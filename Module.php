@@ -4,6 +4,7 @@ namespace nitm\module;
 
 class Module extends \yii\base\Module
 {
+	public $controllerNamespace = 'nitm\module\controllers';
 	
 	/*
 	 * @var array options for nitm\module\models\Configer

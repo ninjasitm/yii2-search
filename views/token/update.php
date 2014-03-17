@@ -7,9 +7,9 @@ use yii\helpers\Html;
  * @var app\models\Token $model
  */
 
-$this->title = 'Update Token: ' . $model->tokenid;
+$this->title = 'Update Token: ' . $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Tokens', 'url' => ['index']];
-$this->params['breadcrumbs'][] = ['label' => $model->tokenid, 'url' => ['view', 'id' => $model->tokenid]];
+$this->params['breadcrumbs'][] = ['label' => $model->id, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = 'Update';
 ?>
 <div class="token-update">

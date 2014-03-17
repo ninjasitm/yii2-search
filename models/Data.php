@@ -145,7 +145,7 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 				case 'created_at':
 				//Setup timestamping
 				$behaviors['timestamp'] = [
-					'class' => \yii\behaviors\AutoTimestamp::className(),
+					'class' => \yii\behaviors\TimestampBehavior::className(),
 					'attributes' => [
 						ActiveRecord::EVENT_BEFORE_INSERT => 'created_at',
 						ActiveRecord::EVENT_BEFORE_UPDATE => 'updated_at',

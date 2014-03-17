@@ -32,7 +32,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 					],
 					[
 						'actions' => ['index',  'add',  'edit',  'delete', 'get','convert', 'undelete'],
-						'allow' => true,
+						'allow' => false,
 						'roles' => ['@'],
 					],
 				],
@@ -40,6 +40,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			'verbs' => [
 				'class' => \yii\web\VerbFilter::className(),
 				'actions' => [
+					'index' => ['post', 'get'],
 					'delete' => ['post'],
 					'undelete' => ['post'],
 					'add' => ['post'],

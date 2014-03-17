@@ -21,8 +21,11 @@ $this->params['breadcrumbs'][] = $this->title;
 	<p>
 		<?= Html::tag("You are editing: ".$this->title) ?>
 	</p>
+	<p>
+		<?= Html::a('Create Token', ['create'], ['class' => 'btn btn-success']) ?>
+	</p>
 	
-	<?= \backend\widgets\Legend::widget([
+	<?= \nitm\widgets\legend\widget\Legend::widget([
 		"legend" => $this->context->legend
 	]); ?>
 

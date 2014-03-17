@@ -28,8 +28,8 @@ class Token extends \nitm\module\models\Data
 
 	protected static $is = 'token';
 	
-	const LEVEL_READ = 1;
-	const LEVEL_WRITE = 2;
+	const LEVEL_READ = 0;
+	const LEVEL_WRITE = 1;
 
 	const STATUS_DELETED = 0;
 	const STATUS_ACTIVE = 1;
@@ -42,7 +42,7 @@ class Token extends \nitm\module\models\Data
 		return 'access_tokens';
 	}
 	
-	public function rulesuser()
+	public function rules()
 	{
 		$rules = [
 			[['userid'], 'required', 'on' => ['edit', 'delete', 'create']],
@@ -85,6 +85,24 @@ class Token extends \nitm\module\models\Data
 			'revoked' => 'Revoked',
 			'revoked_on' => 'Revoked On',
 		];
+	}
+	
+	/**
+	 * Get the user name and ID
+	 * Token $id The id of the user
+	 */
+	public static function getUserName(Token $token=null)
+	{
+		$ret_val = null;
+		$token = ($token instanceof Token) ? $token : static::$self;
+		$user = User::find($token->userid);
+		switch($user instanceof User)
+		{
+			case true:
+			$ret_val = $token->userid.' ('.$user->username.')';
+			break;
+		}
+		return $ret_val;
 	}
 	
 	/**

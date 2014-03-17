@@ -27,6 +27,7 @@ class User extends Data
 	/**
 	 * @var string the raw password. Used to collect password input and isn't saved in database
 	 */
+	public $name;
 	public $password;
 	public $password2;
 	

@@ -69,6 +69,12 @@ class DefaultController extends Controller
 		parent::init();
 	}
 	
+	public static function has()
+	{
+		return [
+		];
+	}
+	
 	/*
 	 * Initialize any css needed for this controller
 	 */
@@ -84,11 +90,11 @@ class DefaultController extends Controller
 			case true:
 			foreach($this->_cssFiles as $css)
 			{
-				$file = $css.'.css';
+				$file = (is_array($css) ? $css['url'] : $css).'.css';
 				switch(file_exists(Yii::$app->basePath.'/web'.$file))
 				{
 					case true:
-					$this->view->registerCssFile(Yii::$app->UrlManager->baseUrl.$file, '');
+					$this->view->registerCssFile(Yii::$app->UrlManager->baseUrl.$file, @$css['depends'], @$css['options']);
 					break;
 					
 					default:
@@ -142,7 +148,7 @@ class DefaultController extends Controller
 				{
 					case true:
 					$js['src'] = Yii::$app->UrlManager->baseUrl.$js['src'];
-					$this->view->registerJsFile($js['src'], ["position" => $js['position']]);
+					$this->view->registerJsFile($js['src'], @$js['depends'], ["position" => $js['position']]);
 					break;
 				}
 			}

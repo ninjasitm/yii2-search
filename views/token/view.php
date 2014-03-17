@@ -8,7 +8,7 @@ use yii\widgets\DetailView;
  * @var app\models\Token $model
  */
 
-$this->title = $model->tokenid;
+$this->title = $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Tokens', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
@@ -17,8 +17,8 @@ $this->params['breadcrumbs'][] = $this->title;
 	<h1><?= Html::encode($this->title) ?></h1>
 
 	<p>
-		<?= Html::a('Update', ['update', 'id' => $model->tokenid], ['class' => 'btn btn-primary']) ?>
-		<?php echo Html::a('Delete', ['delete', 'id' => $model->tokenid], [
+		<?= Html::a('Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
+		<?php echo Html::a('Delete', ['delete', 'id' => $model->id], [
 			'class' => 'btn btn-danger',
 			'data-confirm' => Yii::t('app', 'Are you sure to delete this item?'),
 			'data-method' => 'post',
@@ -28,14 +28,19 @@ $this->params['breadcrumbs'][] = $this->title;
 	<?php echo DetailView::widget([
 		'model' => $model,
 		'attributes' => [
-			'tokenid',
-			'userid',
+			'id',
+			[
+				'attribute' => 'userid',
+				'name' => 'userid',
+				'value' => \nitm\module\models\api\Token::getUserName($model),
+			],
 			'token:ntext',
 			'added',
 			'active:boolean',
 			[
+				'attribute' => 'level',
 				'name' => 'level',
-				'value' => \common\models\api\Token::getLevel($model),
+				'value' => \nitm\module\models\api\Token::getLevel($model),
 			], 
 			'revoked:boolean',
 			'revoked_on',

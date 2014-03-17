@@ -17,7 +17,7 @@ use yii\widgets\ActiveForm;
 		<?php 
 			if(!$model->isNewRecord)
 			{
-				echo Html::tag('h4', \common\models\User::getFullName($model->userid));
+				echo Html::tag('h4', \nitm\module\models\User::getFullName($model->userid));
 			}
 			else
 			{
@@ -35,7 +35,7 @@ use yii\widgets\ActiveForm;
 						]),
 					],
 					'clientOptions' => [
-						'source' => 'https://admin.lefteyecc.mhdevnet.net/user/autocomplete',
+						'source' => '/autocomplete/user',
 					],
 				]);
 			}
