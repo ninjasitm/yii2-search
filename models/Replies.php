@@ -1,0 +1,286 @@
+<?php
+
+namespace nitm\module\models;
+
+use Yii;
+use yii\base\Model;
+use yii\base\Event;
+use nitm\module\models\Data;
+use nitm\module\models\User;
+use nitm\module\models\security\Fingerprint;
+use nitm\module\interfaces\DataInterface;
+
+/**
+ * Class Replies
+ * @package nitm\models
+ *
+ */
+
+class Replies extends Data implements DataInterface
+{
+	public $constrain;
+	public $constraints = [];
+	
+	private $_lastActivity = '___lastActivity';
+	private $_dateFormat = "D M d Y h:iA";
+	
+	public function __construct($constrain=null)
+	{
+		$this->constrain($constrain);
+		$this->init();
+	}
+	
+	public function init()
+	{
+		parent::init();
+	}
+	
+	public function behaviors()
+	{
+		$behaviors = [
+			//setup special attribute behavior
+			'replyToId' => [
+				'class' => \yii\behaviors\AttributeBehavior::className(),
+				'attributes' => [
+					\yii\db\ActiveRecord::EVENT_BEFORE_INSERT => ['reply_to'],
+				],
+				'value' => function ($event) {
+					return $event->sender->getReplyToAuthorId();
+				},
+			],
+		];
+		return array_merge(parent::behaviors(), $behaviors);
+	}
+	
+	public static function tableName()
+	{
+		return 'replies';
+	}
+	
+	public static function has()
+	{
+		$has = [
+			'author' => null, 
+			'editor' => null,
+			'hidden' => null,
+			'deleted' => null,
+		];
+		return array_merge(parent::has(), $has);
+	}
+	
+	public function rules()
+	{
+		return [
+			[
+				[
+					'unique_one', 
+					'unique_two', 
+					'reply_for', 
+					'author', 
+					'message',
+				], 
+				'required', 
+				'on' => [
+					'create'
+				]
+			],
+			[
+				[
+					'message'
+				],
+				'required',
+				'on' => [
+					'validateNew'
+				]
+			],
+			[
+				[
+					'ip_addr',
+					'cookie_hash'
+				],
+				'required', 
+				'on' => [
+					'create',
+				]
+			],
+		];
+	}
+	
+	public function scenarios()
+	{
+		$scenarios =  [
+			'create' => [
+				'unique_one', 
+				'unique_two', 
+				'reply_for',
+				'message',
+				'constrain',
+				'ip_addr',
+				'ip_host',
+				'cookie_hash',
+				'reply_to', 
+				'reply_to_author', 
+			],
+			'update' => [
+				'unique_one', 
+				'unique_two', 
+				'reply_for', 
+				'message',  
+				'public', 
+				'disabled', 
+				'hidden'
+			],
+			'hide' => [
+				'hidden'
+			],
+			'validateNew' => [
+				'message', 
+				'reply_to'
+			]
+		];
+		return array_merge(parent::scenarios(), $scenarios);
+	}
+	
+	/*
+	 * Set the constrining parameters
+	 * @param mixed $using
+	 */
+	public function constrain($using)
+	{
+		$this->setConstraints($using);
+		$this->queryFilters = array_merge($this->queryFilters, $this->constraints);
+	}
+	
+	/*
+	 * Set the constrining parameters
+	 * @param mixed $using
+	 */
+	public function setConstraints($using)
+	{
+		if(!empty($using['one']))
+			$this->constraints['unique_one'] = $using['one'];
+		if(!empty($using['two']))
+			$this->constraints['unique_two'] = date($this->_dateFormat, strtotime($using['two']));
+		if(!empty($using['three']))
+			$this->constraints['reply_for'] = strtolower($using['three']);
+		//constrain for admin user
+		switch(\Yii::$app->userMeta->isAdmin())
+		{
+			case false:
+			$this->queryFilters['hidden'] = 0;
+			break;
+		}
+	}
+	
+	
+	/*
+	 * Get the author for this object
+	 * @return mixed user array
+	 */
+	public function total()
+	{
+		return $this->find()->where($this->queryFilters)->all()->count();
+	}
+	
+	
+	/*
+	 * Get the author for this object
+	 * @return mixed user array
+	 */
+	public function hasNew()
+	{
+		$queryFilters = is_array($this->queryFilters) ? $this->queryFilters : array();
+		//$this->queryFilters['added'] = Yii::$app->getSession()->get($this->_lastActivity);
+		return $this->find()->where($this->queryFilters)->count();
+	}
+	
+	
+	/*
+	 * Get the author for this object
+	 * @return mixed user array
+	 */
+	public function lastOn()
+	{
+		$q = new ActiveQuery();
+		$q->select('added');
+		return $this->find($q)->where($this->queryFilters)->asArray()->max();
+	}
+	
+	
+	/*
+	 * Get the author for this object
+	 * @return mixed user array
+	 */
+	public function lastBy()
+	{
+		return $this->hasOne(User::className(), ['author' => 'id']);
+	}
+	
+	
+	/*
+	 * Reply to a post/user
+	 * @param mixed $message A maessage containing the necessary fileds
+	 * @return mixed user array
+	 */
+	public function reply($message=null)
+	{
+		$ret_val = false;
+		$this->setScenario('create');
+		if(is_array($message))
+		{
+			$this->load($message);
+		}
+		$this->ip_addr = \Yii::$app->request->getUserIp();
+		$this->ip_host = \Yii::$app->request->getUserHost();
+		$cookie = Fingerprint::getSessionCookie();
+		switch($cookie instanceof Cookie)
+		{
+			case true:
+			$this->cookie_hash = $cookie->value;
+			break;
+			
+			default:
+			$this->cookie_hash = Fingerprint::getBrowserFingerPrint();
+			break;
+		}
+		switch($this->validate())
+		{
+			case true:
+			$ret_val = $this->save();
+			$this->added_hr = \nitm\module\helpers\DateFormatter::formatDate();
+			break;
+		}
+		return $ret_val;
+	}
+	
+	/**
+	 * Return the reply author information
+	 * @param string $what The property to return
+	 */
+	public function getReplyToAuthor($what='username')
+	{
+		$ret_val = null;
+		$user = $this->hasOne(User::className(), ['id' => 'reply_to_author'])->select(['username', 'f_name', 'l_name'])->one();
+		switch($user instanceof User)
+		{
+			case true:
+			$ret_val = $user->hasAttribute($what) ? $user->$what :($user->hasMethod($what) ? $user->$what() : null);
+			break;
+		}
+		return $ret_val; 
+	}
+	
+	/**
+	 * Get the userID for the reply_to author
+	 */
+	public function getReplyToAuthorId()
+	{
+		switch(empty($this->reply_to))
+		{
+			case false:
+			$this->reply_to_author = Replies::find()->select(['author'])->where([static::primaryKey()[0] => $this->reply_to])->one()->author;
+			break;
+		}
+	}
+}
+?>
