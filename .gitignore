@@ -1,6 +1,6 @@
 config/
 .git/
-*.LCK
-*.DS_Stroe
-*~
-*.lock
+**.LCK
+**.DS_Stroe
+**~
+**.lock
