@@ -16,7 +16,7 @@
 				<div class="row">
 				<?php $form = ActiveForm::begin(['id' => "value_comment_$unique_id",
 								'action' => '/configuration/comment',
-								'options' => ['class' => 'form-inline'],
+								'options' => ['class' => 'form-horizontal'],
 								'fieldConfig' => [
 										  'inputOptions' => ['class' => 'form-control']
 										],

@@ -169,6 +169,11 @@ trait Query {
 				$ret_val = ($default === true) ? array_merge(['' => 'Any'], $ret_val) : $ret_val;
 				break;
 				
+				case 'boolean':
+				$ret_val = ['0' => 'No', '1' => 'Yes'];
+				//$ret_val = ($default === true) ? array_merge(['' => 'Any'], $ret_val) : $ret_val;
+				break;
+				
 				case 'order':
 				$ret_val = ['desc' => 'Descending', 'asc' => 'Ascending'];
 				break;
@@ -184,14 +189,14 @@ trait Query {
 				switch($class == null)
 				{
 					case true:
-					$filters = $this->settings[static::isWhat()]['filter'][$name];
+					$filters = isset($this->settings[static::isWhat()]['filter'][$name]) ? $this->settings[static::isWhat()]['filter'][$name] : [];
 					break;
 					
 					default:
 					$filters = call_user_func_array(array($class, $method), $args);
 					break;
 				}
-				$ret_val = ($default === true) ? array_merge(['' => 'Select '.ucfirst($name)], $filters) : $filters;
+				$ret_val = ($default === true) ? array_merge(['' => 'Select '.$this->properName($name)], $filters) : $filters;
 				break;
 			}
 			break;

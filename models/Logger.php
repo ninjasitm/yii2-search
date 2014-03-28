@@ -310,7 +310,7 @@ class Logger extends Model
 				case 1:
 				parent::changeDbt($this->logDb, $this->logTable);
 				$this->prepareDb();
-				$this->currentUser = (!$this->currentUser) ? \Yii::$app->user->identity->username : $this->currentUser;
+				$this->currentUser = (!$this->currentUser) ? User::getUsername() : $this->currentUser;
 				$hostname = (empty($_SERVER['REMOTE_HOST'])) ? $this->getHost(@$_SERVER['REMOTE_ADDR']) : $_SERVER['REMOTE_HOST'];
 				$hostname = (empty($hostname)) ? 'localhost' : $hostname;
 				$ipaddr = (!empty($_SERVER['REMOTE_ADDR'])) ? $_SERVER['REMOTE_ADDR'] : 'localhost';

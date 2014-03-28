@@ -38,6 +38,7 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	public $settings;
 	public $queryFilters = [];
 	public $filter;
+	public $requestModel;
 	public static $active = [
 		'driver' => 'mysql',
 		'db' => [
@@ -57,28 +58,13 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	];
 	
 	protected $success;
-	protected static $connection;
+	protected $connection;
 	protected static $is;
 	protected static $tableName;
 	protected static $supported;
 	protected static $self;
 	
 	//private members
-	
-	public function __construct($init=true)
-	{
-		$this->init();
-		static::$self = $this;
-	}
-	
-	//public function  to print array data properly
-	public static function pr($data)
-	{
-		foreach(func_get_args() as $data)
-		{
-			echo "<pre>".print_r($data, true)."</pre>";
-		}
-	}
 
 	public function init()
 	{
@@ -89,12 +75,14 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	{
 		return [
 			[['filter'], 'required', 'on' => ['filtering']],
+			[['unique'], 'safe']
 		];
 	}
 	
 	public function scenarios()
 	{
 		return [
+			'default' => ['unique'],
 			'filter' => ['filter'],
 			'create' => ['author'],
 			'update' => ['editor'],
@@ -110,70 +98,66 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 		$has = is_array(static::has()) ? static::has() : [];
 		foreach($has as $name=>$dataProvider)
 		{
-			switch($name)
+			switch($this->hasProperty($name))
 			{
-				case 'edits':
-				$behaviors['edits'] = [
-					'class' => \yii\behaviors\AttributeBehavior::className(),
-					'attributes' => [
-						ActiveRecord::EVENT_BEFORE_UPDATE => ['edits'],
-					],
-					'value' => function ($event) {
-						switch($event->sender->HasProperty('edits'))
-						{
-							case true:
-							return $event->sender->edits++;
-							break;
-						}
-					},
-				];
-				break;
-				
-				case 'author':
-				case 'editor':
-				//Setup author/editor
-				$behaviors["blamable"] = [
-				'class' => \yii\behaviors\BlameableBehavior::className(),
-					'attributes' => [
-						ActiveRecord::EVENT_BEFORE_INSERT => 'author',
-						ActiveRecord::EVENT_BEFORE_UPDATE => 'editor',
-					],
-				];
-				break;
-				
-				case 'updated_at':
-				case 'created_at':
-				//Setup timestamping
-				$behaviors['timestamp'] = [
-					'class' => \yii\behaviors\TimestampBehavior::className(),
-					'attributes' => [
-						ActiveRecord::EVENT_BEFORE_INSERT => 'created_at',
-						ActiveRecord::EVENT_BEFORE_UPDATE => 'updated_at',
-					],
-				];
-				break;
-				
-				default:
-				//setup special attribute behavior
-				switch(is_array($dataProvider))
+				case true:
+				switch($name)
 				{
-					case true:
-					$behaviors[$name] = $dataProvider;
+					case 'updates':
+					$behaviors['updates'] = [
+						'class' => \yii\behaviors\AttributeBehavior::className(),
+						'attributes' => [
+							ActiveRecord::EVENT_BEFORE_UPDATE => ['updates'],
+						],
+						'value' => function ($event) {
+							switch($event->sender->HasProperty('updates'))
+							{
+								case true:
+								return $event->sender->edits++;
+								break;
+							}
+						},
+					];
 					break;
+					
+					case 'author':
+					case 'editor':
+					//Setup author/editor
+					$behaviors["blamable"] = [
+					'class' => \yii\behaviors\BlameableBehavior::className(),
+						'attributes' => [
+							ActiveRecord::EVENT_BEFORE_INSERT => 'author',
+							ActiveRecord::EVENT_BEFORE_UPDATE => 'editor',
+						],
+					];
+					break;
+					
+					case 'updated_at':
+					case 'created_at':
+					//Setup timestamping
+					$behaviors['timestamp'] = [
+						'class' => \yii\behaviors\TimestampBehavior::className(),
+						'attributes' => [
+							ActiveRecord::EVENT_BEFORE_INSERT => 'created_at',
+							ActiveRecord::EVENT_BEFORE_UPDATE => 'updated_at',
+						],
+					];
+					break;
+					
+					default:
+					//setup special attribute behavior
+					switch(is_array($dataProvider))
+					{
+						case true:
+						$behaviors[$name] = $dataProvider;
+						break;
+					}
+					break; 
 				}
-				break; 
+				break;
 			}
 		}
 		return array_merge(parent::behaviors(), $behaviors);
-	}
-	
-	/*
-	 * Function to detemine what dictates a record as active
-	 * @param ActiveQuery $query
-	 */
-	public static function active()
-	{
-		return [];
 	}
 	
 	public static function tableName()
@@ -185,17 +169,17 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	 * Check to see if somethign is supported
 	 * @param mixed $what
 	 */
-	public static function isSupported($what)
+	public function isSupported($what)
 	{
 		$thisSupports = [$what => false];
-		switch(is_array(static::$supported))
+		switch(is_array($this->supported))
 		{
 			case true:
-			$thisSupports = static::$supported;
+			$thisSupports = $this->supported;
 			break;
 			
 			default:
-			$thisSupports = @static::$self->settings[static::isWhat()]['supported'];
+			$thisSupports = @$this->settings[static::isWhat()]['supported'];
 			break;
 		}
 		return (isset($thisSupports[$what]) &&  ($thisSupports[$what] == true));
@@ -213,6 +197,7 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 				'show' => null,
 				'limit' => null,
 				'unique' => null,
+				'boolean' => null,
 		];
 	}
 	
@@ -260,12 +245,12 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 			{
 				case DB::NULL:
 				case null:
-				self::$active['table']['name'] = '';
+				static::$active['table']['name'] = '';
 				break;
 				
 				default:
-				self::$active['table']['name'] = $table;
-				self::$tableName = $table;
+				static::$active['table']['name'] = $table;
+				$this->tableName = $table;
 				break;
 			}
 			$ret_val = true;
@@ -278,8 +263,8 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	 */
 	public function clearDb()
 	{
-		self::$connection = null;
-		$this->setDb();
+		static::$connection = null;
+		static::setDb();
 	}
 	
 	/**
@@ -291,10 +276,19 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	public static function getDb()
 	{
 		$ret_val = \Yii::$app->getDb();
-		switch(\Yii::$app->getComponent('db2') instanceof \yii\db\Connection)
+		switch(\Yii::$app->has('db2'))
 		{
 			case true:
-			$ret_val = \Yii::$app->getComponent('db2');
+			switch(\Yii::$app->get('db2') instanceof \yii\db\Connection)
+			{
+				case true:
+				$ret_val = \Yii::$app->get('db2');
+				break;
+			}
+			break;
+			
+			default:
+			$ret_val = \Yii::$app->get('db');
 			break;
 		}
 		return $ret_val;
@@ -313,31 +307,23 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 		switch($db)
 		{
 			case '__default__':
-			Yii::$app->setComponent('db2', null);
-			self::$active = array();
+			Yii::$app->set('db2', static::getConnection($this->username, $this->password, $this->host));
+			static::$active = array();
 			break;
 			
  			default:
-			switch(!empty($db) && ($force || ($db != self::$active['db']['name'])))
+			switch(!empty($db) && ($force || ($db != static::$active['db']['name'])))
 			{
 				case true:
-				self::$active['db']['name'] = $db;
-				switch(empty(self::$active['driver']))
+				static::$active['db']['name'] = $db;
+				switch(empty(static::$active['driver']))
 				{
 					case true:
 					throw new \yii\base\ErrorException("Invalid driver and host parameters. Please call ".$this->className()."->changeLogin to change host and conneciton info");
 					break;
 					
 					default:
-					static::$connection = new \yii\db\Connection([
-						'dsn' => self::$active['driver'].":host=".$this->host.";dbname=".self::$active['db']['name'],
-						'username' => $this->username,
-						'password' => $this->password,
-						'emulatePrepare' => true,
-						'charset' => 'utf8',
-					]);
-					static::$connection->open();
-					Yii::$app->setComponent('db2', static::$connection);
+					Yii::$app->set('db2', static::getConnection($this->username, $this->password, $this->host));
 					break;
 				}
 				break;
@@ -346,7 +332,7 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 		}
 		if(!empty($table))
 		{
-			$ret_val = $this->setTable($table);
+			$ret_val = static::setTable($table);
 		}
 		return $ret_val;
 	}
@@ -364,23 +350,23 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 		}
 		if((!empty($db)))
 		{
-			self::$old['db']['name'] = self::$active['db']['name'];
-			self::$active['db']['name'] = $db;
-			$this->setDb(self::$active['db']['name'], null, true);
+			$this->old['db']['name'] = static::$active['db']['name'];
+			static::$active['db']['name'] = $db;
+			static::setDb(static::$active['db']['name'], null, true);
 		}
 		else
 		{
-			self::$old['db']['name'] = null;
+			$this->old['db']['name'] = null;
 		}
 		if(!empty($table))
 		{
-			self::$old['table']['name'] = self::$active['table'];
-			self::$active['table']['name'] = $table;
-			$this->setTable(self::$active['table']['name']);
+			$this->old['table']['name'] = static::$active['table'];
+			static::$active['table']['name'] = $table;
+			static::setTable(static::$active['table']['name']);
 		}
 		else
 		{
-			self::$old['table']['name'] = null;
+			$this->old['table']['name'] = null;
 		}
 	}
 	
@@ -389,22 +375,22 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	 */
 	public function revertDb()
 	{
-		if(!empty(self::$old['db']['name']))
+		if(!empty($this->old['db']['name']))
 		{
-			$this->setDb(self::$old['db']['name']);
+			static::setDb($this->old['db']['name']);
 		}
-		if(!empty(self::$old['table']['name']))
+		if(!empty($this->old['table']['name']))
 		{
-			self::$active['table'] = self::$old['table'];
+			static::$active['table'] = $this->old['table'];
 		}
-		switch(empty(self::$active['table']['name']))
+		switch(empty(static::$active['table']['name']))
 		{
 			case true:
-			$this->setTable(self::$active['table']['name']);
+			static::setTable(static::$active['table']['name']);
 			break;
 		}
-		self::$old['db'] = [];
-		self::$old['table'] = [];
+		$this->old['db'] = [];
+		$this->old['table'] = [];
 	}
 	
 	/*
@@ -412,7 +398,23 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	 */
 	public static function isWhat()
 	{
+		switch(empty(static::$is))
+		{
+			case true:
+			static::$is = strtolower(array_pop(explode('\\', static::className())));
+			break;
+		}
 		return static::$is;
+	}
+	
+	/**
+	 * Get the unique ID of this object
+	 * @return string|int
+	 */
+	public function getId()
+	{
+		$key = $this->primaryKey();
+		return $this->$key[0];
 	}
 	
 	/*
@@ -426,18 +428,18 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	/*
 	 * Get the records for this provisioning template
 	 */
-	public function getRecords()
+	public function getArrays()
 	{
 		switch($this->getScenario() == null)
 		{
 			case true:
-			$this->setScenario('select');
+			$this->setScenario('default');
 			break;
 		}
 		$query = $this->find();
 		static::aliasColumns($query);
 		static::applyFilters($query, $this->queryFilters);
-		$ret_val = $query->all();
+		$ret_val = $query->asArray()->all();
 		$this->success = (sizeof($ret_val) >= 1) ? true : false;
 		return $ret_val;
 	}
@@ -447,9 +449,14 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	 * @param boolean $templates Should we get the templates?
 	 * @param boolead $files Should we get the files?
 	 */
-	public function getObjects()
+	public function getModels()
 	{
-		$this->setScenario('select');
+		switch($this->getScenario() == null)
+		{
+			case true:
+			$this->setScenario('default');
+			break;
+		}
 		$query = $this->find();
 		static::aliasColumns($query);
 		static::applyFilters($query, $this->queryFilters);
@@ -464,6 +471,17 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	public function grouping()
 	{
 		return null;
+	}
+	
+	/*
+	 * Return a string imploded with ucfirst characters
+	 * @param string $name
+	 * @return string
+	 */
+	public function properName($value)
+	{
+		$ret_val = empty($value) ?  [] : array_map('ucfirst', explode('_', $value));
+		return implode(' ', $ret_val);
 	}
 	
 	/*---------------------
@@ -484,6 +502,31 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 		$logger = new Logger(null, null, null, Logger::LT_DB, $matches[1], $table);
 		$logger->addTrans($db, $table, $action, $message);
 	}
+	
+	/**
+	 * Create the connection to the database
+	 * @param string $username
+	 * @param string $password
+	 * @param string $host
+	 * @return Connection
+	 */
+	 protected static function getConnection($username, $password, $host)
+	 {
+		 switch(static::$connection instanceof yii\db\Connection)
+		 {
+			 case false:
+			 static::$connection = new \yii\db\Connection([
+				'dsn' => static::$active['driver'].":host=".$host.";dbname=".static::$active['db']['name'],
+				'username' => $username,
+				'password' => $password,
+				'emulatePrepare' => true,
+				'charset' => 'utf8',
+			]);
+			static::$connection->open();
+			break;
+		 }
+		return static::$connection;
+	 }
 	
 	/*---------------------
 		Private Functions

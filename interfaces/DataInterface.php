@@ -14,9 +14,6 @@ interface DataInterface
 	//Return an array with specific parameters that determine whether a record should contain something
 	public static function has();
 	
-	//Determine whether an item is active or not
-	public static function active();
-	
 	//The columns to return from the table
 	public static function columns();
 }

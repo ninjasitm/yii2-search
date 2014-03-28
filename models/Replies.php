@@ -16,10 +16,13 @@ use nitm\module\interfaces\DataInterface;
  *
  */
 
-class Replies extends Data implements DataInterface
+class Replies extends BaseWidget
 {
 	public $constrain;
 	public $constraints = [];
+	
+	protected $authorIdKey = 'author';
+	protected static $is = 'replies';
 	
 	private $_lastActivity = '___lastActivity';
 	private $_dateFormat = "D M d Y h:iA";
@@ -54,7 +57,7 @@ class Replies extends Data implements DataInterface
 	
 	public static function tableName()
 	{
-		return 'replies';
+		return 'comments';
 	}
 	
 	public static function has()
@@ -136,7 +139,8 @@ class Replies extends Data implements DataInterface
 			'validateNew' => [
 				'message', 
 				'reply_to'
-			]
+			],
+			'default' => []
 		];
 		return array_merge(parent::scenarios(), $scenarios);
 	}
@@ -145,24 +149,11 @@ class Replies extends Data implements DataInterface
 	 * Set the constrining parameters
 	 * @param mixed $using
 	 */
-	public function constrain($using)
-	{
-		$this->setConstraints($using);
-		$this->queryFilters = array_merge($this->queryFilters, $this->constraints);
-	}
-	
-	/*
-	 * Set the constrining parameters
-	 * @param mixed $using
-	 */
 	public function setConstraints($using)
 	{
-		if(!empty($using['one']))
-			$this->constraints['unique_one'] = $using['one'];
-		if(!empty($using['two']))
-			$this->constraints['unique_two'] = date($this->_dateFormat, strtotime($using['two']));
-		if(!empty($using['three']))
-			$this->constraints['reply_for'] = strtolower($using['three']);
+		parent::setConstraints($using);
+		//if(!empty($using[2]))
+		//	$this->constraints['parent_key'] = date($this->_dateFormat, strtotime($using[2]));
 		//constrain for admin user
 		switch(\Yii::$app->userMeta->isAdmin())
 		{
@@ -171,51 +162,6 @@ class Replies extends Data implements DataInterface
 			break;
 		}
 	}
-	
-	
-	/*
-	 * Get the author for this object
-	 * @return mixed user array
-	 */
-	public function total()
-	{
-		return $this->find()->where($this->queryFilters)->all()->count();
-	}
-	
-	
-	/*
-	 * Get the author for this object
-	 * @return mixed user array
-	 */
-	public function hasNew()
-	{
-		$queryFilters = is_array($this->queryFilters) ? $this->queryFilters : array();
-		//$this->queryFilters['added'] = Yii::$app->getSession()->get($this->_lastActivity);
-		return $this->find()->where($this->queryFilters)->count();
-	}
-	
-	
-	/*
-	 * Get the author for this object
-	 * @return mixed user array
-	 */
-	public function lastOn()
-	{
-		$q = new ActiveQuery();
-		$q->select('added');
-		return $this->find($q)->where($this->queryFilters)->asArray()->max();
-	}
-	
-	
-	/*
-	 * Get the author for this object
-	 * @return mixed user array
-	 */
-	public function lastBy()
-	{
-		return $this->hasOne(User::className(), ['author' => 'id']);
-	}
-	
 	
 	/*
 	 * Reply to a post/user
@@ -260,11 +206,11 @@ class Replies extends Data implements DataInterface
 	public function getReplyToAuthor($what='username')
 	{
 		$ret_val = null;
-		$user = $this->hasOne(User::className(), ['id' => 'reply_to_author'])->select(['username', 'f_name', 'l_name'])->one();
+		$user = $this->hasOne(User::className(), ['id' => 'reply_to_author'])->select(['username'])->one();
 		switch($user instanceof User)
 		{
 			case true:
-			$ret_val = $user->hasAttribute($what) ? $user->$what :($user->hasMethod($what) ? $user->$what() : null);
+			$ret_val = User::getFullName($user);
 			break;
 		}
 		return $ret_val; 

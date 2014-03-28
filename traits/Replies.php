@@ -13,18 +13,14 @@ use yii\base\Event;
 
 trait Replies
 {	
-	public function replyWidget($constrain)
+	public function replyWidget(array $constrain)
 	{
-		return \nitm\widgets\replies\widget\Replies::widget([
-			'constrain' => $constrain
-		]);
+		return \nitm\widgets\replies\widget\Replies::widget($constrain);
 	}
 	
-	public function replyFormWidget($constrain)
+	public function replyFormWidget(array $constrain)
 	{
-		return \nitm\widgets\replies\widget\RepliesForm::widget([
-			'constrain' => $constrain
-		]);
+		return \nitm\widgets\replies\widget\RepliesForm::widget($constrain);
 	}
 }
 ?>

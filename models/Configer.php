@@ -429,7 +429,7 @@ class Configer extends Model
 			break;
 			
 			default:
-			switch($key[0])
+			switch($this->container)
 			{
 				case Yii::$app->getModule('nitm')->configOptions['container'];
 				array_unshift($key, Helper::settings);
@@ -439,7 +439,7 @@ class Configer extends Model
 				switch($key[0] == $this->container)
 				{
 					case false;
-					array_unshift($key, self::dm, $this->location, 'config');
+					array_unshift($key, self::dm, $this->location, 'config', $this->container);
 					break;
 				}
 				break;
@@ -534,6 +534,7 @@ class Configer extends Model
 			{
 				case 'db':
 				$this->setTable($this->configTables['containers']);
+				$pri['containers'] = $this->getCurPri();
 				$cond = [
 					"key" => ['name', $pri['containers']], 
 					"data" => [$container, $container],
@@ -548,11 +549,12 @@ class Configer extends Model
 					$container = $containerid[$pri['containers']];
 					break;
 				}
-				$section = ['author' => Yii::$app->user->id, "containerid" => $container];
+				$section = ['author' => \Yii::$app->user->getId(), "containerid" => $container];
 				$message = "";
 				$result = 'failure';
 				$action = ["success" => "Add Config", "failure" => "Add Config Fail"];
 				$this->setTable($this->configTables['sections']);
+				$pri['sections'] = $this->getCurPri();
 				//write the sections
 				foreach($data as $name=>$values)
 				{
@@ -720,27 +722,7 @@ class Configer extends Model
 							'key' => $this->configTables['sections'].'.'.$this->getCurPri(),
 							'name' => $this->getCurPri()
 						];
-						/*
-						 * Now get the values and sections
-						 */
-						$this->setTable($this->configTables['values']);
-						$sel_fields = [
-							$pri['values']['name'],
-							$pri['values']['name']." AS `unique`",
-							'sectionid',
-							'containerid', 
-							'name',
-							'value',
-							'comment',
-							'author',
-							'editor',
-							'added',
-							'edited',
-							"CONCAT((SELECT `name` FROM `".$this->configTables['sections']."` WHERE ".$this->configTables['sections'].".id=sectionid), '.', name) AS unique_id", 
-							"'".$pri['sections']['name']."' AS unique_name", 
-							"(SELECT `name` FROM `".$this->configTables['sections']."` WHERE ".$this->configTables['sections'].".id=sectionid) AS 'section_name'", 
-							"(SELECT `name` FROM `".$this->configTables['containers']."` WHERE ".$this->configTables['containers'].".id=containerid) AS 'container_name'"
-						];
+						$sel_fields = ['name', $pri['containers']['name']];
 						$this->select($sel_fields,
 							true, 
 							[
@@ -754,23 +736,63 @@ class Configer extends Model
 							["orderby" => "name"],
 							true
 						);
-						switch($this->successful())
+						switch($this->rows())
 						{
 							case true:
-							$this->config['current']['sections'] = ['' => "Select section"];
+							$this->config['current']['sections'] = ['' => "Select section..."];
 							$result = $this->result(DB::R_ASS, true);
 							$ret_val = [];
-							$this->setTable($this->configTables['values']);
-							array_push($sel_fields, 'value', 'comment', $pri['values']);
 							foreach($result as $value)
 							{
-								switch(isset($this->config['current']['sections'][$value['section_name']]))
+								switch(isset($this->config['current']['sections'][$value['name']]))
 								{
 									case false:
-									$this->config['current']['sections'][$value['section_name']] = $value['section_name'];
+									$this->config['current']['sections'][$value['name']] = $value['name'];
 									break;
 								}
 							}
+							
+							/*
+							 * Now get the values
+							 */
+							$this->setTable($this->configTables['values']);
+							$sel_fields = [
+								$pri['values']['name'],
+								$pri['values']['name']." AS `unique`",
+								'sectionid',
+								'containerid', 
+								'name',
+								'value',
+								'comment',
+								'author',
+								'editor',
+								'added',
+								'edited',
+								"CONCAT((SELECT `name` FROM `".$this->configTables['sections']."` WHERE ".$this->configTables['sections'].".id=sectionid), '.', name) AS unique_id", 
+								"'".$pri['sections']['name']."' AS unique_name", 
+								"(SELECT `name` FROM `".$this->configTables['sections']."` WHERE ".$this->configTables['sections'].".id=sectionid) AS 'section_name'", 
+								"(SELECT `name` FROM `".$this->configTables['containers']."` WHERE ".$this->configTables['containers'].".id=containerid) AS 'container_name'"
+							];
+							$this->select($sel_fields,
+								true, 
+								[
+									"key" => [
+										'containerid'
+									], 
+									"data" => [
+										$containerid[$pri['containers']['name']]
+									]
+								], 
+								["orderby" => "name"],
+								true
+							);
+							break;
+						}
+						switch($this->successful())
+						{
+							case true:
+							//$this->config['current']['sections'] = ['' => "Select section..."];
+							$result = $this->result(DB::R_ASS, true);
 							$ret_val = $result;
 							break;
 						}
@@ -1229,15 +1251,16 @@ class Configer extends Model
 	public function createContainer($name, $in=null, $engine='file')
 	{
 		$this->setEngine($engine);
-		$ret_val = ["success" => false];
+		$ret_val = ["success" => false, 'class' => 'error'];
 		switch($this->location)
 		{
 			case 'db':
-			$data = ["containers" => ['author' => Yii::$app->user->id]];
+			$data = ["containers" => ['author' => \Yii::$app->user->getId()]];
 			$message = "";
 			$result = 'failure';
 			$action = ["success" => "Add Container", "failure" => "Add Container Fail"];
 			$this->setTable($this->configTables['containers']);
+			$pri['containers'] = $this->getCurPri();
 			$data['containers']['name'] = $name;
 			//first we chec the container info
 			$cond = [
@@ -1401,8 +1424,8 @@ class Configer extends Model
 		$ret_val = [
 			'success' => false,
 			'value' => rawurlencode($value),
-			'key' => $hierarchy[3],
-			'section' => $hierarchy[3],
+			'key' => $key,
+			'section' => $hierarchy[4],
 			'container' => $container,
 			'message' => "Unable to add value ".$value
 		];
@@ -1413,11 +1436,11 @@ class Configer extends Model
 			switch(sizeof($hierarchy))
 			{
 				//We're adding a section
-				case 4:
+				case 5:
 				$section = [
 					'author' => \Yii::$app->user->getId(), 
 					"containerid" => $container,
-					"name" => $hierarchy[3]
+					"name" => $hierarchy[4]
 				];
 				$this->setTable($this->configTables['sections']);
 				$check = ['name', 'containerid'];
@@ -1428,20 +1451,20 @@ class Configer extends Model
 					{
 						case true:
 						$ret_val['success'] = true;
-						$ret_val['message'] = "Added section ".$hierarchy[3];
+						$ret_val['message'] = "Added section ".$hierarchy[4];
 						break;
 					}
 					break;
 				}
 				break;
 				
-				case 5:
+				case 6:
 				$val = [];
 				$val['author'] = \Yii::$app->user->getId();
-				$val['name'] = $hierarchy[4];
+				$val['name'] = $hierarchy[5];
 				$val['value'] = $value;
 				$val['containerid'] = $container;
-				$val['sectionid'] = $this->getSectionId($container, $hierarchy[3]);
+				$val['sectionid'] = $this->getSectionId($container, $hierarchy[4]);
 				//write the values
 				$this->setTable($this->configTables['values']);
 				$check = ['containerid', 'sectionid', 'name'];
@@ -1457,7 +1480,7 @@ class Configer extends Model
 						$ret_val['section_name'] = $hierarchy[3];
 						$ret_val = array_merge($ret_val, $val);
 						$ret_val['success'] = true;
-						$ret_val['message'] = "Added ".$hierarchy[4]." to section ".$hierarchy[3];
+						$ret_val['message'] = "Added ".$hierarchy[5]." to section ".$hierarchy[4];
 						break;
 					}
 					break;
@@ -1471,20 +1494,20 @@ class Configer extends Model
 			switch(sizeof($hierarchy))
 			{
 				//we're adding a section
-				case 4:
+				case 5:
 				$args['command'] = "sed -i '\$a\\\n\\n[%s]' ";
-				$args['args'] = [$hierarchy[3]];
-				$message = "Added new section [".$hierarchy[3]."] to ".$hierarchy[2];
-				$name = $hierarchy[3];
+				$args['args'] = [$hierarchy[4]];
+				$message = "Added new section [".$hierarchy[4]."] to ".$hierarchy[3];
+				$name = $hierarchy[4];
 				break;
 				
 	
 				//we're adding a value
-				case 5:
+				case 6:
 				$args['command'] = "sed -i '/\[%s\]/a %s = %s' ";
-				$args['args'] = [$hierarchy[3], $hierarchy[4], $value];
-				$message = "Added new config option [".$hierarchy[4]."] to ".$hierarchy[3];
-				$name = $hierarchy[4];
+				$args['args'] = [$hierarchy[4], $hierarchy[5], $value];
+				$message = "Added new config option [".$hierarchy[5]."] to ".$hierarchy[4];
+				$name = $hierarchy[5];
 				break;
 			}
 			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).' "'.$container.'.'.$this->types[$this->location].'"';
@@ -1493,10 +1516,10 @@ class Configer extends Model
 			switch($cmd_ret_val)
 			{
 				case 0:
-				$ret_val['unique'] = $hierarchy[3].'.'.$name;
+				$ret_val['unique'] = $hierarchy[4].'.'.$name;
 				$ret_val['name'] = $name;
 				$ret_val['container_name'] = $ret_val['container'];
-				$ret_val['section_name'] = $hierarchy[3];
+				$ret_val['section_name'] = $hierarchy[4];
 				$ret_val['unique_id'] = $key;
 				$ret_val['message'] = $message;
 				$ret_val['success'] = true;
@@ -1523,8 +1546,8 @@ class Configer extends Model
 			'success' => false,
 			'old_value' => $old_value['value'],
 			'value' => rawurlencode($value),
-			'key' => $hierarchy[4],
-			'name' => $hierarchy[4],
+			'key' => $hierarchy[5],
+			'name' => $hierarchy[5],
 			'container' => $key,
 			'message' => "Unable to edit value ".$value
 		];
@@ -1534,7 +1557,7 @@ class Configer extends Model
 			switch(sizeof($hierarchy))
 			{
 				//we're editing a section
-				case 4:
+				case 5:
 				$update['editor'] = \Yii::$app->user->getId();
 				$update['edited'] = time();
 				$update['table'] = $this->configTables['sections'];
@@ -1546,10 +1569,11 @@ class Configer extends Model
 					'data' => [$this->cfg_id]
 				];
 				$update['process'] = true;
+				$ret_val['section'] = $hierarchy[3];
 				break;
 			
 				//we're editing a value
-				case 5:
+				case 6:
 				$update['editor'] = \Yii::$app->user->getId();
 				$update['edited'] = time();
 				$update['table'] = $this->configTables['values'];
@@ -1561,6 +1585,7 @@ class Configer extends Model
 					'data' => [$this->cfg_id]
 				];
 				$update['process'] = true;
+				$ret_val['section'] = $hierarchy[4];
 				break;
 			}
 			switch($update['process'])
@@ -1584,17 +1609,17 @@ class Configer extends Model
 			switch(sizeof($hierarchy))
 			{
 				//we're editing a section
-				case 4:
+				case 5:
 				$args['command'] = 'sed -i -e "s/^\[%s\]/%s/" ';	
-				$args['args'] = [$hierarchy[3], $value];
-				$message = "Edited the section name from ".$hierarchy[3]." to $value";
+				$args['args'] = [$hierarchy[4], $value];
+				$message = "Edited the section name from ".$hierarchy[4]." to $value";
 				break;
 			
 				//no support for editing section names as of yet
-				case 5:      
+				case 6:      
 				$args['command'] = 'sed -i -e "/^\[%s\]/,/^$/{s/%s =.*/%s = %s/}" ';
-				$args['args'] = [$hierarchy[3], $hierarchy[4], $hierarchy[4], $value];
-				$message = "Edited the value name from ".$hierarchy[4]." to $value";
+				$args['args'] = [$hierarchy[4], $hierarchy[5], $hierarchy[5], $value];
+				$message = "Edited the value name from ".$hierarchy[5]." to $value";
 				break;
 			}
 			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).'"'.$container.'.'.$this->types[$this->location].'"';
@@ -1626,7 +1651,6 @@ class Configer extends Model
 		$ret_val = [
 			'success' => false,
 			'value' => Helper::getVal($correctKey),
-			'section' => $hierarchy[3],
 			'container' => $key,
 			'message' => "Unable to delete ".$key
 		];
@@ -1636,23 +1660,25 @@ class Configer extends Model
 			switch(sizeof($hierarchy))
 			{
 				//we're deleting a section
-				case 4:
+				case 5:
 				$delete['table'] = $this->configTables['sections'];
 				$delete['keys'] = ['id'];
 				$delete['values'] = [$this->cfg_id];
 				$message = "Deleted the $key";
 				$delete['process'] = true;
+				$ret_val['section'] = $hierarchy[4];
 				break;
 			
 				//we're deleting a value
-				case 5:
-				$ret_val['key'] = @$hierarchy[4];
-				$ret_val['name'] = @$hierarchy[4];
+				case 6:
+				$ret_val['key'] = @$hierarchy[5];
+				$ret_val['name'] = @$hierarchy[5];
 				$delete['table'] = $this->configTables['values'];
 				$delete['keys'] = ['id'];
 				$delete['values'] = [$this->cfg_id];
 				$message = "Deleted the value $key";
 				$delete['process'] = true;
+				$ret_val['section'] = $hierarchy[4];
 				break;
 			}
 			switch($delete['process'])
@@ -1676,21 +1702,21 @@ class Configer extends Model
 			switch(sizeof($hierarchy))
 			{
 				//are we deleting a value/line?
-				case 5:
+				case 6:
 				$args['command'] = "sed -i '/^\[%s\]/,/^$/{/^%s =.*/d}' ";
-				$args['args'] =[$hierarchy[4], $hierarchy[3]];
-				$message = "Deleted value ".$hierarchy." in ".$hierarchy[3];
+				$args['args'] =[$hierarchy[5], $hierarchy[4]];
+				$message = "Deleted value ".$hierarchy." in ".$hierarchy[4];
 				break;
 				
 				//we're deleting a section
-				case 4:
+				case 5:
 				$args['command'] = "sed -i '/^\[%s\]/,/^$/d' ";
-				$args['args'] = [$hierarchy[3]];
-				$message = "Deleted the section ".$hierarchy[3];
+				$args['args'] = [$hierarchy[4]];
+				$message = "Deleted the section ".$hierarchy[4];
 				break;
 				
 				//we're deleting a container
-				case 1:
+				case 2:
 				$args['command'] = "rm -f '%s'";
 				$args['args'] = [$container];
 				$message = "Deleted the file ".$container;

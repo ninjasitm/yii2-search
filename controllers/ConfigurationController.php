@@ -32,7 +32,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 					],
 					[
 						'actions' => ['index',  'add',  'edit',  'delete', 'get','convert', 'undelete'],
-						'allow' => false,
+						'allow' => true,
 						'roles' => ['@'],
 					],
 				],
@@ -40,7 +40,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			'verbs' => [
 				'class' => \yii\web\VerbFilter::className(),
 				'actions' => [
-					'index' => ['post', 'get'],
+					'index' => ['get'],
 					'delete' => ['post'],
 					'undelete' => ['post'],
 					'add' => ['post'],
@@ -50,22 +50,14 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			],
 		];
 		
-		return array_merge(parent::behaviors(), $behaviors);
+		return array_replace_recursive(parent::behaviors(), $behaviors);
 	}
 	
-	public static function has ()
+	public static function has()
 	{
 		return [
-			'ConfigurationAsset'
+			'configuration'
 		];
-	}
-	
-	public function actions() 
-	{
-		/*$actions = array(
-			     "add",
-			     );
-		return array_merge(parent::actions(), $actions);*/
 	}
 	
 	function beforeAction($action)

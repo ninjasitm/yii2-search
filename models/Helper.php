@@ -34,7 +34,8 @@ class Helper extends Model
 	const settings = 'settings';
 	const fields = 'fields';
 	const configer = 'configer';
-	const comparer= 'comparer';
+	const comparer = 'comparer';
+	const current = 'active';
 	
 	//you don't have to use a qualifier for these but the csdm will be used
 	const adder = 'adder';

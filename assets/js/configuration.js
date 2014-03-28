@@ -382,7 +382,7 @@ function Configuration(items)
 		var container = $(elem).data('id');
 		var type = $(elem).data('type');
 		var value = new String($(elem).html());
-		var oldValue = new String(escape(value.trim()));
+		var oldValue = new String(value.trim());
 		var size = oldValue.length;
 		switch(type)
 		{
@@ -394,7 +394,7 @@ function Configuration(items)
 				var style = 'font-weight:normal;font-size:12pt;';
 				break;
 		}
-		form = $("<form name='activeForm' id='activeForm_"+container+"' class='form-inline' onsubmit='return false;'></form><br>");
+		form = $("<form name='activeForm' id='activeForm_"+container+"' class='form-horizontal' onsubmit='return false;'></form><br>");
 		form.append("<input type='hidden' name='container' value='"+container+"'>");
 		form.append("<input type='hidden' name='cellId' value='"+id+"'>");
 		form.append("<input type='hidden' name='inputId' value='"+id+this.iObj+"'>");
@@ -412,7 +412,8 @@ function Configuration(items)
 		}
 		else
 		{
-			var input = $('<input class="form-control" size="'+size+'" type="text" id="'+id+this.iObj+'" value="'+value+'"\>');
+			var input = $('<input class="form-control" size="'+size+'" type="text" id="'+id+this.iObj+'"\>');
+			input.val(value);
 			input.on('blur', function () {
 				self.parse(form.get(0));
 			});

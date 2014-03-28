@@ -15,7 +15,10 @@
 		"yiisoft/yii2-swiftmailer": "*",
 		"yiisoft/yii2-gii": "*",
 		"yiidoc/yii2-redactor": "*",
-		"dektrium/yii2-user": "*"
+		"dektrium/yii2-user": "*",
+		"kartik-v/yii2-widgets": "*",
+		"kartik-v/yii2-helpers": "*",
+		"kartik-v/yii2-icons": "*"
     },
     "autoload": {
         "psr-4": {

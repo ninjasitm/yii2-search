@@ -38,6 +38,8 @@ class User extends Data
 	'enabled' => false));
 	
 	protected $use_token = false;
+	
+	private $_lastActivity = '__lastActivity';
 
 	const STATUS_DELETED = 0;
 	const STATUS_ACTIVE = 1;
@@ -186,6 +188,27 @@ class User extends Data
 	}
 	
 	/**
+	 * Get the last time this user was active
+	 * @return boolean
+	 */
+	public function lastActive()
+	{
+		$ret_val = strtotime('now');
+		$sessionActivity = \Yii::$app->getSession()->get($this->_lastActivity);
+		switch(is_null($sessionActivity))
+		{
+			case true:
+			$ret_val = \Yii::$app->user->getIdentity()->logged_in_at;
+			break;
+			
+			default:
+			$ret_val = $sessionActivity;
+			break;
+		}
+		return $ret_val;
+	}
+	
+	/**
 	 * Should we use token authentication for this user?
 	 * @param boolean $use
 	 */
@@ -212,7 +235,7 @@ class User extends Data
 	public static function hasApiTokens(User $user=null)
 	{
 		$user = is_null($user) ? \Yii::$app->user->getIdentity() : $user;
-		return (bool) ($user->hasMany(\nitm\models\api\Token::className(), ['userid' => 'id'])->count() >= 1);
+		return (bool) ($user->hasMany(\nitm\module\models\api\Token::className(), ['userid' => 'id'])->count() >= 1);
 	}
 	
 	/**
@@ -223,7 +246,7 @@ class User extends Data
 	public static function getApiTokens(User $user=null)
 	{
 		$user = is_null($user) ? \Yii::$app->user->getIdentity() : $user;
-		return $user->hasMany(\nitm\models\api\Token::className(), ['userid' => 'id'])->all();
+		return $user->hasMany(\nitm\module\models\api\Token::className(), ['userid' => 'id'])->all();
 	}
 	
 	/**
@@ -232,27 +255,41 @@ class User extends Data
 	 * @param string $idKey The key where the userid is stored
 	 * @return string
 	 */
-	public static function getFullName($id=null, $idKey='id')
+	public static function getFullName($withUsername=false, $user=null, $idKey='id')
 	{
 		$ret_val = '';
-		$id = is_object($id) ? $id->$idKey : $id;
-		switch(@parent::$active['db']['name'] == static::dbName())
+		switch($user instanceof User)
 		{
 			case false:
-			\Yii::$app->user->getIdentity()->changeDb(static::dbName());
+			switch(@parent::$active['db']['name'] == static::dbName())
+			{
+				case false:
+				\Yii::$app->user->getIdentity()->changeDb(static::dbName());
+				break;
+			}
+			$user = is_null($user) ? \Yii::$app->user->getIdentity() : User::find($user);
+			switch(parent::$old['db']['name'] == static::dbName())
+			{
+				case false:
+				\Yii::$app->user->getIdentity()->revertDb();
+				break;
+			}
 			break;
 		}
-		$user = is_null($id) ? \Yii::$app->user->getIdentity() : static::findIdentity($id);
 		switch($user instanceof User)
 		{
 			case true:
-			//$ret_val = $user->f_name.' '.$user->l_name;
-			break;
-		}
-		switch(parent::$old['db']['name'] == static::dbName())
-		{
-			case false:
-			\Yii::$app->user->getIdentity()->revertDb();
+			$profile = \dektrium\user\models\Profile::find()->where(['user_id' => $user->id])->one();
+			switch($profile instanceof \dektrium\user\models\Profile)
+			{
+				case true:
+				$ret_val = $profile->name.($withUsername ? '('.$user->username.')' : '');
+				break;
+				
+				default:
+				$ret_val = $user->username;
+				break;
+			}
 			break;
 		}
 		return $ret_val;
@@ -423,19 +460,5 @@ class User extends Data
 			break;
 		}
 		return $ret_val;
-	}
-
-	public function beforeSave($insert)
-	{
-		if (parent::beforeSave($insert)) {
-			if (($this->isNewRecord || $this->getScenario() === 'resetPassword') && !empty($this->password)) {
-				$this->password_hash = Security::generatePasswordHash($this->password);
-			}
-			if ($this->isNewRecord) {
-				$this->auth_key = Security::generateRandomKey();
-			}
-			return true;
-		}
-		return false;
 	}
 }

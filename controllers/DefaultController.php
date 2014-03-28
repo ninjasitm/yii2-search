@@ -19,9 +19,9 @@ class DefaultController extends Controller
 	
 	protected $responseFormat;
 	protected $_view = [
-						'view' => '@nitm/views/utils/wrapper', //The view file
-						'args' => [] //the arguments to the view file
-					];
+		'view' => '@nitm/views/utils/wrapper', //The view file
+		'args' => [] //the arguments to the view file
+	];
 	
 	/**
 	 * Indicator types supports
@@ -225,22 +225,33 @@ class DefaultController extends Controller
 			case true:
 			foreach($has as $asset)
 			{
-				$class = $asset.'\assets\Asset';
-				switch(class_exists($class))
+				//This may be an absolute namespace to an asset
+				switch(class_exists($asset))
 				{
 					case true:
-					$class::register($this->getView());
-					//\Yii::$app->assetManager->bundles[] = $class;
-					//\Yii::$app->assetManager->getBundle($class)->registerAssetFiles($this->getView());
+					$asset::register($this->getView());
 					break;
 					
 					default:
-					//This is probably not a widget asset but a module asset
-					$class = '\nitm\module\assets\\'.$asset;
+					//It isn't then it may be an asset we have in nitm/assets or nitm/widgets
+					$class = $asset.'\assets\Asset';
 					switch(class_exists($class))
 					{
 						case true:
 						$class::register($this->getView());
+						//\Yii::$app->assetManager->bundles[] = $class;
+						//\Yii::$app->assetManager->getBundle($class)->registerAssetFiles($this->getView());
+						break;
+						
+						default:
+						//This is probably not a widget asset but a module asset
+						$class = '\nitm\module\assets\\'.static::properName($asset).'Asset';
+						switch(class_exists($class))
+						{
+							case true:
+							$class::register($this->getView());
+							break;
+						}
 						break;
 					}
 					break;
@@ -373,12 +384,13 @@ class DefaultController extends Controller
 	{
 		$item = is_null($item) ? $this : $item;
 		$ret_val = 'default';
-		switch($token instanceof Token)
+		switch(is_object($item))
 		{
 			case true:
-			switch(Edit::getStatus($token))
+			switch(1)
 			{
-				case 'Disabled':
+				case $item->hasProperty('disabled');
+				case '':
 				$ret_val = 'default';
 				break;
 				
@@ -426,7 +438,7 @@ class DefaultController extends Controller
 		return $ret_val;
 	}
 	
-	public function actionFilter()
+	public function actionSearch()
 	{
 		$ret_val = [
 			"success" => false, 
@@ -435,10 +447,21 @@ class DefaultController extends Controller
 			"format" => $this->getResponseFormat(),
 			'message' => "No data found for this filter"
 		];
-		$this->model->setScenario('filter');
+		switch(class_exists('@app/models/search/'.$this->model->isWhat()))
+		{
+			case true:
+			$class = '@app/models/search/'.$this->model->isWhat();
+			$className = $class::className();
+			$searchModel = new $className();
+			break;
+			
+			default:
+			$serchModel = $this->model;
+			break;
+		}
+		//$search->setScenario('filter');
 		$class = array_pop(explode('\\', $this->model->className()));
-		$this->model->queryFilters = $_REQUEST[$class]['filter'];
-		$this->data = $this->model->getRecords();
+        $this->data = $searchModel->search($_REQUEST[$class]['filter']);
 		$partial = true;
 		switch($this->model->successful())
 		{
@@ -503,15 +526,19 @@ class DefaultController extends Controller
 			break;
 			
 			case 'html':
-			$ret_val = empty($params['view']) ? null : $this->$render($params['view'], $params['args']);
+			$params ['view'] =  empty($params['view']) ? '@nitm/views/utils/wrapper' :  $params['view'];
+			$ret_val = $this->$render($params['view'], $params['args']);
 			break;
 			
 			case 'modal':
-			$ret_val = empty($params['view']) ? null :  $this->$render('@nitm/views/utils/modal', [
+			$params ['view'] =  empty($params['view']) ? '@nitm/views/utils/wrapper' :  $params['view'];
+			$ret_val = $this->$render('@nitm/views/utils/modal', 
+				[
 					'content' => $this->$render($params['view'], $params['args']),
 					'title' => @$params['title'],
-					]
-				);
+					'modalOptions' => @$params['modalOptions'],
+				]
+			);
 			break;
 			
 			case 'text':
