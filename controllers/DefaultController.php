@@ -6,7 +6,7 @@ use Yii;
 use yii\helpers\Html;
 use yii\web\Controller;
 use yii\web\VerbFilter;
-use nitm\module\models\Helper;
+use nitm\module\helpers\Session;
 use nitm\module\models\Configer;
 
 class DefaultController extends Controller
@@ -16,6 +16,7 @@ class DefaultController extends Controller
 	public $model;
 	public $settings;
 	public $metaTags = array();
+	public $forceAjax = false;
 	
 	protected $responseFormat;
 	protected $_view = [
@@ -57,9 +58,8 @@ class DefaultController extends Controller
 		$this->initAssets();
 		$this->initMetaTags();
 		$this->initJs();
-		$registered = Helper::isRegistered(Helper::settings);
-		$empty = Helper::getval(Helper::settings);
-		switch(!$registered || empty($empty))
+		$registered = Session::isRegistered(Session::settings);
+		switch(!$registered || !(Session::size(Session::settings)))
 		{
 			case true:
 			$this->initConfig();
@@ -294,7 +294,7 @@ class DefaultController extends Controller
 	{
 		$ret_val = array();
 		$navigation = array();
-		$navigation = Helper::getval($from);
+		$navigation = Session::getval($from);
 		$priorities = array();
 		if(is_array($navigation))
 		{
@@ -505,7 +505,7 @@ class DefaultController extends Controller
 	 */
 	protected static function properName($value)
 	{
-		$ret_val = empty($value) ?  [] : array_map('ucfirst', explode('_', $value));
+		$ret_val = empty($value) ?  [] : array_map('ucfirst', preg_split ("/[_-]/", $value));
 		return implode($ret_val);
 	}
 	
@@ -516,7 +516,7 @@ class DefaultController extends Controller
 	protected function renderResponse($result, $params=null, $partial=true)
 	{
 		$contentType = "text/html";
-		$render = ($partial === true) ? 'renderAjax' : 'render';
+		$render = (($partial === true) || ($this->forceAjax === true)) ? 'renderAjax' : 'render';
 		switch($this->getResponseFormat())
 		{
 			case 'xml':
@@ -552,7 +552,7 @@ class DefaultController extends Controller
 			break;
 		}
 		\Yii::$app->response->getHeaders()->set('Content-Type', $contentType);
-		echo $ret_val;
+		return $ret_val;
 	}
 	
 	/*

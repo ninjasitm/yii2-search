@@ -6,6 +6,7 @@ use PDO;
 use yii\db\Connection;
 use yii\db\Query;
 use yii\base\Behavior;
+use nitm\module\helpers\Helper;
 
 //DB.php class which handles database conectivity.
 class DB extends Query
@@ -96,22 +97,8 @@ class DB extends Query
 		return array_merge(parent::behaviors(), $behaviors);
 	}
 	
-	public function __destruct()
-	{
-	}
-	
-	public function __wakeup()
-	{
-		//$this->open();
-	}
-	
-	public function __sleep()
- 	{
-		$this->close();
-		return array_keys(get_object_vars($this));
-	}
-	
-	/*
+	/**
+	 *
 	 * set the current driver
 	 * @param string $driver
 	 */
@@ -120,21 +107,54 @@ class DB extends Query
 		static::$active['driver'] = ($db_driver != NULL) ? $db_driver : $this->_default['driver'];
 	}
 	
-	/*
+	/**
+	 *
 	 * Change the database login information
 	 * @param string $db_host
 	 * @param string $db_user
 	 * @param string $db_pass
+	 * @return boolean
 	 */
 	public function setLogin($db_host=NULL, $db_user=NULL, $db_pass=NULL)
 	{
-		$this->host = ($db_host != NULL) ? $db_host : 'localhost';
+		switch($db_host != NULL)
+		{
+			case true:
+			$this->host = $db_host;
+			break;
+			
+			default:
+			$this->host = static::getDefaultDbHost();
+			break;
+		}
 		$this->username = ($db_user != NULL) ? $db_user : \Yii::$app->params['components.db']['username'];
 		$this->_password = ($db_pass != NULL) ? $db_pass : \Yii::$app->params['components.db']['password'];
 		return true;
 	}
 	
-	/*
+	/**
+	 *
+	 * Get the default database host
+	 * @return string host
+	 */
+	public static function getDefaultDbHost()
+	{
+		preg_match("/(host=)(.+)([$;])/", \Yii::$app->params['components.db']['dsn'], $matches);
+		return $matches[2];
+	}
+	
+	/**
+	 *
+	 * Get the default database name
+	 * @return string database name
+	 */
+	public static function getDefaultDbName()
+	{
+		preg_match("/(dbname=)(.+)($|;)/", \Yii::$app->params['components.db']['dsn'], $matches);
+		return $matches[2];
+	}
+	
+	/**
 	 * Set the error handling behavior
 	 * @param boolean $die
 	 * @param boolean $backtrace
@@ -148,7 +168,7 @@ class DB extends Query
 	}
 	
 	
-	/*
+	/**
 	 * set the current table
 	 * @param string $table
 	 * @return boolean
@@ -177,7 +197,7 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
+	/**
 	 * set the current database
 	 * @param string $db
 	 * @param string $table
@@ -192,8 +212,7 @@ class DB extends Query
 			switch(empty(static::$active['db']['name']))
 			{
 				case true:
-				preg_match("/(dbname=)(.+)($|;)/", \Yii::$app->params['components.db']['dsn'], $matches);
-				static::$active['db']['name'] = $matches[2];
+				static::$active['db']['name'] = static::getDefaultDbName();
 				break;
 				
 				default:
@@ -229,7 +248,11 @@ class DB extends Query
 		return (static::$active['table']['name'] == NULL) ? NULL : $this->primary['key'];
 	}
 	
-	//function to properly escape data being for use in SQL statements
+	/**
+	 * function to properly escape data being for use in SQL statements
+	 * @param mixed $data
+	 * @return mixed
+	 */
 	public function sanitize($data)
 	{
 		$ret_val = false;
@@ -264,160 +287,11 @@ class DB extends Query
 		
 	}
 	
-	/*
-		Function to split data based on conditionals
-		@param mixed $a1 first array to split, usually the keys
-		@param mixed $a2 second array to be split, usually data
-		@param mixed $c comparison operator to use
-		@param mixed $xor glue to connect pieces of array conditionals
-		@param bool $esc escape data
-		@param bool $quote_fields should fields be quoted?
-		@param bool $quote_data should data be quoted?
-		@return mixed
-	*/
-	public static function splitc($a1, $a2, $c='=', $xor='AND', $esc=true, $quote_fields=true, $quote_data=true)
-	{
-		$keys = (is_array($a1)) ? array_values($a1) : array($a1);
-		$data = (is_array($a2)) ? array_values($a2) : array($a2);
-// 		$c = (is_array($c) && (sizeof($c) == 1)) ? array_shift($c) : $c;
-		if(($s = sizeof($keys)) == sizeof($data))
-		{
-			$ret_val = "";
-			$c_arr = is_array($c);
-			$xor_arr = is_array($xor);
-			for($ci = 0; $ci < $s; $ci++)
-			{
-				$field = ($quote_fields === true) ? "`".$keys[$ci]."`" : $keys[$ci];
-				$value = (($data[$ci] === DB::FLAG_NULL) || ((is_null($data[$ci]) && !is_numeric($data[$ci])) === true)) ? null : (($esc === true) ? $data[$ci] : $data[$ci]);
-				switch(substr($keys[$ci], 0, strlen(self::FLAG_IGNORE)) === self::FLAG_IGNORE)
-				{
-					case true:
-					switch(isset($xor[$ci]))
-					{
-						case true:
-						$field = '';
-						$value = '';
-						break;
-						
-						default:
-						continue 2;
-						break;
-					}
-					break;
-				}
-				switch(1)
-				{
-					case substr($field, 0, strlen(self::FLAG_ASIS)) === self::FLAG_ASIS:
-					$value = null;
-					$field = substr($field, strlen(self::FLAG_ASIS), strlen($field));
-					$match = '';
-					break;
-					
-					default:
-					switch(1)
-					{
-						case $field == self::FLAG_NULL:
-						case $field == null:
-						$match = null;
-						switch(is_array($data[$ci]))
-						{
-							case true:
-							$value = "(".static::splitc($value['keys'], $value['data'], $value['operand'], $value['xor'], $esc, $quote_fields, $quote_data).")";
-							break;
-						}
-						break;
-						
-						case is_numeric($c) && !empty($c):
-						case is_string($c) && !empty($c):
-						$match = $c;
-						break;
-						
-						default:
-						switch($c_arr == true)
-						{
-							case true:
-							$match = isset($c[$ci]) ? (($c[$ci] == self::FLAG_NULL) ? null : $c[$ci]) : '=';
-							break;
-							
-							default:
-							$match = ($c == self::FLAG_NULL) ? null : (($c == null) ? '=' : $c);
-							break;
-						}
-					break;
-					}
-				}
-				$multi_cond = ($xor_arr === true && isset($xor[$ci])) ? (($xor[$ci] == null) ? " AND " : " $xor[$ci] ") : (($xor == null) ? " AND " : (is_array($xor) && !isset($xor[$ci])) ?  " AND " : " $xor ");
-				switch(1)
-				{
-					case is_null($value):
-					$ret_val .= $field.$match;
-					break;
-					
-					case is_numeric($value):
-					$ret_val .= $field.$match.$value;
-					break;
-					
-					case is_string($value) && $quote_data:
-					$quoter = ($quote_data === false) ? '' : ($this->quote_data === true) ? '"' : '';
-					$ret_val .= $field.$match."$quoter".$value."$quoter";
-					break;
-					
-					default:
-					$ret_val .= $field.$match.$value;
-					break;
-				}
-				switch($ci == ($s-1))
-				{
-					case false:
-					$ret_val .= $multi_cond;
-					break;
-				}
-			}
-		}
-		else
-		{
-			static::generateError(-1, "You specified incorrect lengths for the keys and data to check DB::splitc('".print_r($a1)."', '".print_r($a2)."');");
-			return null;
-		}
-		return $ret_val;
-	}
-	
-	/*
-		function to split fields by a delimiter
-	*/
-	public static function splitf($array, $splitter=',', $esc = true, $sur='', $max_len=null, $num=true, $print=false)
-	{
-		$ret_val = array();
-		switch(empty($array))
-		{
-			case false:
-			$array = is_array($array) ? $array : array($array);
-			$data = array_values($array);
-			foreach($data as $d)
-			{
-				switch(1)
-				{
-					case substr($d, 0, strlen(self::FLAG_ASIS)) === self::FLAG_ASIS:
-					$ret_val[] = substr($d, strlen(self::FLAG_ASIS), strlen($d));
-					break;
-					
-					default:
-					$ret_val[] = $sur.$d.$sur;
-					break;
-				}
-			}
-			break;
-		}
-		switch($print == true)
-		{
-			case true:
-			self::pr($ret_val);
-			break;
-		}
-		return implode($splitter, $ret_val);
-	}
-	
-	//temporarily change the database or table for operation
+	/**
+	 * Temporarily change the database or table for operation
+	 * @param string $db
+	 * @param string $table
+	 */
 	public function changeDbt($db, $table=null)
 	{
 		if(empty($this->user) || empty($this->host) || empty($this->_password))
@@ -446,10 +320,10 @@ class DB extends Query
 		};
 	}
 	
-	/*
-		Reset the database and table back
-		$gpk == Get primary key?
-	*/
+	/**
+	 * Reset the database and table back
+	 * @param boolean $primary_key Get primary key?
+	 */
 	public function revertDbt($primary_key=true)
 	{
 		if(!empty(static::$old['db']['name']) && is_string(static::$old['db']['name']))
@@ -471,7 +345,12 @@ class DB extends Query
 		static::$old['table'] = array();
 	}
 	
-//perform various operations on a table
+	/**
+	 * Perform various operations on a table
+	 * @param DB::constant the operation
+	 * @param string table
+	 * @ return mixed | boolean
+	 */
 	public function performOp($op=null, $table=NULL)
 	{
 		if(is_null($table))
@@ -511,7 +390,15 @@ class DB extends Query
 		return $this->result(DB::R_ASS);
 	}
 	
-	//add a key to the a table 
+	/**
+	 * Add a key to the a table
+	 * @param string $field
+	 * @param string $db
+	 * @param string $table
+	 * @param boolean $null
+	 * @param string | int $default
+	 * @return boolean
+	 */
 	public final function addFieldTo($field, $db=null, $table=null, $null=true, $default=0)
 	{
 		$db = (is_null($db)) ? static::$active['db']['name'] : $db;
@@ -541,7 +428,11 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-// 	get the tables in a given database or returns for the current database
+	/**
+	 * Get the tables in a given database or returns for the current database
+	 * @param strign $db
+	 * @return mixed table names
+	 */
 	public function getTables($db=NULL)
 	{
 		$ret_val = false;
@@ -549,7 +440,7 @@ class DB extends Query
 		return $this->connections->getSchema()->getTableNames();
 	}
 
-	/*
+	/**
 	 * Check to see if a table exists
 	 * @param string $table
 	 * @param string $db
@@ -563,7 +454,7 @@ class DB extends Query
 		return empty($schema) ? false : true;
 	}
 	
-	/*
+	/**
 	 * Get the info for tables in a db
 	 * @param string $db
 	 * @return mixed $tables
@@ -599,46 +490,87 @@ class DB extends Query
 	}
 
 
-// 	get the tables in a given database or returns for the current database
+    /**
+	 * Get the staus of a table
+	 * @param string $table
+	 * @return mixed
+	 */
 	public function getTableStatus($table=NULL)
 	{
 		$table = (is_null($table)) ? static::$active['table']['name'] : $table;
 		return $this->connection->getTableSchema($table);
 	}
 
-// 	show the jkeys for a table
+    /**
+	 * Get the fields for a table
+	 * @param string $table
+	 * @param string $field?
+	 * @return mixed
+	 */
 	public function getFields($table=null, $field=null)
 	{
 		return $this->getTableStatus($table)->columns;
 	} 
 	
-//get the type for a field
+    /**
+	 * Get the type of a field
+	 * @param strgin $field
+	 * @return yii\db\ColumnSchema
+	 */
 	public function getFieldType($field=null)
 	{
 		return $this->connection->getTableSchema(static::$active['table']['name'])->getColumn($field)->dbType;
 	} 
 
-//get the type for a field
+    /**
+	 * Get the length of a field
+	 * @param string $field
+	 * @return int
+	 */
 	public function getFieldLen($field=null)
 	{
 		return $this->connection->getTableSchema(static::$active['table']['name'])->getColumn($field)->size;
 	} 
 	
-//check to see whether a key esists in a table
+    /**
+	 * does the give key exist in the table?
+	 * @param string $key
+	 * @param string $table
+	 * @return boolean
+	 */
 	public function keyExists($key, $table=null)
 	{
 		$table = (is_null($table)) ? static::$active['table']['name'] : $table;
 		return $this->connection->getTableSchema(static::$active['table']['name'])->getColumn($field) !== null;
 	}
 
-// 	get the primary gey for a given table
+    /**
+	 * Get the primary key name
+	 * @param string $table
+	 * @return string
+	 */
 	public function getPrimaryKey($table=null)
 	{
-		$ret_val = $this->connection->getTableSchema(static::$active['table']['name']);
-		$this->primary['key'] = $ret_val->primaryKey[0];
-		return $ret_val->primaryKey[0];
+		$ret_val = $this->connection->getTableSchema(is_null($table) ? static::$active['table']['name'] : $table);
+		switch($ret_val instanceof \yii\db\TableSchema)
+		{
+			case true:
+			$this->primary['key'] = $ret_val->primaryKey[0];
+			break;
+			
+			default:
+			$this->primary['key'] = null;
+			break;
+		}
+		return $this->primary['key'];
 	}
 
+    /**
+	 * Get the indexes for a table
+	 * @param string $db
+	 * @param string $table
+	 * @return mixed
+	 */
 	public function getIndexes($db=null, $table=null)
 	{
 		$ret_val = false;
@@ -653,8 +585,9 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
+	/**
 	 * function to check a result resource
+	 * @return boolean
 	 */
 	public function successful()
 	{
@@ -668,9 +601,13 @@ class DB extends Query
 		return $ret_val;		
 	}
 	
-	/*
+	/**
 	 * Executing of queries
 	 * @param mixed $db_query
+	 * @param string $db
+	 * @param string $table
+	 * @param boolean $prepared Is the SQL already prepared?
+	 * @return boolean
 	 */
 	public function execute($db_query=null, $db=null, $table=null, $prepared=false)
 	{
@@ -796,19 +733,9 @@ class DB extends Query
 	
 	public function printQuery()
 	{
-		self::pr($this->getQuery());
+		Helper::pr($this->getQuery());
 	}
 	
-	public static function pr()
-	{
-		foreach(func_get_args() as $data)
-		{
-			if(!empty($data))
-			{
-				echo "<pre>".print_r($data)."</pre>";
-			}
-		}
-	}
 	public function getQueryStats($return_queries=false)
 	{
 		$ret_val = false;
@@ -840,7 +767,7 @@ class DB extends Query
 		$ret_val = false;
 		if(!empty($key))
 		{
-			$this->query['data']['check']['keys'] = (is_array($key)) ? static::splitf($key, ',') : $key;
+			$this->query['data']['check']['keys'] = (is_array($key)) ? Helper::splitF($key, ',') : $key;
 			if($db)
 			{
 				$this->changeDbt($db, $table);
@@ -938,17 +865,17 @@ class DB extends Query
 	}
 	
 	//simply pass the necessary arguments and everything will be calculated
-	/*
-		function to select data from a database + table
+	/**
+	function to select data from a database + table
 		@param mixed $f fields to be selected
-		@param bool $d whether or not this should be a distinct select
+		@param boolean $d whether or not this should be a distinct select
 		@param mixed $c the conditions for selecting data
 		@param mixed $o order the results by
 		@param mixed $a ascending or descing order?
 		@param mixed $lim the manimum number of results to return
-		@param bool $esc escape arguments
+		@param boolean $esc escape arguments
 		@param int $offset start selecting from here
-		@param bool $union Should a union be used to merge multiple selects?
+		@param boolean $union Should a union be used to merge multiple selects?
 		@param mixed $max maximum number of results to return
 		@return mixed
 	*/
@@ -977,14 +904,14 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
-	 * Simply pass the necessary arguments and everything will be calculated
+	/**
+	* Simply pass the necessary arguments and everything will be calculated
 	 * Function to insert data into a database + table
 	 * @param mixed $f = fields to be matched against $d
 	 * @param mixed $d = data to be inserted
-	 * @param bool $delay = whether transaction is high priority or should be delayed
+	 * @param boolean $delay = whether transaction is high priority or should be delayed
 	 * @param mixed $dupe = data to be changed on a duplicate
-	 * @param bool $esc Should the data be escaped?
+	 * @param boolean $esc Should the data be escaped?
 	 */
 	public function insert($f, $d, $delay=false, $dupe=null, $esc=true)
 	{
@@ -1018,8 +945,8 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
-	 * Simply pass the necessary arguments and everything will be calculated
+	/**
+	* Simply pass the necessary arguments and everything will be calculated
 	 * @param mixed $f fields to be updated against $d
 	 * @param mixed $d data to be updated
 	 * @param mixed $c condition to be matched (key, data, xor, operand)
@@ -1054,16 +981,15 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
-	 * Simply pass the necessary arguments and everything will be calculated
+	/**
+	* Simply pass the necessary arguments and everything will be calculated
 	 * Named remove because of conflicts with delete
 	 * @param mixed $f fields to be matched against $d
 	 * @param mixed $d data to be matched
 	 * @param int $lim delete limit
 	 * @param string $oper operand to use
 	 * @param string $xor connector for conditional requirements
-	 * @return bool
-	 */
+	 * @return boolean */
 	public function remove($f, $d, $table=null, $db=null, $lim=1, $oper='=', $xor=' AND ')
 	{
 		$this->query['type'] = 'delete';
@@ -1085,8 +1011,8 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
-	 * Set the where part of the query
+	/**
+	* Set the where part of the query
 	 * @param mixed $key 
 	 * @param mixed $data 
 	 * @param mixed $operand
@@ -1127,8 +1053,8 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
-	 * Set the fields and union part of the query
+	/**
+	* Set the fields and union part of the query
 	 * @param mixed $f 
 	 * @return string the union parameter
 	 */
@@ -1203,11 +1129,11 @@ class DB extends Query
 			{
 				case 'insert':
 				//forumalate fields part of query
-				$u['fields'] = " (".static::splitf($f, $u['join'], false, '').")";
+				$u['fields'] = " (".Helper::splitF($f, $u['join'], false, '').")";
 				break;
 				
 				case 'select':
-				$u['fields'] = static::splitf($f, $u['join'], false);
+				$u['fields'] = Helper::splitF($f, $u['join'], false);
 				break;
 				
 				case 'update':
@@ -1241,7 +1167,7 @@ class DB extends Query
 					{
 						$values[] = " VALUES(".implode(',', ($fields)).")";
 					}
-					$values = static::splitf($values, ', ');
+					$values = Helper::splitF($values, ', ');
 					$this->query['data']['values'] = $values;
 					break;
 				}
@@ -1283,8 +1209,8 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
-	 * Set the orderby part of the query
+	/**
+	* Set the orderby part of the query
 	 * @param mixed $o
 	 * @param boolean $union
 	 * @param mixed $u
@@ -1302,7 +1228,7 @@ class DB extends Query
 		{
 			case true:
 			$u['groupby'] = "GROUP BY";
-			$u['gbfields'] = static::splitc(explode(',', $o['groupby']), $this->query['data']['direction'], " ", ', ', false, false, false);
+			$u['gbfields'] = Helper::splitC(explode(',', $o['groupby']), $this->query['data']['direction'], " ", ', ', false, false, false);
 			unset($o['groupby']);
 			$this->query['data']['groupby'] = $u['gbfields'];
 			break;
@@ -1328,7 +1254,7 @@ class DB extends Query
 		{
 			case false:
 			$u['orderby'] .= "ORDER BY";
-			$u['obfields'] = static::splitc($o, $this->query['data']['direction'], " ", ', ', false, false, false);
+			$u['obfields'] = Helper::splitC($o, $this->query['data']['direction'], " ", ', ', false, false, false);
 			$this->query['data']['orderby'] = $u['obfields'];
 			break;
 		}
@@ -1337,8 +1263,8 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
-	 * How should the results be ordered
+	/**
+	* How should the results be ordered
 	 * @param mixed $asc
 	 * @return string
 	 */
@@ -1366,8 +1292,8 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
-	 * Set the limit
+	/**
+	* Set the limit
 	 * @param int $limit
 	 * @param int $offset
 	 */
@@ -1394,8 +1320,8 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
-		get the result set from a quesry in an array
+	/**
+	get the result set from a quesry in an array
 		$mode = ftype of result to return
 		$ar = should I return an array of all the results or just one result according to mode
 		$group = should I group the results by each key or not?
@@ -1465,8 +1391,8 @@ class DB extends Query
 		return $ret_val;	
 	}
 	
-	/*
-		Prepare a DB::PDO_NOBIND string for use in SQL query...etc
+	/**
+	Prepare a DB::PDO_NOBIND string for use in SQL query...etc
 		@param mixed $keys keys for use in conditional
 		@param mixed $data data for use in conditional
 		@param mixed $operand operand to use in conditional
@@ -1494,14 +1420,14 @@ class DB extends Query
 			$xor = is_array($xor) ? $xor : array_fill(0, sizeof($keys['values']), $xor);
 			$data['values'] = (!empty($data['prep']) || !empty($data['app'])) ? explode(',', $data['prep'].implode($data['app'].','.$data['prep'], $data['values']).$data['app']) : $data['values']; 
 			$keys['values'] = (!empty($keys['prep']) || !empty($keys['app'])) ? explode(',', $keys['prep'].implode($keys['app'].','.$keys['prep'], $keys['values']).$keys['app']) : $keys['values'];
-			$ret_val = static::splitc($keys['values'], $data['values'], $operand, $xor, false, false, false);
+			$ret_val = Helper::splitC($keys['values'], $data['values'], $operand, $xor, false, false, false);
 			break;
 		}
 		return $ret_val;
 	}
 	
-	/*
-		Get PDO version of keys
+	/**
+	Get PDO version of keys
 		@param mixed $array array to use for determining PDO keys
 		@param int $start where to start?
 		@param mixed $data alternative data to use
@@ -1582,8 +1508,8 @@ class DB extends Query
 		return $ret_val;
 	}
 	
-	/*
-	 * Bind the data using PDO
+	/**
+	* Bind the data using PDO
 	 * @param mixed $queries
 	 * @param mixed $fields
 	 * @param mixed $data
@@ -1651,12 +1577,11 @@ class DB extends Query
 	///////////////////Protected functions\\\\\\\\\\\\\\\\\\\\\\
 	
 
-	/*
-		function to print a nicely formated error message
+	/**
+	function to print a nicely formated error message
 		@param resource $loc_link mysql resource link
 		@param string $loc_msg messageto use for error
-		@return bool
-	*/
+		@return boolean */
 	protected static function generateError($loc_link, $loc_msg)
 	{
 		$trace = '';
@@ -1771,12 +1696,13 @@ class DB extends Query
 		return $this->_rows['max'];
 	}
 	
-	/*------------------------
+	/**
+	------------------------
 		Private Functions
 	------------------------*/
 
-	/*
-	 * Release the result information
+	/**
+	* Release the result information
 	 */
 	private function free()
 	{
@@ -1786,8 +1712,8 @@ class DB extends Query
 		}
 	}
 	
-	/*
-	 * Release the result information
+	/**
+	* Release the result information
 	 */
 	private function close()
 	{
@@ -1795,8 +1721,8 @@ class DB extends Query
 		$this->free();
 	}
 	
-	/*
-	 * Handle connection to the database
+	/**
+	* Handle connection to the database
 	 */
 	private function connect()
 	{
@@ -1808,16 +1734,16 @@ class DB extends Query
 		$this->connection->open();
 	}
 	
-	/*
-	 * Return the unencrypted password for this current host and user
+	/**
+	* Return the unencrypted password for this current host and user
 	 */
 	private function getPassword()
 	{
 		return base64_decode(convert_uudecode($this->_password));
 	}
 	
-	/*
-	 * Set up the max query
+	/**
+	* Set up the max query
 	 */
 	private function maxQuery()
 	{
@@ -1826,8 +1752,8 @@ class DB extends Query
 		$this->query['max'] .= " FROM ".static::$active['db']['name'].'.'.static::$active['table']['name'].$this->query['data']['where'];
 	}
 	
-	/*
-	 * Bind the quey using PDO binding
+	/**
+	* Bind the quey using PDO binding
 	 * @param mixed $queries
 	 */
 	private function bindQuery($queries, $bind_fields=null, $bind_data=null)

@@ -1,38 +1,34 @@
 @media (min-width: 1200px) {
 	.configuration-container {
 			top: 0; left: 0; right: 0; bottom: 0;
-			position: absolute;
-			padding: 0 -15px;
-			overflow: hidden;
+			height: 100%;
+			padding: 0 -30px;
+			overflow: auto;
 	}
 	.configuration-actions {
-			padding: 15px -15px;
+			padding: 0 -15px;
 	}
 
 	.configuration-header {
 			height: 100px; 
-			position: absolute;
 			padding: 0 15px 0 0;
 			top: 0; right: 0; left: 0;
 	}
 
 	.configuration-sections {
-			top: 115px; right: 0; left: 0;
+			top: 115px;
 			height: 50px; 
-			position: absolute;
 	}
 
 	.configuration-body {
-			top: 185px; right: 0; left: 0; bottom: 115px;
+			top: 185px; right: 0; left: 0;
 			overflow: auto;
-			position: absolute;
 	}
 
 	.configuration-footer {
 			height: 115px;
 			right: 0; left: 0; bottom: 0px;
-			position: absolute;
-			padding: 0 15px 15px 15px;
+			padding: 0 15px;
 	}
 }
 
@@ -42,7 +38,7 @@
 			height: 100%;
 	}
 	.configuration-actions {
-			padding: 15px 0;
+			//padding: 15px 0;
 	}
 	
 	.configuration-header {
@@ -56,7 +52,7 @@
 	.configuration-body {
 			width: 100%;
 			overflow: auto;
-			padding: 15px 15px 0 0;
+			//padding: 15px 15px 0 0;
 	}
 	
 	.configuration-footer {

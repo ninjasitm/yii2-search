@@ -224,7 +224,34 @@ class User extends Data
 	 */
 	public function getAvatar($options=[]) 
 	{
-		return \yii\helpers\Html::img($this->avatar, array_merge(['class' => 'avatar'], $options));
+		switch($this->hasProperty('avatar') && !empty($this->avatar))
+		{
+			case true:
+			$url = $this->avatar;
+			break;
+			
+			//Fallback to dektriuk\User gravatar info
+			default:
+			$id = empty($this->id) ? \Yii::$app->user->identity->id : $this->id;
+			$profile = \dektrium\user\models\Profile::find()->where(['user_id' => $id])->one();
+			switch(1)
+			{
+				case !empty($profile->gravatar_id):
+				$key = $profile->gravatar_id;
+				break;
+				
+				case !empty($profile->gravatar_email):
+				$key = $profile->gravatar_email;
+				break;
+				
+				default:
+				$key = $profile->public_email;
+				break;
+			}
+			$url = "http://gravatar.com/avatar/$key";
+			break;
+		}
+		return \yii\helpers\Html::img($url, array_merge(['class' => 'avatar'], $options));
 	}
 	
 	/**

@@ -3,12 +3,13 @@
 namespace nitm\module\models;
 
 use yii\base\Model;
+use nitm\module\helpers\Session;
 
 if(!defined('AUTH_DOMAIN'))
 {
 	define('AUTH_DOMAIN', 'securer.'.str_replace('.', '', @$_SERVER['HTTP_HOST']));
 }
-class Logger extends Model
+class Logger extends DB
 {
 	//constant data
 	const SEP = DIRECTORY_SEPARATOR;
@@ -63,7 +64,7 @@ class Logger extends Model
 			$this->prepareDb();
 			break;
 		}
-		//$currentUser = parent::getval(AUTH_DOMAIN.'.username');
+		//$currentUser = Session::getVal(AUTH_DOMAIN.'.username');
 		$this->logDir = is_dir($this->logDir) ? $this->logDir : $_SERVER['DOCUMENT_ROOT'].$this->logDir;
 		$this->currentUser = ($this->currentUser == '') ? $this->currentUser : User::getUsername();
 	}
@@ -77,15 +78,16 @@ class Logger extends Model
 	
 	public function behaviors()
 	{
-		$behaviors = array(
-				"Helper" => array(
-					"class" => \nitm\module\models\Helper::className(),
-				),
-			);
+		$behaviors = [
+		];
 		return array_merge(parent::behaviors(), $behaviors);
 	}
 	
-	//function to chage the log databaseand table
+	/**
+	 * Function to change the log database and table
+	 * @param string $db
+	 * @param string $table
+	 */
 	public function changeLogDbt($db=null, $table=null)
 	{
 		if($db)
@@ -96,7 +98,7 @@ class Logger extends Model
 		{
 			$this->logTable = $table;
 		}
-		parent::setDb($this->logDb, $this->logTable);
+		$this->setDb($this->logDb, $this->logTable);
 	}
 	
 	public function prepareFile($filename, $dir=null, $ext=null)
@@ -130,7 +132,7 @@ class Logger extends Model
 	
 	public function prepareDb()
 	{
-// 		parent::__construct(null, $this->logDb, $this->logTable);
+		
 		$this->setDb($this->logDb, $this->logTable);
 	}
 	
@@ -277,7 +279,7 @@ class Logger extends Model
 				$text = strip_tags($text);
 				break;
 		}
-		if(parent::getval("settings.globals.allow_log") == true)
+		if(Session::getVal("settings.globals.allow_log") == true)
 		{
 			if(fwrite($this->handle, wordwrap($text, 512, "\n\n")) === false)
 			{
@@ -303,7 +305,7 @@ class Logger extends Model
 		}
 		else
 		{
-			switch(parent::getval("settings.globals.allow_log"))
+			switch(Session::getVal("settings.globals.allow_log"))
 			{
 				case true:
 				case 'true':
@@ -311,7 +313,7 @@ class Logger extends Model
 				parent::changeDbt($this->logDb, $this->logTable);
 				$this->prepareDb();
 				$this->currentUser = (!$this->currentUser) ? User::getUsername() : $this->currentUser;
-				$hostname = (empty($_SERVER['REMOTE_HOST'])) ? $this->getHost(@$_SERVER['REMOTE_ADDR']) : $_SERVER['REMOTE_HOST'];
+				$hostname = (empty($_SERVER['REMOTE_HOST'])) ? Network::getHost(@$_SERVER['REMOTE_ADDR']) : $_SERVER['REMOTE_HOST'];
 				$hostname = (empty($hostname)) ? 'localhost' : $hostname;
 				$ipaddr = (!empty($_SERVER['REMOTE_ADDR'])) ? $_SERVER['REMOTE_ADDR'] : 'localhost';
 				parent::insert(array('added', 'user', 'action', 'notes', 'ip_addr', 'host', 'db_name', 'table_name'), array(strtotime('now'), $this->currentUser, $action, $note, $ipaddr, $hostname, $db, $table), null, null, true);
@@ -321,32 +323,6 @@ class Logger extends Model
 		}
 	}
 	//end fucntion
-	
-	/*
-		function to get hostname instead of gethostbyaddr
-		@param $ip = ip address to lookup
-	*/
-	private function getHost($ip)
-	{
-		//Make sure the input is not going to do anything unexpected
-		//IPs must be in the form x.x.x.x with each x as a number
-		$testar = explode('.',$ip);
-		if (count($testar)!=4)
-		{
-			return $ip;
-		}
-		for ($i=0;$i<4;++$i)
-		{
-			if (!is_numeric($testar[$i]))
-			{
-				return $ip;
-			}
-		}
-		$host = `host -W 1 $ip`;
-		$host = ($host) ? end(explode(' ', $host)) : $ip;
-		$host = (strpos($host, "SERVFAIL") === false) ? $host : $ip;
-		return $host;
-	} 
 }
 // end log class 
 ?>

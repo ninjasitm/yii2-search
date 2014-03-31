@@ -9,7 +9,7 @@ use yii\helpers\Html;
 		<?php
 			foreach($values as $section=>$value)
 			{
-				echo $this->render('values/value',  array("model" => $model,
+				echo $this->render('value',  array("model" => $model,
 									  "section" => $section,
 									  "data" => $value,
 									  "surround" => @$surround));
@@ -23,7 +23,7 @@ use yii\helpers\Html;
 
 <?php
 	//render the footer for this section
-	echo $this->render("values/footer", array("model" => $model,
+	echo $this->render("footer", array("model" => $model,
 							"section" => $parent,
 							"container" => $model->config['current']['container']));
 ?>

@@ -1,10 +1,10 @@
 <?php
 
-namespace common\models;
+namespace nitm\module\helpers;
 
-use common\models\DB;
 use yii\db\ActiveRecord;
 use yii\base\Behavior;
+use nitm\module\models\DB;
 
 if(!@isset($_SESSION))
 {
@@ -21,22 +21,17 @@ class Network extends Behavior
 	
 	public function behaviors()
 	{
-		$behaviors = array(
-				"DB" => array(
-					"class" => \common\models\DB::className(),
-				),
-				"ActiveRecord" => array(
-					"class" => \yii\db\ActiveRecord::className(),
-				),
-			);
+		$behaviors = [
+		];
 		return array_merge(parent::behaviors(), $behaviors);
 	}
 	
 	/*
 		function to get hostname instead of gethostbyaddr
-		$ip = ip address to lookup
+		$param string $ip = ip address to lookup
+		@return string hostname
 	*/
-	public function getHost($ip)
+	public static function getHost($ip)
 	{
 		//Make sure the input is not going to do anything unexpected
 		//IPs must be in the form x.x.x.x with each x as a number

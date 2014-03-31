@@ -165,8 +165,8 @@ function Configuration(items)
 							self.afterGet(result);
 							break;
 								
-							case 'update':
-							self.afterUpdate(result);
+							case 'edit':
+							self.afterEdit(result);
 							break;
 								
 							case 'delete':
@@ -259,7 +259,7 @@ function Configuration(items)
 		}
 	}
 	
-	this.afterUpdate = function (result) {
+	this.afterEdit = function (result) {
 		var nClass = self.classes.warning;
 		var iClass = self.classes.information;
 		if(result.success)
@@ -285,11 +285,12 @@ function Configuration(items)
 		switch(result.success)
 		{
 			case true:
+			var _form = $(form);
 			switch(result.value)
 			{
 				//We just deleted a section
 				case null:
-				$('#'+self.container.showSection).find("select :selected").remove();
+				$('#'+self.views.containers.showSection).find("select :selected").remove();
 				break;
 				
 				default:

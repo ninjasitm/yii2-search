@@ -13,107 +13,108 @@ class m140312_212206_config extends \yii\db\Migration
 	private $_tables = [
 		'config_containers' => [
 			'fields' => [
-				'id' => Schema::TYPE_PK,
-				'name' => Schema::TYPE_STRING."(64) NOT NULL",
-				'author' => Schema::TYPE_INTEGER,
-				'editor' => Schema::TYPE_INTEGER,
-				'created_at' => Schema::TYPE_TIMESTAMP." default NOW()",
-				'updated_at' => Schema::TYPE_TIMESTAMP." on update NOW()",
-				'deleted' => Schema::TYPE_BOOLEAN
+				'id:PK' => '',
+				'name:STRING' => "(64) NOT NULL",
+				'author:INTEGER' => '',
+				'editor:INTEGER' => '',
+				'created_at:TIMESTAMP' => "DEFAULT CURRENT_TIMESTAMP",
+				'updated_at:TIMESTAMP' => "ON UPDATE CURRENT_TIMESTAMP",
+				'deleted:BOOLEAN' => ''
 			],
 			'index' => [
 				'unique_name' => [
 					'fields' => 'name',
-					'unique' = true
+					'unique' => true
 				]
 			],
 			'foreignKeys' => [
 				'foreignAuthor' => [
 					'localKey' => 'author',
 					'remote' => 'tbl_user',
-					'remoteKey' = 'id',
+					'remoteKey' => 'id',
 				],
 				'foreignEditor' => [
 					'localKey' => 'editor',
 					'remote' => 'tbl_user',
-					'remoteKey' = 'id',
+					'remoteKey' => 'id',
 				]
 			]
 		],
 		'config_sections' => [
 			'fields' => [
-				'id' => Schema::TYPE_PK,
-				'containerid' => Schema::TYPE_INTEGER,
-				'name' => Schema::TYPE_STRING."(64) NOT NULL",
-				'author' => Schema::TYPE_INTEGER,
-				'editor' => Schema::TYPE_INTEGER,
-				'created_at' => Schema::TYPE_TIMESTAMP." default NOW()",
-				'updated_at' => Schema::TYPE_TIMESTAMP." on update NOW()",
-				'deleted' => Schema::TYPE_BOOLEAN
+				'id:PK' => '',
+				'containerid:INTEGER' => '',
+				'name:STRING' => "(64) NOT NULL",
+				'author:INTEGER' => '',
+				'editor:INTEGER' => '',
+				'created_at:TIMESTAMP' => "DEFAULT CURRENT_TIMESTAMP",
+				'updated_at:TIMESTAMP' => "ON UPDATE CURRENT_TIMESTAMP",
+				'deleted:BOOLEAN' => ''
 			],
 			'index' => [
 				'unique_name' => [
 					'fields' => 'name',
-					'unique' = true
+					'unique' => true
 				]
 			],
 			'foreignKeys' => [
 				'foreignAuthor' => [
 					'localKey' => 'author',
 					'remote' => 'tbl_user',
-					'remoteKey' = 'id',
+					'remoteKey' => 'id',
 				],
 				'foreignEditor' => [
 					'localKey' => 'editor',
 					'remote' => 'tbl_user',
-					'remoteKey' = 'id',
+					'remoteKey' => 'id',
 				],
 				'foreignContainer' => [
 					'localKey' => 'containerid',
 					'remote' => 'config_containers',
-					'remoteKey' = 'id',
+					'remoteKey' => 'id',
 				]
 			]
 		],
 		'config_values' => [
 			'fields' => [
-				'id' => Schema::TYPE_PK,
-				'name' => Schema::TYPE_STRING."(64) NOT NULL",
-				'value' => Schema::TYPE_TEXT." NULL",
-				'comment' => Schema::TYPE_TEXT." NULL",
-				'containerid' => Schema::TYPE_INTEGER,
-				'author' => Schema::TYPE_INTEGER,
-				'editor' => Schema::TYPE_INTEGER,
-				'created_at' => Schema::TYPE_TIMESTAMP." default NOW()",
-				'updated_at' => Schema::TYPE_TIMESTAMP." on update NOW()",
-				'deleted' => Schema::TYPE_BOOLEAN
+				'id:PK' => '',
+				'name:STRING' => "(64) NOT NULL",
+				'value:TEXT' => "NULL",
+				'comment:TEXT' => "NULL",
+				'containerid:INTEGER' => '',
+				'sectionid:INTEGER' => '',
+				'author:INTEGER' => '',
+				'editor:INTEGER' => '',
+				'created_at:TIMESTAMP' => "DEFAULT CURRENT_TIMESTAMP",
+				'updated_at:TIMESTAMP' => "ON UPDATE CURRENT_TIMESTAMP",
+				'deleted:BOOLEAN' => ''
 			],
 			'index' => [
 				'unique_name' => [
 					'fields' => 'name',
-					'unique' = true
+					'unique' => true
 				]
 			],
 			'foreignKeys' => [
 				'foreignAuthor' => [
 					'localKey' => 'author',
 					'remote' => 'tbl_user',
-					'remoteKey' = 'id',
+					'remoteKey' => 'id',
 				],
 				'foreignEditor' => [
 					'localKey' => 'editor',
 					'remote' => 'tbl_user',
-					'remoteKey' = 'id',
+					'remoteKey' => 'id',
 				],
 				'foreignSection' => [
 					'localKey' => 'sectionid',
 					'remote' => 'config_sections',
-					'remoteKey' = 'id',
+					'remoteKey' => 'id',
 				],
 				'foreignContainer' => [
 					'localKey' => 'containerid',
 					'remote' => 'config_containers',
-					'remoteKey' = 'id',
+					'remoteKey' => 'id',
 				]
 			]
 		],
@@ -123,23 +124,29 @@ class m140312_212206_config extends \yii\db\Migration
 	{
 		foreach($this->_tables as $table=>$schema)
 		{
-			switch($this->tableExists("{{%$table}}"))
+			$tableSchema = \Yii::$app->db->getTableSchema("$table");
+			switch($tableSchema)
 			{
 				case false:
-				$this->createTable("{{%$table}}", $schema['fields'], $this->tableOptions);
+				foreach($schema['fields'] as $field=>$options)
+				{
+					$name = explode(':', $field);
+					$fields[$name[0]] = constant('\yii\db\Schema::TYPE_'.$name[1]); 
+				}
+				$this->createTable("$table", $fields, $this->tableOptions);
 				switch(isset($schema['index']))
 				{
 					case true:
 					foreach($schema['index'] as $name=>$index)
 					{
-						$this->createIndex($name, "{{%$table}}", $index['fields'], @$index['unique']);
+						$this->createIndex($name, "$table", $index['fields'], @$index['unique']);
 					}
 					break;
 				}
 				switch(isset($schema['foreignKeys']) && !empty($schema['foreignKeys']))
 				{
 					case true:
-					foreach($schema['foreignKeys'] as $name=>$index)
+					foreach($schema['foreignKeys'] as $name=>$key)
 					{
 						switch(isset($key['options']))
 						{
@@ -151,7 +158,7 @@ class m140312_212206_config extends \yii\db\Migration
 							$key['options'] = $this->_foreignOptions;
 							break;
 						}
-						$this->addForeignKey($name, "{{%$table}}", $key['localKey'], "{{%".$key['remote']."}}", $key['remoteKey'], $key['options']['onDelete'], $key['options']['onUpdate']);
+						$this->addForeignKey($table.$name, "$table", $key['localKey'], $key['remote'], $key['remoteKey'], $key['options']['onDelete'], $key['options']['onUpdate']);
 					}
 					break;
 				}
@@ -166,11 +173,17 @@ class m140312_212206_config extends \yii\db\Migration
 						switch($index['fields'])
 						{
 							case Schema::TYPE_PK:
-							$this->getTableSchema("{{%$table}}")->fixPrimaryKey($name);
+							$tableSchema->fixPrimaryKey($name);	
 							break;
 							
 							default:
-							$this->createIndex($name, "{{%$table}}", $index['fields'], @$index['unique']);
+							$column = \Yii::$app->db->createCommand()->setSql("SHOW INDEX FROM ".$table." WHERE Key_name='$name'")->queryAll();
+							switch(empty($column))
+							{
+								case true:
+								$this->createIndex($name, "$table", $index['fields'], @$index['unique']);
+								break;
+							}
 							break;
 						}
 					}
@@ -179,27 +192,31 @@ class m140312_212206_config extends \yii\db\Migration
 				switch(isset($schema['foreignKeys']) && !empty($schema['foreignKeys']))
 				{
 					case true:
-					$fk = $this->getTableSchema("{{%$table}}")->foreignKeys;
+					/*$fk = $tableSchema->foreignKeys;
 					switch(is_array($fk))
 					{
 						case true:
 						//Drop all current foreign keys
 						foreach($fk as $key)
 						{
+							print_r($key);
 							foreach($key as $idx=>$val)
 							{
 								switch(is_array($val))
 								{
 									case true:
-									$this->dropForeignKey($idx, "{{%$table}}");
+									echo "Dropping $idx";
+									exit;
+									$tableName = array_shift($val);
+									$this->dropForeignKey($tableName.implode($val), "$table");
 									break;
 								}
 							}
 						}
 						break;
-					}
+					}*/
 					//Recreate all foreign keys
-					foreach($schema['foreignKeys'] as $name=>$index)
+					/*foreach($schema['foreignKeys'] as $name=>$key)
 					{
 						switch(isset($key['options']))
 						{
@@ -211,13 +228,14 @@ class m140312_212206_config extends \yii\db\Migration
 							$key['options'] = $this->_foreignOptions;
 							break;
 						}
-						$this->addForeignKey($name, "{{%$table}}", $key['localKey'], "{{%".$key['remote']."}}", $key['remoteKey'], $key['options']['onDelete'], $key['options']['onUpdate']);
-					}
+						$this->addForeignKey($table.$name, "$table", $key['localKey'], $key['remote'], $key['remoteKey'], $key['options']['onDelete'], $key['options']['onUpdate']);
+					}*/
 					break;
 				}
 				break;
 			}
 		}
+		return true;
 	}
 
 	public function down()
@@ -227,10 +245,10 @@ class m140312_212206_config extends \yii\db\Migration
 		 */
 		foreach(array_keys($this->_tables) as $table)
 		{
-			switch(!$this->getTableSchema("{{%$table}}")->count())
+			switch(!$this->getTableSchema("$table")->count())
 			{
 				case true:
-				$this->dropTable("{{%$table}}");
+				$this->dropTable("$table");
 				break;
 				
 				default:
@@ -238,6 +256,6 @@ class m140312_212206_config extends \yii\db\Migration
 				break;
 			}
 		}
-		return false;
+		return true;
 	}
 }

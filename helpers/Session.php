@@ -1,12 +1,12 @@
 <?php
 
-namespace nitm\module\models;
+namespace nitm\module\helpers;
 
 use yii\db\ActiveRecord;
 use yii\base\Model;
 
 //class that sets up and retrieves, deletes and handles modifying of contact data
-class Helper extends Model
+class Session extends Model
 {
 	//setup public data
 	public static $method;
@@ -53,35 +53,30 @@ class Helper extends Model
 	public function __construct($dm=null, $db=null, $table=null, $compare=false, $driver=null)
 	{
 		$_SERVER['SERVER_NAME'] = (isset($_SERVER['SERVER_NAME'])) ? $_SERVER['SERVER_NAME'] : $_SESSION['SERVER_NAME'];
-		self::$session = (empty(self::$session)) ? self::$sess_name.$_SERVER['SERVER_NAME'] : self::$session;
-// 		if(@is_object($_SESSION[self::$session][self::variables][self::reg_vars][self::object]))
-// 		{
-// 			return $_SESSION[self::$session][self::variables][self::reg_vars][self::object];
-// 		}
-		if(!isset($_SESSION[self::$session]))
+		if(!isset($_SESSION[static::sessionName()]))
 		{
-			$_SESSION[self::$session] = array();
-			if(!isset($_SESSION[self::$session][self::variables]))
+			$_SESSION[static::sessionName()] = array();
+			if(!isset($_SESSION[static::sessionName()][self::variables]))
 			{
-				$_SESSION[self::$session][self::variables] = array();
+				$_SESSION[static::sessionName()][self::variables] = array();
 			}
-			if(!isset($_SESSION[self::$session][self::variables][self::reg_vars]))
+			if(!isset($_SESSION[static::sessionName()][self::variables][self::reg_vars]))
 			{
-				$_SESSION[self::$session][self::variables][self::reg_vars] = array();
-				$_SESSION[self::$session][self::variables][self::reg_vars][self::object] = NULL;
+				$_SESSION[static::sessionName()][self::variables][self::reg_vars] = array();
+				$_SESSION[static::sessionName()][self::variables][self::reg_vars][self::object] = NULL;
 			}
 		}
 		if(!is_null($dm))
 		{
 			self::$compare = $compare;
-			$_SESSION[self::$session][self::variables][self::csdm_var] = $dm;
-			$_SESSION[self::$session][self::variables][self::$lock] = $dm;
+			$_SESSION[static::sessionName()][self::variables][self::csdm_var] = $dm;
+			$_SESSION[static::sessionName()][self::variables][self::$lock] = $dm;
 			self::register($dm);
 		}
-		/*if(!@is_object($_SESSION[self::$session][self::variables][self::reg_vars][self::object]))
+		/*if(!@is_object($_SESSION[static::sessionName()][self::variables][self::reg_vars][self::object]))
 		{
 // 			pr(var_dump($this));
-			$_SESSION[self::$session][self::variables][self::reg_vars][self::object] = serialize($this);
+			$_SESSION[static::sessionName()][self::variables][self::reg_vars][self::object] = serialize($this);
 		}*/
 		if($compare == true)
 		{
@@ -91,16 +86,8 @@ class Helper extends Model
 	
 	public function behaviors()
 	{
-		$behaviors = array(
-				"DB" => array(
-					"class" => \nitm\module\models\DB::className(),
-					"login" => [
-						'localhost',
-						\Yii::$app->params['components.db']['username'],
-						\Yii::$app->params['components.db']['password'],
-					]
-				),
-			);
+		$behaviors = [
+		];
 		return array_merge(parent::behaviors(), $behaviors);
 	}
 	
@@ -109,111 +96,27 @@ class Helper extends Model
 		self::$method = $_REQUEST;
 	}
 	
-	//function to remove carriage returns and newlines from strings
-	public static function stripNl($s)
+	public static function sessionName()
 	{
-		switch(gettype($s))
-		{
-			case 'array':
-			foreach($s as $k=>$v)
-			{
-				$s[$k] = self::stripNl($v);
-			}
-			return $s;
-			break;
-		
-			default:
-			return str_replace(array("\r", "\n", "\r\n"), '', $s);
-			break;
-		}
-	}
-	
-	/*
-		Function to return boolean value of a variable
-		$var = value
-	*/
-	public static function boolVal($val)
-	{
-		$ret_val = 'nobool';
-		switch(true)
-		{
-			case (true === $val):
-			case (1 === $val) || ('1' === $val):
-			case ($val && (strtolower($val) === 'true')):
-			case ($val && (strtolower($val) === 'on')):
-			case ($val && (strtolower($val) === 'yes')):
-			case ($val && (strtolower($val) === 'y')):
-			$ret_val = true;
-			break;
-			
-			case (false === $val):
-			case (0 === $val) || ('0' === $val):
-			case ($val && (strtolower($val) === 'false')):
-			case ($val && (strtolower($val) === 'off')):
-			case ($val && (strtolower($val) === 'no')):
-			case ($val && (strtolower($val) === 'n')):
-			$ret_val = false;
-			break;
-		}
-		return $ret_val;
-	}
-	
-	/*
-		Function to return an array for the given parameters:
-		$string = The string code with all values
-		$sep = The separator used in $string
-		$sur = What to surround the values with
-		$num = Should numeric values be left alone and not surround with $sur?
-	*/
-	public final function getArray($string, $sep=',', $sur="'", $num=true)
-	{
-		$ret_val = false;
-		$sep = ($sep == null) ? ',' : $sep;
-		$sur = ($sur == null) ? "'" : $sur;
-		switch(is_string($string) || ($string == 0))
-		{
-			case true:
-			$string = explode($sep, $string);
-			$string = is_array($string) ? $string : array($string);
-			$ret_val = DB::splitf($string, $sep, true, $sur, null, $num);
-			eval("\$ret_val = array($ret_val);");
-			break;
-			
-			default:
-			$ret_val = $string;
-			break;
-		}
-		return $ret_val;
-	}
-	
-	/*static function to get safe string. Essentially replace all non string characters with underscores, 
-	or unless specified by $s and $r
-	$subject = string to be checked
-	$s = what to search for
-	$r = what to replace with
-	*/
-	public static function getSafeString($subject, $s=null, $r=null)
-	{
-		$s = (!empty($s)) ? $s : array("/([^a-zA-Z0-9\\+])/", "/([^a-zA-Z0-9]){1,}$/", "/([\s]){1,}/");
-		$r = (!empty($r)) ? $r : array(" ", "", "_");
-		return preg_replace($s, $r, $subject);
+		static::$session = (empty(static::$session)) ? static::$sess_name.$_SERVER['SERVER_NAME'] : static::$session;
+		return static::$session;
 	}
 	
 	public static final function setCsdm($dm, $compare=false)
 	{
 // 		echo "Setting Helper csdm for $dm <br>";
 		self::$compare = $compare;
-		$_SESSION[self::$session][self::variables][self::csdm_var] = $dm;
-		$_SESSION[self::$session][self::variables][self::$lock] = $dm;
+		$_SESSION[static::sessionName()][self::variables][self::csdm_var] = $dm;
+		$_SESSION[static::sessionName()][self::variables][self::$lock] = $dm;
 		self::register($dm);
 		return true;
 	}
 	
 	public static final function getCsdm()
 	{
-		if(isset($_SESSION[self::$session][self::variables][self::csdm_var]))
+		if(isset($_SESSION[static::sessionName()][self::variables][self::csdm_var]))
 		{
-			return $_SESSION[self::$session][self::variables][self::csdm_var];
+			return $_SESSION[static::sessionName()][self::variables][self::csdm_var];
 		}
 		return null;
 	}
@@ -232,11 +135,11 @@ class Helper extends Model
 		{
 			return false;
 		}
-		$csdm = ($compare === true) ? self::comparer : @$_SESSION[self::$session][self::variables][self::csdm_var];
-// 		pr($_SESSION[self::$session]);
+		$csdm = ($compare === true) ? self::comparer : @$_SESSION[static::sessionName()][self::variables][self::csdm_var];
+// 		pr($_SESSION[static::sessionName()]);
 // 		echo "End here<br>";
-// 		pr($_SESSION[self::$session][self::variables]);
-// 		echo "\nHelper string called by ".get_class($this)." == ".self::$session.".".self::variables.".".self::csdm_var."<br>";
+// 		pr($_SESSION[static::sessionName()][self::variables]);
+// 		echo "\nHelper string called by ".get_class($this)." == ".static::sessionName().".".self::variables.".".self::csdm_var."<br>";
 //		var_dump(debug_backtrace());
 //		exit;
 		$cIdx = (is_null($cIdx)) ? $csdm : $cIdx;
@@ -274,7 +177,7 @@ class Helper extends Model
 				break;
 				
 				default:
-				$csdm = @$_SESSION[self::$session][self::variables][self::csdm_var];
+				$csdm = @$_SESSION[static::sessionName()][self::variables][self::csdm_var];
 				array_unshift($member, $csdm);
 				break;
 			}
@@ -289,11 +192,11 @@ class Helper extends Model
 						switch($array)
 						{
 							case true:
-							eval("\$_SESSION['".self::$session."']['".DB::splitf($member, "']['")."'][] = \$jvalue;");
+							eval("\$_SESSION['".static::sessionName()."']['".Helper::splitf($member, "']['")."'][] = \$jvalue;");
 							break;
 							
 							default:
-							eval("\$_SESSION['".self::$session."']['".DB::splitf($member, "']['")."'] = \$jvalue;");
+							eval("\$_SESSION['".static::sessionName()."']['".Helper::splitf($member, "']['")."'] = \$jvalue;");
 							break;
 						}
 					}
@@ -307,12 +210,12 @@ class Helper extends Model
 					switch($array)
 					{
 						case true:
-						eval("\$_SESSION['".self::$session."']['".DB::splitf($member, "']['")."'][] = \$data;");
+						eval("\$_SESSION['".static::sessionName()."']['".Helper::splitf($member, "']['")."'][] = \$data;");
 						break;
 						
 						default:
 // 						echo "Setting here $member to $data<br>";
-						eval("\$_SESSION['".self::$session."']['".DB::splitf($member, "']['")."'] = \$data;");
+						eval("\$_SESSION['".static::sessionName()."']['".Helper::splitf($member, "']['")."'] = \$data;");
 						break;
 					}
 				}
@@ -403,11 +306,11 @@ class Helper extends Model
 			case in_array($cIdx, self::$no_q) === true:
 			case in_array($cIdx, self::$q) === true:
 			case null:
-			$_SESSION[self::$session][$cIdx] = array();
+			$_SESSION[static::sessionName()][$cIdx] = array();
 			break;
 			
 			default:
-			$_SESSION[self::$session][self::getCsdm()] = array();
+			$_SESSION[static::sessionName()][self::getCsdm()] = array();
 			break;
 		}
 		return true;
@@ -461,7 +364,7 @@ class Helper extends Model
 		return $ret_val;
 	}
 
-	public static final function size($item, $size_only=false)
+	public static final function size($item, $size_only=true)
 	{
 		if(!self::isRegistered($item))
 		{	
@@ -469,19 +372,19 @@ class Helper extends Model
 		}	
 		else
 		{
-			$ret_val = self::getVal($item);
+			//$ret_val = self::getVal($item);
 			$hierarchy = explode('.', $item);
-			$access_str = "['".DB::splitf($hierarchy, "']['")."']";
-			$csdm = $_SESSION[self::$session][self::variables][self::csdm_var];;
+			$access_str = "['".Helper::splitf($hierarchy, "']['")."']";
+			$csdm = @$_SESSION[static::sessionName()][self::variables][self::csdm_var];;
 			$access_str = ($csdm != null) ? (($csdm == $hierarchy[0]) ? $access_str : ((!in_array($hierarchy[0], self::$no_q)) ? $csdm.$access_str : $access_str)) : $access_str;
-			eval("\$size = sizeof(\$_SESSION['".self::$session."']".$access_str.");");
+			eval("\$size = sizeof(\$_SESSION['".static::sessionName()."']".$access_str.");");
 			switch($size_only)
 			{
 				case false:
 				$ret_val = array('value' => self::getVal($item), 'size' => $size, 'idx' => $item);
 				break;
 				
-				case  true:
+				default:
 				$ret_val = $size;
 				break;
 			}
@@ -499,7 +402,7 @@ class Helper extends Model
 		{
 			case in_array($cIdx, self::$no_q) === true:
 			case in_array($cIdx, self::$q) === true:
-			$ret_val = isset($_SESSION[self::$session][$cIdx]);
+			$ret_val = isset($_SESSION[static::sessionName()][$cIdx]);
 			break;
 			
 			default:
@@ -508,11 +411,11 @@ class Helper extends Model
 			{	
 				case in_array($hierarchy[0], self::$q) === true:
 				case in_array($hierarchy[0], self::$no_q) === true:
-				case ($hierarchy[0] == @$_SESSION[self::$session][self::variables][self::csdm_var]):
+				case ($hierarchy[0] == @$_SESSION[static::sessionName()][self::variables][self::csdm_var]):
 				break;
 				
 				default:
-				array_unshift($hierarchy, @$_SESSION[self::$session][self::variables][self::csdm_var]);
+				array_unshift($hierarchy, @$_SESSION[static::sessionName()][self::variables][self::csdm_var]);
 				break;
 			}
 // 			if($csdm == 'securer')
@@ -521,27 +424,15 @@ class Helper extends Model
 // 				pr($_SESSION);
 // 				pr($session);
 // 			}
-			eval("\$ret_val = isset(\$_SESSION['".self::$session."']['".DB::splitf($hierarchy, "']['")."']);");
-// 			self::pr("['self::$session']['".DB::splitf($hierarchy, "']['")."']");
-// 			eval("echo \$_SESSION['".self::$session."']['".DB::splitf($hierarchy, "']['")."'];");
+			eval("\$ret_val = isset(\$_SESSION['".static::sessionName()."']['".Helper::splitf($hierarchy, "']['")."']);");
+// 			self::pr("['static::sessionName()']['".Helper::splitf($hierarchy, "']['")."']");
+// 			eval("echo \$_SESSION['".static::sessionName()."']['".Helper::splitf($hierarchy, "']['")."'];");
 			//print_r("Returning $ret_val for $cIdx<br>");
 			break;
 		}
 // 		echo "Returning $ret_val for is_registrered($cIdx)<br>";
 // 		pr($ret_val);
 		return $ret_val;
-	}
-	
-	/*
-	 * Perform a replacement easily with preg_replace
-	 * @param mixed $what
-	 * @param mixed $with
-	 * @param mixed $in
-	 * @return bool
-	 */
-	public function replace($what='/[^a-zA-Z0-9 -]/', $with='_', $in)
-	{
-		return preg_replace($what, $with, $in);
 	}
 	
 	/*---------------------
@@ -560,25 +451,25 @@ class Helper extends Model
 		{
 			case in_array($cIdx, self::$q) === true:
 			case null;
-			$csdm = $_SESSION[self::$session][self::variables][self::csdm_var];
-			$val = (self::isRegistered($csdm)) ? $_SESSION[self::$session][$csdm] : NULL;
+			$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
+			$val = (self::isRegistered($csdm)) ? $_SESSION[static::sessionName()][$csdm] : NULL;
 // 			pr($ret_val);
 			break;
 			
 			case in_array($cIdx, self::$no_q) === true:
-			$val = (self::isRegistered($cIdx)) ? $_SESSION[self::$session][$cIdx] : NULL;
+			$val = (self::isRegistered($cIdx)) ? $_SESSION[static::sessionName()][$cIdx] : NULL;
 			break;
 		
 			default:
-// 			echo "Session == ".self::$session;
-			$csdm = @$_SESSION[self::$session][self::variables][self::csdm_var];
+// 			echo "Session == ".static::sessionName();
+			$csdm = @$_SESSION[static::sessionName()][self::variables][self::csdm_var];
 			$hierarchy = explode('.', $cIdx);
 			switch($hierarchy[0])
 			{
 				case in_array($hierarchy[0], self::$no_q) === true:
 				if(self::isRegistered($cIdx) !== false)
 				{
-					eval("\$val = \$_SESSION['".self::$session."']['".DB::splitf($hierarchy, "']['")."'];");
+					eval("\$val = \$_SESSION['".static::sessionName()."']['".Helper::splitf($hierarchy, "']['")."'];");
 				}
 				else
 				{
@@ -587,14 +478,14 @@ class Helper extends Model
 				break;
 				
 				default:
-				$csdm = $_SESSION[self::$session][self::variables][self::csdm_var];
+				$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
 				if($hierarchy[0] != $csdm)
 				{
 					array_unshift($hierarchy, $csdm);
 				}
 				if(self::isRegistered($cIdx) !== false)
 				{
-					eval("\$val = \$_SESSION['".self::$session."']['".DB::splitf($hierarchy, "']['")."'];");
+					eval("\$val = \$_SESSION['".static::sessionName()."']['".Helper::splitf($hierarchy, "']['")."'];");
 				}
 				else
 				{
@@ -621,7 +512,7 @@ class Helper extends Model
 		switch($fields)
 		{
 			case in_array($fields, self::$b_q) === true:
-			foreach($_SESSION[self::$session][$fields] as $idx=>$val)
+			foreach($_SESSION[static::sessionName()][$fields] as $idx=>$val)
 			{
 				if($data == $val)
 				{
@@ -669,9 +560,9 @@ class Helper extends Model
 	 */
 	private static final function destroy()
 	{
-		if(isset($_SESSION[self::$session]))
+		if(isset($_SESSION[static::sessionName()]))
 		{
-			foreach($_SESSION[self::$session] as $member=>$val)
+			foreach($_SESSION[static::sessionName()] as $member=>$val)
 			{
 				switch($member)
 				{
@@ -684,7 +575,7 @@ class Helper extends Model
 					break;
 				}
 			}
-			$_SESSION[self::$session] = array();
+			$_SESSION[static::sessionName()] = array();
 		}
 	}
 	
@@ -707,7 +598,7 @@ class Helper extends Model
 				case in_array($cIdx, self::$q) === true:
 				case in_array($cIdx, self::$b_q) === true:
 // 				echo "Registering major csdm $cIdx<br>";
-				$_SESSION[self::$session][$cIdx] = array();
+				$_SESSION[static::sessionName()][$cIdx] = array();
 // 				pr($_SESSION);
 				break;
 				
@@ -720,7 +611,7 @@ class Helper extends Model
 					break;
 					
 					default:
-					$csdm = $_SESSION[self::$session][self::variables][self::csdm_var];
+					$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
 					if($hierarchy[0] == $csdm)
 					{
 						array_shift($hierarchy);
@@ -729,7 +620,7 @@ class Helper extends Model
 				
 				}
 				$hierarchy = (sizeof($hierarchy) > 1) ? $hierarchy : @$hierarchy[0];
-				eval("\$_SESSION['".self::$session."']['$csdm']['".DB::splitf($hierarchy, "']['")."'] = '';");
+				eval("\$_SESSION['".static::sessionName()."']['$csdm']['".Helper::splitf($hierarchy, "']['")."'] = '';");
 				break;
 			}
 			return true;
@@ -751,21 +642,21 @@ class Helper extends Model
 			switch($cIdx)
 			{
 				case in_array($cIdx, self::$q) === true:
-				if($cIdx == $_SESSION[self::$session][self::variables][self::csdm_var])
+				if($cIdx == $_SESSION[static::sessionName()][self::variables][self::csdm_var])
 				{
-					unset($_SESSION[self::$session][$cIdx]);
+					unset($_SESSION[static::sessionName()][$cIdx]);
 					$ret_val = true;
 				}
 				break;
 				
 				case self::batch:
 				case in_array($cIdx, self::$no_q) === true:
-				unset($_SESSION[self::$session][$cIdx]);
+				unset($_SESSION[static::sessionName()][$cIdx]);
 				break;
 				
 				default:
 				$hierarchy = explode('.', $cIdx);
-				if($hierarchy[0] === @$_SESSION[self::$session][self::variables][self::csdm_var])
+				if($hierarchy[0] === @$_SESSION[static::sessionName()][self::variables][self::csdm_var])
 				{
 					$csdm = $hierarchy[0];
 					unset($hierarchy[0]);
@@ -780,13 +671,13 @@ class Helper extends Model
 						break;
 						
 						case false:
-						$csdm = $_SESSION[self::$session][self::variables][self::csdm_var];
+						$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
 						break;
 					}
 				}
 // 				echo "Unregistering $cIdx<br>";
-				self::searchDel($_SESSION[self::$session][$csdm], array_values($hierarchy), self::getVal($cIdx));
-// 				pr($_SESSION[self::$session]['fields']);
+				self::searchDel($_SESSION[static::sessionName()][$csdm], array_values($hierarchy), self::getVal($cIdx));
+// 				pr($_SESSION[static::sessionName()]['fields']);
 				$ret_val = true;
 				break;		
 			}
@@ -810,13 +701,13 @@ class Helper extends Model
 				
 				case in_array($key, self::$q) === true:
 				case null:
-				$csdm = $_SESSION[self::$session][self::variables][self::csdm_var];
-				$ret_val = $_SESSION[self::$session][$csdm];
+				$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
+				$ret_val = $_SESSION[static::sessionName()][$csdm];
 				break;
 				
 				case in_array($key, self::$no_q) === true:
 				$csdm = $key;
-				$ret_val = $_SESSION[self::$session][$key];
+				$ret_val = $_SESSION[static::sessionName()][$key];
 				break; 
 				
 				default:
@@ -831,14 +722,14 @@ class Helper extends Model
 					break; 
 					
 					default:
-					$csdm = $_SESSION[self::$session][self::variables][self::csdm_var];
+					$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
 					if($hierarchy[0] == $csdm)
 					{
 						array_shift($hierarchy);
 					}
 					break;
 				}
-				$ret_val = $_SESSION[self::$session][$csdm];
+				$ret_val = $_SESSION[static::sessionName()][$csdm];
 // 				echo "csdm == $csdm<br>";
 // 				pr($ret_val);
 // 				print_r($hierarchy);
@@ -945,8 +836,5 @@ class Helper extends Model
 // 		echo "Returning $ret_val for searchDel(".implode('.', $keys).")<br>";
 		return $ret_val;
 	}
-//------------end private session fucntions ection
-
-//private functions--------------------------------------------|
 }
 ?>

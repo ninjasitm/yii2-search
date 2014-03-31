@@ -55,7 +55,7 @@ use yii\widgets\ActiveForm;
 				{
 					case 'file':
 					case 'db':
-					echo $this->render('containers/actions',
+					echo $this->render('actions',
 							   array("model" => $model)
 							);
 					break;

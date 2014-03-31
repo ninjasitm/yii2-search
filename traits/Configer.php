@@ -1,7 +1,7 @@
 <?php
 namespace nitm\module\traits;
 
-use nitm\module\models\Helper;
+use nitm\module\helpers\Session;
 
  /**
   * Configuration traits that can be shared
@@ -24,10 +24,10 @@ trait Configer {
 			$module->setDir($module->configOptions['dir']);
 			break;
 		}
-		switch(Helper::isRegistered(Helper::current.'.'.$container))
+		switch(Session::isRegistered(Session::current.'.'.$container))
 		{
 			case true:
-			$this->settings[$container] = Helper::getval(Helper::current.'.'.$container);
+			$this->settings[$container] = Session::getval(Session::current.'.'.$container);
 			break;
 			
 			default:
@@ -35,12 +35,12 @@ trait Configer {
 			switch($container)
 			{
 				case $module->configOptions['container']:
-				Helper::set(Helper::settings, $config);
+				Session::set(Session::settings, $config);
 				break;
 				
 				default:
 				$this->settings[$container] = $config;
-				Helper::getval(Helper::current.'.'.$container, $config);
+				Session::getval(Session::current.'.'.$container, $config);
 				break;
 			}
 			break;

@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\models;
+namespace nitm\module\helpers;
 
 use yii\base\Behavior;
 
@@ -14,13 +14,13 @@ class Directory extends Behavior {
 	public $files = array();
 	public $directories = array();
 	
-	protected $app_path = false;
+	protected $appendPath = false;
 	protected $match = null;
 	protected $group = false;
 	protected $empty = false;
-	protected $skip_these = null;
-	protected $current_dir = null;
-	protected $images_only = false;
+	protected $skipThese = null;
+	protected $currentDirectory = null;
+	protected $imagesOnly = false;
 	
 	/*---------------------
 		Public Functions
@@ -32,9 +32,9 @@ class Directory extends Behavior {
 	* @param boolean $empty include empty files?
 	* @return mixed $ret_val;
 	*/
-	public function getAllFiles($directory,  $app_path=false, $empty=false)
+	public function getAllFiles($directory,  $appendPath=false, $empty=false)
 	{
-		$this->setAppendPath($app_path);
+		$this->setAppendPath($appendPath);
 		$this->returnEmpty($empty);
 		$this->files = $this->readDirectory($directory);
 		return $this->files;
@@ -47,9 +47,9 @@ class Directory extends Behavior {
 	* @param boolean $empty include empty files?
 	* @return mixed $ret_val;
 	*/
-	public function getFilesGrouping($directory, $app_path=false, $empty=false)
+	public function getFilesGrouping($directory, $appendPath=false, $empty=false)
 	{
-		$this->setAppendPath($app_path);
+		$this->setAppendPath($appendPath);
 		$this->returnEmpty($empty);
 		$this->setGrouping(true);
 		$this->files = $this->readDirectory($directory);
@@ -65,9 +65,9 @@ class Directory extends Behavior {
 	* @param boolean $empty include empty files?
 	* @return mixed $ret_val;
 	*/
-	public function getFilesMatching($directory, $match=array(), $app_path=false, $group=false, $empty=false)
+	public function getFilesMatching($directory, $match=array(), $appendPath=false, $group=false, $empty=false)
 	{
-		$this->setAppendPath($app_path);
+		$this->setAppendPath($appendPath);
 		$this->returnEmpty($empty);
 		$this->setGrouping($group);
 		$this->matchThese($match);
@@ -87,7 +87,7 @@ class Directory extends Behavior {
 	*/
 	public function getImages($directory)
 	{
-	$this->images_only = true;
+	$this->imagesOnly = true;
 	}
 	
 	/*
@@ -96,7 +96,7 @@ class Directory extends Behavior {
 	 */
 	public function setSkip($skip = null)
 	{
-		$this->skip_these = is_array($skip) ? $skip : array();
+		$this->skipThese = is_array($skip) ? $skip : array();
 	}
 	
 	/*
@@ -105,7 +105,7 @@ class Directory extends Behavior {
 	 */
 	public function setAppendPath($app = false)
 	{
-		$this->app_path = ($app_path == true) ? true : false;
+		$this->appendPath = ($appendPath == true) ? true : false;
 	}
 	
 	/*
@@ -159,7 +159,7 @@ class Directory extends Behavior {
 	 */
 	private function shouldSkip($directory)
 	{
-		return (is_array($this->skip_these)) ? (in_array($directory, $this->skip_these)) : false;
+		return (is_array($this->skipThese)) ? (in_array($directory, $this->skipThese)) : false;
 	}
 	
 	/*
@@ -187,7 +187,7 @@ class Directory extends Behavior {
 		{
 			if(!$file->isDot())
 			{
-				$this->current_dir = $file->getPath().DIRECTORY_SEPARATOR;
+				$this->currentDirectory = $file->getPath().DIRECTORY_SEPARATOR;
 				switch($file->isDir())
 				{ 
 					case true:
@@ -196,7 +196,7 @@ class Directory extends Behavior {
 						continue;
 					}
 					$this->directories[] = $file->getPath();
-					$data = $this->readDirectory($this->current_dir);
+					$data = $this->readDirectory($this->currentDirectory);
 					if(!empty($data))
 					{
 						$ret_val = array_merge($ret_val, $data);
@@ -207,7 +207,7 @@ class Directory extends Behavior {
 					switch(!$this->empty && ($file->getSize() > 0))
 					{
 						case true:
-						switch($this->images_only)
+						switch($this->imagesOnly)
 						{
 							case true:
 							switch($this->isImage($file->getFilename))
@@ -223,18 +223,18 @@ class Directory extends Behavior {
 							$add = ($needle != null) ? ($file->getExtension() == $needle) : true;
 							if($add)
 							{
-								$indexmarker = ($this->parent == null) ? $this->current_dir : (($file->getPath() == $this->parent) ? $file->getPath() : str_ireplace($this->parent, '', $file->getPath()));
+								$indexmarker = ($this->parent == null) ? $this->currentDirectory : (($file->getPath() == $this->parent) ? $file->getPath() : str_ireplace($this->parent, '', $file->getPath()));
 								$indexmarker = substr($indexmarker, 0, strlen($indexmarker) -1);
 			// 					echo "$directory, $indexmarker, $parent<br>";
 								$name = array('full' => $file->getFilename(), 'short' => $file->getPathname());
 								switch($group)
 								{
 									case true:
-									$ret_val[$indexmarker][] = ($this->app_path == true) ?  $name['full'] : $name['short'];
+									$ret_val[$indexmarker][] = ($this->appendPath == true) ?  $name['full'] : $name['short'];
 									break;
 									
 									default:
-									$ret_val[] = ($this->app_path == true) ?  $name['full'] : $name['short'];
+									$ret_val[] = ($this->appendPath == true) ?  $name['full'] : $name['short'];
 									break;
 								}
 							}

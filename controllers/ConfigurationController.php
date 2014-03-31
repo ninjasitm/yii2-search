@@ -3,7 +3,8 @@
 namespace nitm\module\controllers;
 
 use Yii;
-use nitm\module\models\Helper;
+use nitm\module\helpers\Helper;
+use nitm\module\helpers\Session;
 use nitm\module\models\Configer;
 use nitm\module\interfaces\DefaultControllerInterface;
 
@@ -89,8 +90,8 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		}
 		
 		$dm = $this->model->getDm();
-		$container = Helper::getVal($dm.'.current.config');
-		$engine = Helper::getVal($dm.'.current.engine');
+		$container = Session::getVal($dm.'.current.config');
+		$engine = Session::getVal($dm.'.current.engine');
 		//set the engine
 		$this->model->cfg_e = empty($this->model->cfg_e) ? (empty($engine) ? \Yii::$app->getModule('nitm')->configOptions['engine'] : $engine) : $this->model->cfg_e;
 		$this->model->setEngine($this->model->cfg_e);
@@ -168,7 +169,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 							$this->model->cfg_c,
 							null,
 							$this->model->cfg_e);
-					$this->model->config['current']['config'] = Helper::getVal($this->model->correctKey($this->model->config['current']['action']['key']));
+					$this->model->config['current']['config'] = Session::getVal($this->model->correctKey($this->model->config['current']['action']['key']));
 					$view = [
 								'view' => 'values/value',
 								'data' => [
@@ -280,7 +281,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 							$this->model->cfg_c,
 							null,
 							$this->model->cfg_e);
-					$this->model->config['current']['config'] = Helper::getVal($this->model->correctKey($this->model->config['current']['action']['key']));
+					$this->model->config['current']['config'] = Session::getVal($this->model->correctKey($this->model->config['current']['action']['key']));
 					break;
 					
 					case 'deleteSection':
@@ -350,7 +351,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 	private function finalAction($params=null)
 	{
 		\Yii::$app->getSession()->setFlash(
-			$this->model->config['current']['action']['class'],
+			@$this->model->config['current']['action']['class'],
 			$this->model->config['current']['action']['message']
 		);
 		switch(\Yii::$app->request->isAjax)

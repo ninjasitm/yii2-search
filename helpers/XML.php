@@ -1,8 +1,7 @@
 <?php
 
-namespace nitm\models;
+namespace nitm\module\helpers;
 
-use nitm\models\DB;
 use yii\db\ActiveRecord;
 use yii\base\Behavior;
 
