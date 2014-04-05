@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use yii\grid\GridView;
 use yii\data\ArrayDataProvider;
+use kartik\icons\Icon;
 
 /**
  * @var yii\web\View $this
@@ -18,8 +19,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Update', ['update', 'author' => $model->author, 'parent_type' => $model->parent_type, 'parent_id' => $model->parent_id], ['class' => 'btn btn-primary']) ?>
-        <?= Html::a('Delete', ['delete', 'author' => $model->author, 'parent_type' => $model->parent_type, 'parent_id' => $model->parent_id], [
+        <?= Html::a(Icon::show('reply'), ['restore', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
+        <?= Html::a(Icon::show('trash-o'), ['delete', 'author' => $model->author, 'parent_type' => $model->parent_type, 'parent_id' => $model->parent_id], [
             'class' => 'btn btn-danger',
             'data' => [
                 'confirm' => Yii::t('app', 'Are you sure you want to delete this item?'),

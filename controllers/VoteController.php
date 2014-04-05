@@ -49,9 +49,9 @@ class VoteController extends \nitm\module\controllers\DefaultController
     {
 		$ret_val = ['success' => false];
 		$existing = new Vote();
-		$existing->queryFilters['user_id'] = \Yii::$app->user->getId();
-		$existing->queryFilters['remote_type'] = $type;
-		$existing->queryFilters['remote_id'] = $id;
+		$existing->queryFilters['author'] = \Yii::$app->user->getId();
+		$existing->queryFilters['parent_type'] = $type;
+		$existing->queryFilters['parent_id'] = $id;
 		$vote = $existing->find()->where($existing->queryFilters)->one();
 		switch($vote instanceof Vote)
 		{
@@ -59,8 +59,8 @@ class VoteController extends \nitm\module\controllers\DefaultController
 			$vote = new Vote();
 			$vote->setScenario('create');
 			$vote->load([
-				'remote_type' => $type, 
-				'remote_id' => $id, 
+				'parent_type' => $type, 
+				'parent_id' => $id, 
 				'user_id' => \Yii::$app->user->getId()
 			]);
 			break;
@@ -89,8 +89,8 @@ class VoteController extends \nitm\module\controllers\DefaultController
 		$ret_val = ['success' => false, 'value' => null];
 		$existing = new Vote();
 		$existing->queryFilters['user_id'] = \Yii::$app->user->getId();
-		$existing->queryFilters['remote_type'] = $type;
-		$existing->queryFilters['remote_id'] = $id;
+		$existing->queryFilters['parent_type'] = $type;
+		$existing->queryFilters['parent_id'] = $id;
 		$vote = $existing->find()->where($existing->queryFilters)->one();
 		switch($vote instanceof Vote)
 		{
@@ -99,8 +99,8 @@ class VoteController extends \nitm\module\controllers\DefaultController
 			$vote->setScenario('create');
 			$vote->load([
 				'Vote' => [
-					'remote_type' => $type, 
-					'remote_id' => $id, 
+					'parent_type' => $type, 
+					'parent_id' => $id, 
 					'user_id' => \Yii::$app->user->getId()
 				]
 			]);

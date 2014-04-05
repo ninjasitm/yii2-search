@@ -25,10 +25,11 @@ trait Query {
 					switch($name)
 					{	
 						case 'order_by':
-						$direction = isset($filters['order']) ? (($filters['order'] == 'desc') ? SORT_DESC : SORT_ASC) : SORT_ASC;
-						$query->orderBy([$value => $direction]);
-						if(isset($filters['order']))
+						$query->orderBy($value);
+						if(@isset($filters['order']))
+						{
 							unset($filters['order']);
+						}
 						unset($filters[$name]);
 						break;
 						
@@ -181,7 +182,7 @@ trait Query {
 				case 'order_by':
 				$pkey = $this->primaryKey();
 				$default = [$pkey[0] => "Unique"];
-				$filters = $this->settings[static::isWhat()]['filter'][$name];
+				$filters = static::$settings[static::isWhat()]['filter'][$name];
 				$ret_val = is_array($filters) ? array_merge($default, $filters) : $default;
 				break;
 				
@@ -189,7 +190,7 @@ trait Query {
 				switch($class == null)
 				{
 					case true:
-					$filters = isset($this->settings[static::isWhat()]['filter'][$name]) ? $this->settings[static::isWhat()]['filter'][$name] : [];
+					$filters = isset(static::$settings[static::isWhat()]['filter'][$name]) ? static::$settings[static::isWhat()]['filter'][$name] : [];
 					break;
 					
 					default:

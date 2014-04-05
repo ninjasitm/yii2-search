@@ -35,10 +35,10 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	public $added_hr;
 	public $edited_hr;
 	public $data;
-	public $settings;
 	public $queryFilters = [];
 	public $filter;
 	public $requestModel;
+	public static $settings;
 	public static $active = [
 		'driver' => 'mysql',
 		'db' => [
@@ -69,6 +69,7 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	public function init()
 	{
 		parent::init();
+		$this->initConfig(static::isWhat());
 	}
 	
 	public function rules()
@@ -98,7 +99,7 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 		$has = is_array(static::has()) ? static::has() : [];
 		foreach($has as $name=>$dataProvider)
 		{
-			switch($this->hasProperty($name))
+			switch($this->hasProperty($name) || $this->hasAttribute($name))
 			{
 				case true:
 				switch($name)
@@ -204,8 +205,8 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	public static function has()
 	{
 		return [
-			'added' => null,
-			'edited' => null,
+			'created_at' => null,
+			'updated_at' => null,
 		];
 	}
 	

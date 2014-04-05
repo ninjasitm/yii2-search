@@ -170,6 +170,6 @@ class Vote extends BaseWidget
 	 */
 	public function allowMultiple()
 	{
-		return isset($this->settings[$this->isWhat()]['globals']['allowMultiple']) && ($this->settings[$this->isWhat()]['globals']['allowMultiple'] == true);
+		return isset(static::$settings[$this->isWhat()]['globals']['allowMultiple']) && (static::$settings[$this->isWhat()]['globals']['allowMultiple'] == true);
 	}
 }

@@ -155,6 +155,17 @@ class DB extends Query
 	}
 	
 	/**
+	 *
+	 * Get the default database name
+	 * @return string database name
+	 */
+	public static function getDbName()
+	{
+		preg_match("/(dbname=)(.+)($|;)/", \Yii::$app->db->dsn, $matches);
+		return $matches[2];
+	}
+	
+	/**
 	 * Set the error handling behavior
 	 * @param boolean $die
 	 * @param boolean $backtrace
@@ -1726,12 +1737,21 @@ class DB extends Query
 	 */
 	private function connect()
 	{
-		$this->connection = new Connection([
-			'dsn' => static::$active['driver'].":host=".$this->host.";dbname=".static::$active['db']['name'],
-			'username' => $this->username,
-			'password' => $this->_password
-		]);
-		$this->connection->open();
+		switch(static::getDbName())
+		{
+			case static::$active['db']['name']:
+			$this->connection = \Yii::$app->db;
+			break;
+			
+			default:
+			$this->connection = new Connection([
+				'dsn' => static::$active['driver'].":host=".$this->host.";dbname=".static::$active['db']['name'],
+				'username' => $this->username,
+				'password' => $this->_password
+			]);
+			$this->connection->open();
+			break;
+		}
 	}
 	
 	/**

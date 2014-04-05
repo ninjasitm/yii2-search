@@ -62,15 +62,38 @@ class Network extends Behavior
 	* @param array $options for cURL
 	* @return string
 	*/ 
-	public final function getXml($url, array $get=NULL, array $options=array())
+	public static function getCurlXml($url, array $get=NULL, array $options=array())
+	{
+		$ret_val = '';
+		$response = static::getCurlData($url, $get, $options);
+		$xml = simplexml_load_string(XML::convertEntities($response, true));
+		if($xml)
+		{
+			$ret_val = XML::extractXml($xml);
+		}
+		else
+		{
+			pr(libxml_get_last_error());
+		}
+		return $ret_val;
+	}
+	
+	//xml request/curl related functions
+	/**
+	* Send a GET requst using cURL
+	* @param string $url to request
+	* @param array $get values to send
+	* @param array $options for cURL
+	* @return string
+	*/ 
+	public static function getCurlData($url, array $get=NULL, array $options=array())
 	{
 		$ret_val = false;
-		$defaults = array(
-				CURLOPT_URL => $url. (strpos($url, '?') === FALSE ? '?' : ''). http_build_query($get),
-				CURLOPT_HEADER => 0,
-				CURLOPT_RETURNTRANSFER => TRUE,
-				CURLOPT_TIMEOUT => 4
-				);
+		$defaults = [
+			CURLOPT_URL => $url. (strpos($url, '?') === FALSE ? '?' : ''). http_build_query($get),
+			CURLOPT_RETURNTRANSFER => TRUE,
+			CURLOPT_TIMEOUT => 4
+		];
 		
 		$ch = curl_init();
 		curl_setopt_array($ch, ($options + $defaults));
@@ -82,18 +105,9 @@ class Network extends Behavior
 			break;
 			
 			default:
-			$xml = simplexml_load_string(XML::convertEntities($response, true));
-			if($xml)
-			{
-				$ret_val = XML::extractXml($xml);
-			}
-			else
-			{
-				pr(libxml_get_last_error());
-			}
+			$ret_val = $response;
 			break;
 		}
-		curl_close($ch);
 		return $ret_val;
 	}
 }

@@ -135,7 +135,7 @@ class Session extends Model
 		{
 			return false;
 		}
-		$csdm = ($compare === true) ? self::comparer : @$_SESSION[static::sessionName()][self::variables][self::csdm_var];
+		$csdm = ($compare === true) ? self::comparer : @static::getCsdm();
 // 		pr($_SESSION[static::sessionName()]);
 // 		echo "End here<br>";
 // 		pr($_SESSION[static::sessionName()][self::variables]);
@@ -177,7 +177,7 @@ class Session extends Model
 				break;
 				
 				default:
-				$csdm = @$_SESSION[static::sessionName()][self::variables][self::csdm_var];
+				$csdm = @static::getCsdm();
 				array_unshift($member, $csdm);
 				break;
 			}
@@ -375,7 +375,7 @@ class Session extends Model
 			//$ret_val = self::getVal($item);
 			$hierarchy = explode('.', $item);
 			$access_str = "['".Helper::splitf($hierarchy, "']['")."']";
-			$csdm = @$_SESSION[static::sessionName()][self::variables][self::csdm_var];;
+			$csdm = @static::getCsdm();;
 			$access_str = ($csdm != null) ? (($csdm == $hierarchy[0]) ? $access_str : ((!in_array($hierarchy[0], self::$no_q)) ? $csdm.$access_str : $access_str)) : $access_str;
 			eval("\$size = sizeof(\$_SESSION['".static::sessionName()."']".$access_str.");");
 			switch($size_only)
@@ -411,11 +411,11 @@ class Session extends Model
 			{	
 				case in_array($hierarchy[0], self::$q) === true:
 				case in_array($hierarchy[0], self::$no_q) === true:
-				case ($hierarchy[0] == @$_SESSION[static::sessionName()][self::variables][self::csdm_var]):
+				case ($hierarchy[0] == @static::getCsdm()):
 				break;
 				
 				default:
-				array_unshift($hierarchy, @$_SESSION[static::sessionName()][self::variables][self::csdm_var]);
+				array_unshift($hierarchy, @static::getCsdm());
 				break;
 			}
 // 			if($csdm == 'securer')
@@ -451,7 +451,7 @@ class Session extends Model
 		{
 			case in_array($cIdx, self::$q) === true:
 			case null;
-			$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
+			$csdm = static::getCsdm();
 			$val = (self::isRegistered($csdm)) ? $_SESSION[static::sessionName()][$csdm] : NULL;
 // 			pr($ret_val);
 			break;
@@ -462,7 +462,7 @@ class Session extends Model
 		
 			default:
 // 			echo "Session == ".static::sessionName();
-			$csdm = @$_SESSION[static::sessionName()][self::variables][self::csdm_var];
+			$csdm = @static::getCsdm();
 			$hierarchy = explode('.', $cIdx);
 			switch($hierarchy[0])
 			{
@@ -478,7 +478,7 @@ class Session extends Model
 				break;
 				
 				default:
-				$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
+				$csdm = static::getCsdm();
 				if($hierarchy[0] != $csdm)
 				{
 					array_unshift($hierarchy, $csdm);
@@ -611,7 +611,7 @@ class Session extends Model
 					break;
 					
 					default:
-					$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
+					$csdm = @static::getCsdm();
 					if($hierarchy[0] == $csdm)
 					{
 						array_shift($hierarchy);
@@ -642,7 +642,7 @@ class Session extends Model
 			switch($cIdx)
 			{
 				case in_array($cIdx, self::$q) === true:
-				if($cIdx == $_SESSION[static::sessionName()][self::variables][self::csdm_var])
+				if($cIdx == static::getCsdm())
 				{
 					unset($_SESSION[static::sessionName()][$cIdx]);
 					$ret_val = true;
@@ -656,7 +656,7 @@ class Session extends Model
 				
 				default:
 				$hierarchy = explode('.', $cIdx);
-				if($hierarchy[0] === @$_SESSION[static::sessionName()][self::variables][self::csdm_var])
+				if($hierarchy[0] === @static::getCsdm())
 				{
 					$csdm = $hierarchy[0];
 					unset($hierarchy[0]);
@@ -671,7 +671,7 @@ class Session extends Model
 						break;
 						
 						case false:
-						$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
+						$csdm = static::getCsdm();
 						break;
 					}
 				}
@@ -701,7 +701,7 @@ class Session extends Model
 				
 				case in_array($key, self::$q) === true:
 				case null:
-				$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
+				$csdm = static::getCsdm();
 				$ret_val = $_SESSION[static::sessionName()][$csdm];
 				break;
 				
@@ -722,7 +722,7 @@ class Session extends Model
 					break; 
 					
 					default:
-					$csdm = $_SESSION[static::sessionName()][self::variables][self::csdm_var];
+					$csdm = static::getCsdm();
 					if($hierarchy[0] == $csdm)
 					{
 						array_shift($hierarchy);

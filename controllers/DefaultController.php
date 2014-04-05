@@ -499,21 +499,10 @@ class DefaultController extends Controller
 	}
 	
 	/*
-	 * Return a string imploded with ucfirst characters
-	 * @param string $name
-	 * @return string
-	 */
-	protected static function properName($value)
-	{
-		$ret_val = empty($value) ?  [] : array_map('ucfirst', preg_split ("/[_-]/", $value));
-		return implode($ret_val);
-	}
-	
-	/*
 	 * Determine how to return the data
 	 * @param mixed $result Data to be displayed
 	 */
-	protected function renderResponse($result, $params=null, $partial=true)
+	protected function renderResponse($result=null, $params=null, $partial=true)
 	{
 		$contentType = "text/html";
 		$render = (($partial === true) || ($this->forceAjax === true)) ? 'renderAjax' : 'render';
@@ -531,6 +520,7 @@ class DefaultController extends Controller
 			break;
 			
 			case 'modal':
+			$params = is_null($params) ? $this->_view : $params;
 			$params ['view'] =  empty($params['view']) ? '@nitm/views/utils/wrapper' :  $params['view'];
 			$ret_val = $this->$render('@nitm/views/utils/modal', 
 				[
@@ -594,6 +584,17 @@ class DefaultController extends Controller
 		}
 		$this->responseFormat = $ret_val;
 		return $ret_val;
+	}
+	
+	/*
+	 * Return a string imploded with ucfirst characters
+	 * @param string $name
+	 * @return string
+	 */
+	protected static function properName($value)
+	{
+		$ret_val = empty($value) ?  [] : array_map('ucfirst', preg_split ("/[_-]/", $value));
+		return implode($ret_val);
 	}
 }
 

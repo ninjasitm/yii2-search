@@ -52,7 +52,7 @@ $this->params['breadcrumbs'][] = $this->title;
 						]);
 					},
 					'restore' => function ($url, $model) {
-						return Html::a(Icon::show('refresh'), $url, [
+						return Html::a(Icon::show('reply'), $url, [
 							'title' => Yii::t('yii', 'Restore Revision'),
 							'class' => 'fa-2x',
 							'role' => 'dynamicAction',
@@ -61,7 +61,7 @@ $this->params['breadcrumbs'][] = $this->title;
 						]);
 					},
 					'delete' => function ($url, $model) {
-						return Html::a(Icon::show('delete'), $url, [
+						return Html::a(Icon::show('remove'), $url, [
 							'title' => Yii::t('yii', 'Delete Revision'),
 							'class' => 'fa-2x',
 							'role' => 'dynamicAction',

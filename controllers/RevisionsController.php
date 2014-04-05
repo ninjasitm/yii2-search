@@ -43,16 +43,19 @@ class RevisionsController extends DefaultController
 				'searchModel' => $searchModel,
         	],
 		];*/
-		$ret_val = [
+		$this->_view = [
 			'args' => [
 				"content" => RevisionsWidget::widget([
 					"parentId" => $id, 
 					"parentType" => $type
 				])
+			],
+			'modalOptions' => [
+				'contentOnly' => true
 			]
 		];
 		$this->setResponseFormat('modal');
-		$this->renderResponse(null, $ret_val);
+		echo $this->renderResponse();
     }
 
     /**
@@ -68,10 +71,13 @@ class RevisionsController extends DefaultController
 			'args' => [
             	'model' => $this->findModel($id),
         	],
-			'view' => 'view'
+			'view' => 'view',
+			'modalOptions' => [
+				'contentOnly' => true
+			]
 		];
 		$this->setResponseFormat('modal');
-		$this->renderResponse(null, $ret_val);
+		echo $this->renderResponse(null, $ret_val);
     }
 
     /**
@@ -86,6 +92,27 @@ class RevisionsController extends DefaultController
 		$model->setScenario('create');
 		$model->parent_id = $id;
 		$model->parent_type = $type;
+		//Check to see if a revision was done in the last $model->interval interval
+		$existing = Revisions::find()
+			->select('id')
+			->where([
+				'parent_id' => $id,
+				'parent_type' => $type,
+				'author' => \Yii::$app->user->getId()
+			])
+			->andWhere("TIME_TO_SEC(TIMEDIFF(CURRENT_TIMESTAMP, created_at)) <= ".$model->interval)
+			->orderBy(['id' => SORT_DESC])
+			->one();
+		switch($existing instanceof Revisions)
+		{
+			//There was? Ok let's just update the content
+			case true:
+			$model->id = $existing->id;
+			$model->setScenario('update');
+			$model->created_at = time();
+			break;
+		}
+		$model->author = \Yii::$app->user->getId();
 		$model->setAttribute('data', json_encode($_REQUEST));
 
         if ($model->validate() && $model->save()) {
@@ -96,7 +123,7 @@ class RevisionsController extends DefaultController
                 'model' => $model,
             ]);*/
         }
-		$this->renderResponse($ret_val);
+		echo $this->renderResponse($ret_val);
     }
 
     /**

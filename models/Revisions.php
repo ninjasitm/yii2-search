@@ -14,6 +14,8 @@ namespace nitm\module\models;
  */
 class Revisions extends BaseWidget
 {	
+	public $interval = 300; //Time in seconds for updating/creating new revisions
+	
 	private $_lastActivity = '___lastActivity';
 	private $_dateFormat = "D M d Y h:iA";
 	

@@ -83,37 +83,25 @@ a.desc:after { content: /*"\e114"*/"\e152"; }
 .sort-ordinal a.asc:after { content: "\e155"; }
 .sort-ordinal a.desc:after { content: "\e156"; }
 
-//Fix for modal width setting
+.modal.modal-xlg .modal-dialog {
+  	width: 95%;
+	position: fixed;
+	top: 0; bottom: 0; left: 0; right: 0;
+}
 
-.modal-dialog-auto {
+.modal-xlg .modal-body {
+  overflow-y: auto;
+}
+
+.modal-auto {
 	width: auto;
-	padding-top: 30px;
-	padding-bottom: 30px;
-	padding-right: 15px;
-	padding-left: 15px;
-	margin: 5px;
+	height: auto;
 }
 
-.modal-content-fixed {
-	position: absolute;
-	height: 100%;
-	top: 0;
-	bottom: 0;
-	width: 100%;
+.modal-full {
+	height: 90%;
 }
 
-.modal-content-full {
-	position: absolute;
-	width: 100%;
-	top: 80px;bottom: 0;
-}
-
-.modal-content {
-	-webkit-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-}
-
-//fix for jquery auto complete menu
 .ui-autocomplete {
 	z-index: 10000;
 }

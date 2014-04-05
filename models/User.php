@@ -224,28 +224,38 @@ class User extends Data
 	 */
 	public function getAvatar($options=[]) 
 	{
+		$id = empty($this->id) ? \Yii::$app->user->identity->id : $this->id;
 		switch($this->hasProperty('avatar') && !empty($this->avatar))
 		{
 			case true:
+			//Support for old NITM avatar/local avatar
 			$url = $this->avatar;
 			break;
 			
 			//Fallback to dektriuk\User gravatar info
 			default:
-			$id = empty($this->id) ? \Yii::$app->user->identity->id : $this->id;
 			$profile = \dektrium\user\models\Profile::find()->where(['user_id' => $id])->one();
-			switch(1)
+			switch($profile instanceof Profile)
 			{
-				case !empty($profile->gravatar_id):
-				$key = $profile->gravatar_id;
-				break;
-				
-				case !empty($profile->gravatar_email):
-				$key = $profile->gravatar_email;
+				case true:
+				switch(1)
+				{
+					case !empty($profile->gravatar_id):
+					$key = $profile->gravatar_id;
+					break;
+					
+					case !empty($profile->gravatar_email):
+					$key = $profile->gravatar_email;
+					break;
+					
+					default:
+					$key = $profile->public_email;
+					break;
+				}
 				break;
 				
 				default:
-				$key = $profile->public_email;
+				$key = \Yii::$app->user->identity->email;
 				break;
 			}
 			$url = "http://gravatar.com/avatar/$key";

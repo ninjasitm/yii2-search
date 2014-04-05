@@ -27,7 +27,7 @@ trait Configer {
 		switch(Session::isRegistered(Session::current.'.'.$container))
 		{
 			case true:
-			$this->settings[$container] = Session::getval(Session::current.'.'.$container);
+			static::$settings[$container] = Session::getval(Session::current.'.'.$container);
 			break;
 			
 			default:
@@ -39,8 +39,8 @@ trait Configer {
 				break;
 				
 				default:
-				$this->settings[$container] = $config;
-				Session::getval(Session::current.'.'.$container, $config);
+				static::$settings[$container] = $config;
+				Session::set(Session::current.'.'.$container, $config);
 				break;
 			}
 			break;
