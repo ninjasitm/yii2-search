@@ -261,7 +261,7 @@ class User extends Data
 			$url = "http://gravatar.com/avatar/$key";
 			break;
 		}
-		return \yii\helpers\Html::img($url, array_merge(['class' => 'avatar'], $options));
+		return $url;
 	}
 	
 	/**

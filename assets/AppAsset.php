@@ -18,9 +18,7 @@ class AppAsset extends AssetBundle
 		'css/base.css'
 	];
 	public $js = [
-		'js/common.js',
-		'js/globals.js',
-		'js/admin.js',
+		'js/nitm.js',
 		'js/tools.js'
 	];
 	public $jsOptions = ['position' => \yii\web\View::POS_HEAD];

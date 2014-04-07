@@ -188,11 +188,14 @@ class Configer extends Model
 	{
 		$this->on("afterAdd", function($e) {
 			$this->config['current']['section'] = $this->event['data']['section'];
-			Session::set($this->correctKey($this->event['data']['key']), $this->event['data']);
 			switch($this->container == \Yii::$app->getModule('nitm')->configOptions['container'])
 			{
 				case true:
-				Session::set(Session::settings.'.'.$this->event['data']['key'], (is_null($decoded = json_decode($this->event['data']['value'], true)) ? $this->event['data']['value'] : $decoded));
+				Session::set($this->correctKey($this->event['data']['key']), (is_null($decoded = json_decode($this->event['data']['value'], true)) ? $this->event['data']['value'] : $decoded));
+				break;
+				
+				default:
+				Session::set($this->correctKey($this->event['data']['key']), $this->event['data']);
 				break;
 			}
 			$this->_o['logger']->addTrans($this->event['data']['db'],
@@ -202,11 +205,14 @@ class Configer extends Model
 		});
 		
 		$this->on("afterEdit", function($e) {
-			Session::set($this->correctKey($this->event['data']['key'].'.value'), $this->event['data']['value']);
 			switch($this->container == @Yii::$app->getModule('nitm')->configOptions['container'])
 			{
 				case true:
-				Session::set(Session::settings.'.'.$this->event['data']['key'], (is_null($decoded = json_decode($this->event['data']['value'], true)) ? $this->event['data']['value'] : $decoded));
+				Session::set($this->correctKey($this->event['data']['key']), (is_null($decoded = json_decode($this->event['data']['value'], true)) ? $this->event['data']['value'] : $decoded));
+				break;
+				
+				default:
+				Session::set($this->correctKey($this->event['data']['key'].'.value'), $this->event['data']['value']);
 				break;
 			}
 			$this->_o['logger']->addTrans($this->event['data']['db'],
@@ -234,7 +240,7 @@ class Configer extends Model
 			switch($this->container == @Yii::$app->getModule('nitm')->configOptions['container'])
 			{
 				case true:
-				Session::del(Session::settings.'.'.$this->event['data']['key']);
+				Session::del($this->event['data']['key']);
 				break;
 			}
 			$this->_o['logger']->addTrans($this->event['data']['db'],

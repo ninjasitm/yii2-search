@@ -23,8 +23,8 @@ class ConfigurationController extends DefaultController implements DefaultContro
 	{
 		$behaviors = [
 			'access' => [
-				'class' => \yii\web\AccessControl::className(),
-				'only' => ['index', 'edit', 'add', 'index', 'get', 'delete', 'convert', 'undelete'],
+				'class' => \yii\filters\AccessControl::className(),
+				//'only' => ['index', 'edit', 'add', 'index', 'get', 'delete', 'convert', 'undelete'],
 				'rules' => [
 					[
 						'actions' => ['login', 'error'],
@@ -39,7 +39,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 				],
 			],
 			'verbs' => [
-				'class' => \yii\web\VerbFilter::className(),
+				'class' => \yii\filters\VerbFilter::className(),
 				'actions' => [
 					'index' => ['get'],
 					'delete' => ['post'],
@@ -107,6 +107,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		
 		//if we're not requesting a specific section then only load the sections and no values
 		$this->model->prepareConfig($this->model->cfg_e, $this->model->cfg_c, $this->model->get_values);
+		parent::beforeAction($action);
 		return true;
 	}
 	
@@ -245,13 +246,10 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			}
 			break;
 		}
-		$params = [
-			'view' => '@common/views/utils/wrapper',
-			'args' => [
-				'content' => $ret_val['data']
-			]
+		$this->_view['args'] = [
+			'content' => $ret_val['data']
 		];
-		$this->renderResponse($ret_val, $params, true);
+		echo $this->renderResponse($ret_val, $this->_view, true);
 	}
 	
 	public function actionDelete()
@@ -363,7 +361,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			$params = [
 				'view' => '@common/views/utils/wrapper'
 			];
-			$this->renderResponse($this->model->config['current']['action'], $params, true);
+			echo $this->renderResponse($this->model->config['current']['action'], $params, true);
 			break;
 			
 			//otherwise we're going back to the index

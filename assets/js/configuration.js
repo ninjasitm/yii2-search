@@ -74,7 +74,7 @@ function Configuration(items)
 	this.prepareDeleting = function (container, result) {
 		var container = (container == undefined) ? 'body' : container;
 		this.forms.confirmThese.map(function (v) {
-			var form = getObj(container+" "+"form[role='"+v+"']");
+			var form = $nitm.getObj(container+" "+"form[role='"+v+"']");
 			form.off('submit');
 			form.on('submit', function (e) {
 				e.preventDefault();
@@ -117,7 +117,7 @@ function Configuration(items)
 	this.prepareUpdating = function (container) {	
 		var container = (container == undefined) ? '' : container;
 		this.buttons.allowUpdate.map(function (v) {
-			var button = getObj(container+"[role='"+v+"']");
+			var button = $nitm.getObj(container+"[role='"+v+"']");
 			button.on('click', function (e) {
 				e.preventDefault();
 				self.edit(this);
@@ -125,7 +125,7 @@ function Configuration(items)
 		});
 		
 		this.blocks.allowUpdate.map(function (v) {
-			var block = getObj(container+"[role='"+v+"']");
+			var block = $nitm.getObj(container+"[role='"+v+"']");
 			fn = function (e) {
 				self.edit(this);
 			};
@@ -137,7 +137,7 @@ function Configuration(items)
 	this.prepareAdding = function (container) {
 		var container = (container == undefined) ? 'body' : container;
 		this.forms.allowAdd.map(function (v) {
-			var form = getObj(container+" "+"form[role='"+v+"']");
+			var form = $nitm.getObj(container+" "+"form[role='"+v+"']");
 			form.off('submit');
 			form.on('submit', function (e) {
 				e.preventDefault();
@@ -156,7 +156,7 @@ function Configuration(items)
 		switch(!$(form).attr('action'))
 		{
 			case false:
-			var request = doRequest($(form).attr('action'), 
+			var request = $nitm.doRequest($(form).attr('action'), 
 					data,
 					function (result) {
 						switch(result.action)
@@ -180,7 +180,7 @@ function Configuration(items)
 						}
 					},
 					function () {
-						notify('Error Could not perform configuration action. Please try again', self.classes.error, false);
+						$nitm.notify('Error Could not perform configuration action. Please try again', self.classes.error, false);
 					}
 				);
 				break;
@@ -200,7 +200,7 @@ function Configuration(items)
 					switch(new String(this.tagName).toLowerCase())
 					{
 						case 'button':
-							var elem = getObj($(this).data('id')).get(0);
+							var elem = $nitm.getObj($(this).data('id')).get(0);
 							break;
 							
 						default:
@@ -224,7 +224,7 @@ function Configuration(items)
 		{
 			message = 'Error empty configuration information';
 		}
-		notify(message, nClass, false);
+		$nitm.notify(message, nClass, false);
 	}
 	
 	this.afterAdd = function(result, form) {
@@ -233,7 +233,7 @@ function Configuration(items)
 		{
 			nClass = self.classes.success;
 		}
-		notify(result.message, nClass, false);
+		$nitm.notify(result.message, nClass, false);
 		var _form = $(form);
 		switch(_form.attr('role'))
 		{
@@ -246,7 +246,7 @@ function Configuration(items)
 				_form.attr('action', self.forms.actions.del);
 				_form.attr('role', 'delete_value');
 				_form.find(':input').attr('disabled', false);
-				getObj('value_'+result.container).removeClass('disabled');
+				$nitm.getObj('value_'+result.container).removeClass('disabled');
 				break;
 			}
 			break;
@@ -269,10 +269,10 @@ function Configuration(items)
 		else
 		{
 			iClass = self.classes.warning;
-			getObj(result.container+'.div').html(result.old_value);
+			$nitm.getObj(result.container+'.div').html(result.old_value);
 		}
-		getObj(result.container+'.div').removeClass().addClass(iClass);
-		notify(result.message, nClass, false);
+		$nitm.getObj(result.container+'.div').removeClass().addClass(iClass);
+		$nitm.notify(result.message, nClass, false);
 	}
 	
 	this.afterDelete = function(result, form) {
@@ -281,7 +281,7 @@ function Configuration(items)
 		{
 			nClass = self.classes.success;
 		}
-		notify(result.message, nClass, false);
+		$nitm.notify(result.message, nClass, false);
 		switch(result.success)
 		{
 			case true:
@@ -297,8 +297,8 @@ function Configuration(items)
 				_form.find(':submit').removeClass().addClass('btn btn-warning').html('undel').attr('title', "Are you sure you want to undelete this value?");
 				_form.attr('action', self.forms.actions.undelete);
 				_form.attr('role', 'undelete_value');
-				_form.append("<input type='hidden' name='Configer[cfg_v\]' id='configer-cfg_v' value='"+getObj(result.container+'.div').html()+"'/>");
-				var container = getObj('value_'+result.container);
+				_form.append("<input type='hidden' name='Configer[cfg_v\]' id='configer-cfg_v' value='"+$nitm.getObj(result.container+'.div').html()+"'/>");
+				var container = $nitm.getObj('value_'+result.container);
 				container.addClass('disabled');
 				container.children().map(function() {
 					switch($(this).attr('role'))
@@ -322,28 +322,28 @@ function Configuration(items)
 		var inputId = $(form).find('input[name="inputId"]').val();
 		var oldData = $(form).find('input[name="oldValue"]').val();
 		var container = $(form).find('input[name="container"]').val();
-		var newData = new String(getObj(inputId).val());
+		var newData = new String($nitm.getObj(inputId).val());
 		var newDataEnc = new String(escape(newData));
 		oldData = new String(oldData);
 		var stop = false;
 		if(!newData)
 		{
 			stop = true;
-			notify('Empty Data\nNo Update', 'alert', false);
+			$nitm.notify('Empty Data\nNo Update', 'alert', false);
 		}
-		if(newDataEnc.localeCompare(oldData) == 0)
+		if(newData.localeCompare(oldData) == 0)
 		{
 			stop = true;
-			notify('Duplicate Data\nNo Update', 'alert', false);
+			$nitm.notify('Duplicate Data\nNo Update', 'alert', false);
 		}
 		if (stop)
 		{
 			/*input = $('<div id="'+cellId+'">'+newData+'</div>');
 			 *	input.off('click');
 			 *	input.on('click', function () {
-			 *		self.edit(getObj(cellId));
+			 *		self.edit($nitm.getObj(cellId));
 		});*/
-			//getObj(container).html(newData);
+			//$nitm.getObj(container).html(newData);
 		}
 		else
 		{
@@ -362,19 +362,19 @@ function Configuration(items)
 				newData = '';
 			}
 			newData = newData.toString();
-			var form = getObj('edit_value_form_'+container);
+			var form = $nitm.getObj('edit_value_form_'+container);
 			form.find("[role='value']").val(newData);
 			self.operation(form.get(0));
-			getObj(cellId).css('border','none');
-			/*var container = getObj(cellId).html('<div id="'+cellId+'">'+newData+'</div>');
+			$nitm.getObj(cellId).css('border','none');
+			/*var container = $nitm.getObj(cellId).html('<div id="'+cellId+'">'+newData+'</div>');
 			 *	container.off('click');
 			 *	container.on('click', function () {
-			 *		self.edit(getObj(cellId));
+			 *		self.edit($nitm.getObj(cellId));
 		});*/
 		}
-		getObj(cellId).html(newData);
+		$nitm.getObj(cellId).html(newData.stripslashes());
 		//re-enable the onclick functionality
-		getObj(cellId).on('click', getObj(cellId).data('action'));
+		$nitm.getObj(cellId).on('click', $nitm.getObj(cellId).data('action'));
 		
 	}
 	
@@ -402,7 +402,7 @@ function Configuration(items)
 		form.append("<input type='hidden' name='oldValue' value='"+oldValue+"'>");
 		if(size > 96)
 		{
-			var cols = (getObj(id).attr('offsetWidth') / 10) * 1.5;
+			var cols = ($nitm.getObj(id).attr('offsetWidth') / 10) * 1.5;
 			var rows = Math.round(size/96) + Math.round((size/108)/8);
 			var input = $('<textarea id="'+id+this.iObj+'" class="form-control" rows='+rows+'>'+value+'</textarea>');
 			input.on('blur', function () {
@@ -422,33 +422,30 @@ function Configuration(items)
 			//need to do this here because the input doesn't get recognized unless the form is closed out
 			form.append("<br /><noscript><input value='OK' type='submit'></noscript>");
 			//then we can assign te value
-			getObj(id+this.iObj).attr('value', value);
+			$nitm.getObj(id+this.iObj).attr('value', value);
 		}
 		form.on('submit', function () {
 			e.preventDefault();
 			self.parse(this);
 		});
-		getObj(id).html('').append(form);
+		$nitm.getObj(id).html('').append(form);
 		//disable onclick functionality
-		getObj(id).off('click');
-		getObj(id+this.iObj).focus();
+		$nitm.getObj(id).off('click');
+		$nitm.getObj(id+this.iObj).focus();
 	}
 }
 
 
-String.prototype.trim = function () 
-{
+String.prototype.trim = function () {
   return this.replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1");
 }
 
-String.prototype.addslashes = function() 
-{
+String.prototype.addslashes = function() {
 	return this.replace(/([\\\"\'\.])/g, "\\$1").replace(/\u0000/g, "\\0");
-
 }
 
-String.prototype.stripslashes = function () 
-{
+String.prototype.stripslashes = function () {
 	return this.replace('/\0/g', '0').replace('/\(.)/g', '$1');
-
 }
+
+$nitm.configuration = new Configuration();

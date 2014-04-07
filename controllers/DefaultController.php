@@ -5,7 +5,6 @@ namespace nitm\module\controllers;
 use Yii;
 use yii\helpers\Html;
 use yii\web\Controller;
-use yii\web\VerbFilter;
 use nitm\module\helpers\Session;
 use nitm\module\models\Configer;
 
@@ -42,13 +41,13 @@ class DefaultController extends Controller
 	{ 
 		$behaviors = array(
 			'verbs' => [
-				'class' => VerbFilter::className(),
+				'class' => \yii\filters\VerbFilter::className(),
 				'actions' => [
 					'filter' => ['get', 'post'],
 				]
 			],
 		);
-		return array_merge(parent::behaviors(), $behaviors);
+		return $behaviors;
 	}
 
 	public function init()

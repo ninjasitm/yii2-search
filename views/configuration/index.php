@@ -39,10 +39,8 @@ $this->title = "Edit configration parameters";
 </div>
 
 <script language='javascript' type="text/javascript">
-addOnLoadEvent(function () {
-	var config_path = '<?php echo @$model->config['current']['path']; ?>';
-	var c = new Configuration();	
-	c.prepareChanging();
-	c.prepareUpdating();
+$nitm.addOnLoadEvent(function () {
+	$nitm.configuration.prepareChanging();
+	$nitm.configuration.prepareUpdating();
 });
 </script>
