@@ -1,5 +1,5 @@
 <?php
-namespace nitm\module\traits;
+namespace nitm\traits;
 
 /**
  * Traits defined for expanding query scopes until yii2 resolves traits issue
@@ -154,7 +154,7 @@ trait Query {
 				switch($class == null)
 				{
 					case true:
-					$o = new \nitm\module\models\User;
+					$o = new \nitm\models\User;
 					$filters = $o->getAll();
 					break;
 					
@@ -250,7 +250,7 @@ trait Query {
 					switch(isset(\Yii::$app->getDb()->getTableSchema(static::TableName())->columns[$column]))
 					{
 						case true:
-						$columns[] = "(SELECT username FROM ".\nitm\module\models\User::tableName()." WHERE [[id]]=[[$property]] LIMIT 1) AS ".$column."_hr";
+						$columns[] = "(SELECT username FROM ".\nitm\models\User::tableName()." WHERE [[id]]=[[$property]] LIMIT 1) AS ".$column."_hr";
 						break;
 					}
 					break;
@@ -261,7 +261,7 @@ trait Query {
 					switch(isset(\Yii::$app->getDb()->getTableSchema(static::TableName())->columns[$column]))
 					{
 						case true:
-						$columns[] = "DATE_FORMAT(`$column`, '".\nitm\module\helpers\DateFormatter::getFormat(\nitm\module\helpers\DateFormatter::FORMAT_MYSQL_HR)."') AS ".$column."_hr";
+						$columns[] = "DATE_FORMAT(`$column`, '".\nitm\helpers\DateFormatter::getFormat(\nitm\helpers\DateFormatter::FORMAT_MYSQL_HR)."') AS ".$column."_hr";
 						break;
 					}
 					break;

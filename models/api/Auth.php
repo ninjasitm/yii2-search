@@ -1,6 +1,6 @@
 <?php
 
-namespace common\models\api;
+namespace nitm\models\api;
 
 class Auth extends \yii\db\ActiveRecord
 {

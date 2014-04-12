@@ -1,13 +1,13 @@
 <?php
 
-namespace nitm\module\models\api;
-use \nitm\module\models\User;
+namespace nitm\models\api;
+use nitm\models\User;
 
 /**
  * Token is the token class used for handling api tokens
- * Package nitm\module\models\api
+ * Package nitm\models\api
  *
- * @property int $userid The userid of the owner
+ * @property int $user_id The user_id of the owner
  * @property string $identity The string identity of the user
  * @property string $token The token
  * @property boolean $active Is this token active?
@@ -15,13 +15,13 @@ use \nitm\module\models\User;
  * @property boolean $revoked Has the token been revoked? Thhis is bad since it means it was forcefully disabled
  * @property Timestamp $revoked_on The date the token was revoked on
  */
-class Token extends \nitm\module\models\Data
+class Token extends \nitm\models\Data
 {
 	public $message;
 	public $name;
 
-	private $_add;		                                           //Tokens which need to be added
-	private $_edit;		                                          //Tokens which need to be edited
+	private $_create;		                                           //Tokens which need to be createed
+	private $_update;		                                          //Tokens which need to be updateed
 	private $_toggle;	                                         //Tokens which need to be toggled
 	private $_count;	                                          //The number of tokens for this user
 	private $_tokenKey;
@@ -45,15 +45,15 @@ class Token extends \nitm\module\models\Data
 	public function rules()
 	{
 		$rules = [
-			[['userid'], 'required', 'on' => ['edit', 'delete', 'create']],
-			[['userid'], 'required', 'on' => ['select']],
+			[['user_id'], 'required', 'on' => ['update', 'delete', 'create']],
+			[['user_id'], 'required', 'on' => ['select']],
 			[['token'], 'required', 'on' => ['revoke']],
 			['revoked_on', 'date', 'on' => ['revoke']],
-			[['level', 'userid'], 'required', 'on' => ['create']],
-			[['userid', 'added'], 'required'],
-			[['userid'], 'integer'],
+			[['level', 'user_id'], 'required', 'on' => ['create']],
+			[['user_id', 'createed'], 'required'],
+			[['user_id'], 'integer'],
 			[['token'], 'string'],
-			[['added', 'revoked_on'], 'safe'],
+			[['createed', 'revoked_on'], 'safe'],
 			[['active', 'revoked'], 'boolean'],
 		];
 		return array_merge(parent::rules(), $rules);
@@ -62,10 +62,10 @@ class Token extends \nitm\module\models\Data
 	public function scenarios()
 	{
 		$scenarios = [
-			'select' => ['userid'],
+			'select' => ['user_id'],
 			'update' => ['token', 'active', 'revoked', 'revoked_on', 'level'],
 			'delete' => ['active'],
-			'create' => ['token', 'userid', 'active', 'level']
+			'create' => ['token', 'user_id', 'active', 'level']
 		];
 		return array_merge(parent::scenarios(), $scenarios);
 	}
@@ -76,33 +76,15 @@ class Token extends \nitm\module\models\Data
 	public function attributeLabels()
 	{
 		return [
-			'tokenid' => 'Tokenid',
-			'userid' => 'Userid',
+			'id' => 'Token Id',
+			'user_id' => 'User Id',
 			'token' => 'Token',
-			'added' => 'Added',
+			'createed' => 'Created',
 			'active' => 'Active',
 			'level' => 'Level',
 			'revoked' => 'Revoked',
 			'revoked_on' => 'Revoked On',
 		];
-	}
-	
-	/**
-	 * Get the user name and ID
-	 * Token $id The id of the user
-	 */
-	public static function getUserName(Token $token=null)
-	{
-		$ret_val = null;
-		$token = ($token instanceof Token) ? $token : static::$self;
-		$user = User::find($token->userid);
-		switch($user instanceof User)
-		{
-			case true:
-			$ret_val = $token->userid.' ('.$user->username.')';
-			break;
-		}
-		return $ret_val;
 	}
 	
 	/**
@@ -176,18 +158,18 @@ class Token extends \nitm\module\models\Data
 				switch(($array['toggle'][$idx] == 1) && ($array['revoke'][$idx] != 'on') && ($max === false) && ($array['token_is_active'][$idx] == ''))
 				{
 					case true:
-					$this->_add[$idx]['level'] = $array['token_level'][$idx];
-					$this->_add[$idx]['active'] = 1;
+					$this->_create[$idx]['level'] = $array['token_level'][$idx];
+					$this->_create[$idx]['active'] = 1;
 					break;
 				}
 				continue;
 				break;
 			}
-			switch($array['edit'][$idx])
+			switch($array['update'][$idx])
 			{
 				case 'on':
-				$this->_edit[$idx]['unique'] = $array['token'][$idx];
-				$this->_edit[$idx]['data'] = ['level' => $array['token_level'][$idx]];
+				$this->_update[$idx]['unique'] = $array['token'][$idx];
+				$this->_update[$idx]['data'] = ['level' => $array['token_level'][$idx]];
 				continue;
 				break;
 			}
@@ -205,62 +187,62 @@ class Token extends \nitm\module\models\Data
 		}
 	}
 	
-	public function add()
+	public function create()
 	{
 		$ret_val = false;
-		switch(is_array($this->_add))
+		switch(is_array($this->_create))
 		{
 			case true:
 			$this->logText = "";
-			foreach($this->_add as $data)
+			foreach($this->_create as $data)
 			{
 				$model = new Token();
 				$model->setScenario('create');
 				$model->load($data);
-				$model->userid = $this->userid;
+				$model->user_id = $this->user_id;
 				switch($model->validate())
 				{
 					case true:
 					$model->save();
-					$this->logText .= \nitm\module\models\DB::split_c(array_keys($data['data']), array_values($data['data']), '=', ',', false, false, false)."\n";
+					$this->logText .= \nitm\models\DB::split_c(array_keys($data['data']), array_values($data['data']), '=', ',', false, false, false)."\n";
 					break;
 				}
 			}
-			$this->messages .= "Added ".sizeof($this->_edit)." tokens for user with ID ".$this->userid;
-			$this->log(static::tableName(), 'Add Tokens', $this->message.". Tokens:\n".$this->logText);
+			$this->messages .= "Created ".sizeof($this->_update)." tokens for user with ID ".$this->user_id;
+			$this->log(static::tableName(), 'Create Tokens', $this->message.". Tokens:\n".$this->logText);
 			$ret_val = true;
 			break;
 		}
 		return $ret_val;
 	}
 	
-	public function edit()
+	public function update($validate=true, $attributes=null)
 	{
 		$ret_val = false;
-		switch(is_array($this->_edit))
+		switch(is_array($this->_update))
 		{
 			case true:
 			$this->logText = "";
-			foreach($this->_edit as $data)
+			foreach($this->_update as $data)
 			{
 				$model = Token::find($data['unique']);
 				switch($model instanceof Token)
 				{
 					case true:
-					$model->setScenario('edit');
+					$model->setScenario('update');
 					$model->load($data['data']);
 					switch($model->validate())
 					{
 						case true:
 						$model->save();
-						$this->logText .= \nitm\module\models\DB::split_c(array_keys($data['data']), array_values($data['data']), '=', ',', false, false, false)."\n";
+						$this->logText .= \nitm\models\DB::split_c(array_keys($data['data']), array_values($data['data']), '=', ',', false, false, false)."\n";
 						break;
 					}
 					break;
 				}
 			}
-			$this->messages .= "Edited ".sizeof($this->_edit)." tokens for user with ID ".$this->userid;
-			$this->log(static::tableName(), 'Edit Tokens', $this->message.". Tokens:\n".$this->logText);
+			$this->messages .= "Updated ".sizeof($this->_update)." tokens for user with ID ".$this->user_id;
+			$this->log(static::tableName(), 'Update Tokens', $this->message.". Tokens:\n".$this->logText);
 			$ret_val = true;
 			break;
 		}
@@ -270,12 +252,12 @@ class Token extends \nitm\module\models\Data
 	public function revoke()
 	{
 		$ret_val = false;
-		$this->_edit = $this->_revoke;
-		switch($this->edit())
+		$this->_update = $this->_revoke;
+		switch($this->update())
 		{
 			case true:
 			$ret_val = true;
-			$this->messagse .= "Revoked ".sizeof($this->_edit)." tokens for user with ID ".$this->userid;
+			$this->messagse .= "Revoked ".sizeof($this->_update)." tokens for user with ID ".$this->user_id;
 			$this->log(static::tableName(), 'Revoke Tokens', $this->message.". Tokens:\n".$this->logText);
 			break;
 		}
@@ -290,12 +272,12 @@ class Token extends \nitm\module\models\Data
 	public function toggle()
 	{
 		$ret_val = false;
-		$this->_edit = $this->_toggle;
-		switch($this->edit())
+		$this->_update = $this->_toggle;
+		switch($this->update())
 		{
 			case true:
 			$ret_val = true;
-			$this->messagse .= "Toggled ".sizeof($this->_edit)." tokens for user with ID ".$this->userid;
+			$this->messagse .= "Toggled ".sizeof($this->_update)." tokens for user with ID ".$this->user_id;
 			$this->log(static::tableName(), 'Toggle Tokens', $this->message.". Tokens:\n".$this->logText);
 			break;
 		}
@@ -312,7 +294,7 @@ class Token extends \nitm\module\models\Data
 	 */
 	public function getUniqueToken($id=null)
 	{
-		$id = is_null($id) ? $this->userid : $id;
+		$id = is_null($id) ? $this->user_id : $id;
 		switch(($user = User::find((int) $id)) == null)
 		{
 			case true:
@@ -335,7 +317,7 @@ class Token extends \nitm\module\models\Data
 	{
 		$ret_val = null;
 		//First of all does this user exist?
-		$user = $this->hasOne(User::className(), ['userid' => 'userid']);
+		$user = $this->hasOne(User::className(), ['user_id' => 'user_id']);
 		switch($user instanceof User)
 		{
 			case true:
@@ -353,7 +335,7 @@ class Token extends \nitm\module\models\Data
 				break;
 			}
 			//Ok let's get their tokens
-			$ret_val = $this->hasMany(Tokens::className(), ['userid' => 'userid'])->where($cond)->asArray()->all();
+			$ret_val = $this->hasMany(Tokens::className(), ['user_id' => 'user_id'])->where($cond)->asArray()->all();
 			break;
 		}
 		return $ret_val;
@@ -370,7 +352,7 @@ class Token extends \nitm\module\models\Data
 		{
 			case true:
 			$this->_count = $this->find()->where([
-				'userid' => $this->userid,
+				'user_id' => $this->user_id,
 				'active' => 1,
 				'revoked' => 0
 			])->count();

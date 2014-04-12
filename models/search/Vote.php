@@ -1,13 +1,13 @@
 <?php
 
-namespace nitm\module\models\search;
+namespace nitm\models\search;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use nitm\module\models\Vote as VoteModel;
+use nitm\models\Vote as VoteModel;
 
 /**
- * Vote represents the model behind the search form about `nitm\module\models\Vote`.
+ * Vote represents the model behind the search form about `nitm\models\Vote`.
  */
 class Vote extends Model
 {

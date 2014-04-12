@@ -12,7 +12,7 @@
 		</div>
 		<div class="col-md-9 col-lg-9 col-sm-7">
 			<div id='<?= $unique_id; ?>'>
-				<?= @$surround['open']; ?><div id='<?= $unique_id; ?>.div' role="edit_field_div" data-id="<?= $unique_id; ?>" data-type="<?= $model->config['current']['type']; ?>"><?= htmlentities($value); ?></div><?= @$surround['close']; ?>
+				<?= @$surround['open']; ?><div id='<?= $unique_id; ?>.div' role="updateFieldDiv" data-id="<?= $unique_id; ?>" data-type="<?= $model->config['current']['type']; ?>"><?= htmlentities($value); ?></div><?= @$surround['close']; ?>
 				<div class="row">
 				<?php $form = ActiveForm::begin(['id' => "value_comment_$unique_id",
 								'action' => '/configuration/comment',
@@ -44,8 +44,8 @@
 			</div>
 		</div>
 		<div class="col-lg-1 col-md-1 col-sm-2">
-			<?php $form = ActiveForm::begin(['id' => "edit_value_form_$unique_id",
-							'action' => '/configuration/edit',
+			<?php $form = ActiveForm::begin(['id' => "update_value_form_$unique_id",
+							'action' => '/configuration/update',
 							'options' => [
 								'class' => 'form-inline'
 							],
@@ -61,11 +61,11 @@
 				echo Html::activeHiddenInput($model, 'cfg_n', array('value' => $unique_id));
 				echo Html::activeHiddenInput($model, 'cfg_v', array('value' => $value,
 										    'role' => 'value'));
-				echo Html::submitButton('edit', [
-										'id' => 'edit_value',
+				echo Html::submitButton('update', [
+										'id' => 'update_value',
 										'class' => 'btn btn-primary btn-sm',
 										'title' => "Edit $unique",
-										'role' => 'edit_field_button',
+										'role' => 'updateFieldButton',
 										'data-id' => $unique.'.div',
 										'data-type' => $model->config['current']['type'],
 										"data-loading-text" => "Editing..."
@@ -78,7 +78,7 @@
 				$form = ActiveForm::begin(['id' => 'delete_value',
 							'action' => '/configuration/delete',
 							'options' => ['class' => 'form-inline',
-							'role' => 'delete_value'],
+							'role' => 'deleteValue'],
 							'fieldConfig' => [
 									  'inputOptions' => ['class' => 'form-control']
 									],

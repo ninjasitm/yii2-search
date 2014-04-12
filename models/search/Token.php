@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\models\search;
+namespace nitm\models\search;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
@@ -10,8 +10,8 @@ use yii\data\ActiveDataProvider;
  */
 class Token extends Model
 {
-	public $tokenid;
-	public $userid;
+	public $id;
+	public $user_id;
 	public $token;
 	public $added;
 	public $active;
@@ -22,7 +22,7 @@ class Token extends Model
 	public function rules()
 	{
 		return [
-			[['tokenid', 'userid'], 'integer'],
+			[['id', 'user_id'], 'integer'],
 			[['token', 'added', 'level', 'revoked_on'], 'safe'],
 			[['active', 'revoked'], 'boolean'],
 		];
@@ -34,8 +34,8 @@ class Token extends Model
 	public function attributeLabels()
 	{
 		return [
-			'tokenid' => 'Tokenid',
-			'userid' => 'Userid',
+			'id' => 'Token Id',
+			'user_id' => 'User Id',
 			'token' => 'Token',
 			'added' => 'Added',
 			'active' => 'Active',
@@ -47,7 +47,7 @@ class Token extends Model
 
 	public function search($params)
 	{
-	 $query = \nitm\module\models\api\Token::find();
+	 $query = \nitm\models\api\Token::find()->with('user');
 		$dataProvider = new ActiveDataProvider([
 			'query' => $query,
 		]);
@@ -56,8 +56,8 @@ class Token extends Model
 			return $dataProvider;
 		}
 
-		$this->addCondition($query, 'userid');
-		$this->addCondition($query, 'userid', true);
+		$this->addCondition($query, 'user_id');
+		$this->addCondition($query, 'user_id', true);
 		$this->addCondition($query, 'token');
 		$this->addCondition($query, 'token', true);
 		$this->addCondition($query, 'level');

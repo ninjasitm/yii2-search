@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\models\search;
+namespace nitm\models\search;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
@@ -54,7 +54,7 @@ class User extends Model
 
 	public function search($params)
 	{
-		$query = \nitm\module\models\User::find();
+		$query = \nitm\models\User::find();
 		$dataProvider = new ActiveDataProvider([
 			'query' => $query,
 		]);
@@ -83,7 +83,7 @@ class User extends Model
 							$method = 'getStatuses';
 							break;
 						}
-						$match = forward_static_call([\nitm\module\models\User::className(), $method]);
+						$match = forward_static_call([\nitm\models\User::className(), $method]);
 						$value = array_keys(preg_grep("/^".$this->$attr."/i", $match));
 						$this->$attr = array_shift($value);
 						break;

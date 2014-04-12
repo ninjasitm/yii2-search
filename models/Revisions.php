@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\models;
+namespace nitm\models;
 
 /**
  * This is the model class for table "revisions".

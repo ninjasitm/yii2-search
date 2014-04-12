@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\models;
+namespace nitm\models;
 
 /**
  * This is the model class for table "vote".
@@ -77,7 +77,7 @@ class Vote extends BaseWidget
 	{
 		$ret_val = ['positive' => 0];
 		//Only count votes with a 1 value
-		$this->constrain([$this->parent_id, $this->parent_type]);
+		$this->setConstraints([$this->parent_id, $this->parent_type]);
 		switch($this->allowMultiple())
 		{
 			case true:
@@ -146,14 +146,14 @@ class Vote extends BaseWidget
 		{
 			case false:
 			$this->queryFilters['author'] = \Yii::$app->user->getId();
-			$vote = $this->getModels();
-			switch(sizeof($vote) >= 1)
+			$vote = $this->getOne();
+			switch($vote instanceof Vote)
 			{
 				case true:
 				switch(1)
 				{
-					case ($vote[0]->value == -1) && $direction == 'down':
-					case ($vote[0]->value == 1) && $direction == 'up':
+					case ($vote->value == -1) && $direction == 'down':
+					case ($vote->value == 1) && $direction == 'up':
 					$ret_val = true;
 					break;
 				}

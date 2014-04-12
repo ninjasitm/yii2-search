@@ -1,16 +1,16 @@
 <?php
 
-namespace nitm\module\controllers;
+namespace nitm\controllers;
 
 use Yii;
 use yii\helpers\Html;
 use yii\web\Controller;
-use nitm\module\helpers\Session;
-use nitm\module\models\Configer;
+use nitm\helpers\Session;
+use nitm\models\Configer;
 
 class DefaultController extends Controller
 {
-	use \nitm\module\traits\Configer;
+	use \nitm\traits\Configer;
 	
 	public $model;
 	public $settings;
@@ -244,7 +244,7 @@ class DefaultController extends Controller
 						
 						default:
 						//This is probably not a widget asset but a module asset
-						$class = '\nitm\module\assets\\'.static::properName($asset).'Asset';
+						$class = '\nitm\assets\\'.static::properName($asset).'Asset';
 						switch(class_exists($class))
 						{
 							case true:
@@ -289,11 +289,11 @@ class DefaultController extends Controller
 	 * @param string from
 	 * @return mixed $ret_val
 	 */
-	public function loadNav($from="navigation")
+	public static function loadNav($from="navigation")
 	{
 		$ret_val = array();
 		$navigation = array();
-		$navigation = Session::getval($from);
+		$navigation = Session::getVal($from);
 		$priorities = array();
 		if(is_array($navigation))
 		{
@@ -333,10 +333,10 @@ class DefaultController extends Controller
 	 * @param mixed $encapsulate Surround the elements in this tag
 	 * @return mixed $ret_val
 	 */
-	public function getNavHtml($navigation=null, $encapsulate=null)
+	public static function getNavHtml($navigation=null, $encapsulate=null)
 	{
 		$ret_val = array();
-		$navigation = !is_array($navigation) ? $this->loadNav('settings.navigation') : $navigation;
+		$navigation = !is_array($navigation) ? static::loadNav('settings.navigation') : $navigation;
 		$top = ($navigation === null) ? true : false;
 		foreach($navigation as $idx=>$item)
 		{
@@ -344,7 +344,7 @@ class DefaultController extends Controller
 			switch(isset($item['sub']) && is_array($item['sub']))
 			{
 				case true:
-				$item['sub'] = $this->getNavHtml($item['sub']);
+				$item['sub'] = static::getNavHtml($item['sub']);
 				$submenu = $item['sub'];
 				break;
 			}
@@ -551,7 +551,7 @@ class DefaultController extends Controller
 	protected function setResponseFormat($format=null)
 	{
 		$ret_val = null;
-		$format = (is_null($format)) ? (isset($_REQUEST['__format']) ? $_REQUEST['__format'] : null) : $format;
+		$format = (is_null($format)) ? (!\Yii::$app->request->get('__format') ? null : \Yii::$app->request->get('__format')) : $format;
 		switch($format)
 		{
 			case 'text':

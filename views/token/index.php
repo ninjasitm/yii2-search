@@ -9,10 +9,13 @@ use yii\grid\GridView;
  * @var app\models\search\Token $searchModel
  */
 
-$this->title = 'Edit: ';
+$this->title = 'Tokens';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="token-index">
+	<?= yii\widgets\Breadcrumbs::widget([
+		'links' => $this->params['breadcrumbs']
+	]); ?>
 
 	<h1><?= Html::encode($this->title) ?></h1>
 
@@ -25,9 +28,7 @@ $this->params['breadcrumbs'][] = $this->title;
 		<?= Html::a('Create Token', ['create'], ['class' => 'btn btn-success']) ?>
 	</p>
 	
-	<?= \nitm\widgets\legend\widget\Legend::widget([
-		"legend" => $this->context->legend
-	]); ?>
+	<?= $this->context->legendWidget(); ?>
 
 	<?php
 		echo GridView::widget([
@@ -37,9 +38,9 @@ $this->params['breadcrumbs'][] = $this->title;
 			'id',
 			[
 				'label' => 'User',
-				'attribute' => 'userid',
-				'value' => function ($user) {
-					return \nitm\module\models\User::getFullName($user);
+				'attribute' => 'user_id',
+				'value' => function ($model) {
+					return $model->user->getFullName();
 				},
 			],
 			'token:ntext',

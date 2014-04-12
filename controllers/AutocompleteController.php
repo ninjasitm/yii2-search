@@ -1,13 +1,13 @@
 <?php
 
-namespace nitm\module\controllers;
+namespace nitm\controllers;
 
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\web\VerbFilter;
-use nitm\module\controllers\DefaultController;
-use nitm\module\models\User;
-use nitm\module\models\search\User as UserSearch;
+use nitm\controllers\DefaultController;
+use nitm\models\User;
+use nitm\models\search\User as UserSearch;
 /**
  * UserController implements the CRUD actions for User model.
  */

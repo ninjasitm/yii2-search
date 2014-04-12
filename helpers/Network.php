@@ -1,10 +1,10 @@
 <?php
 
-namespace nitm\module\helpers;
+namespace nitm\helpers;
 
 use yii\db\ActiveRecord;
 use yii\base\Behavior;
-use nitm\module\models\DB;
+use nitm\models\DB;
 
 if(!@isset($_SESSION))
 {
@@ -35,7 +35,6 @@ class Network extends Behavior
 	{
 		//Make sure the input is not going to do anything unexpected
 		//IPs must be in the form x.x.x.x with each x as a number
-		$this->set_ip($ip);
 		$testar = explode('.',$ip);
 		if (count($testar)!=4)
 		{

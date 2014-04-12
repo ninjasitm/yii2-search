@@ -17,7 +17,7 @@ use yii\widgets\ActiveForm;
 		<?php 
 			if(!$model->isNewRecord)
 			{
-				echo Html::tag('h4', \nitm\module\models\User::getFullName($model->userid));
+				echo Html::tag('h4', \nitm\module\models\User::getFullName($model->user_id));
 			}
 			else
 			{
@@ -31,7 +31,7 @@ use yii\widgets\ActiveForm;
 						'data-select' => \yii\helpers\Json::encode([
 							"value" => "unique", 
 							"label" => "name", 
-							"container" => "token-userid"
+							"container" => "token-user_id"
 						]),
 					],
 					'clientOptions' => [
@@ -40,7 +40,7 @@ use yii\widgets\ActiveForm;
 				]);
 			}
 		?>
-		<?= Html::activeHiddenInput($model, 'userid') ?>
+		<?= Html::activeHiddenInput($model, 'user_id') ?>
 		<?= $form->field($model, 'active')->checkbox() ?>
 
 		<?= $form->field($model, 'revoked')->checkbox() ?>

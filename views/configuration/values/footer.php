@@ -2,11 +2,11 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 ?>
-<div class="well" id="add_value_container">
-        <?php $form = ActiveForm::begin(['id' => "add_new_value_$section",
-                                        'action' => '/configuration/add',
+<div class="well" id="create_value_container">
+        <?php $form = ActiveForm::begin(['id' => "create_new_value_$section",
+                                        'action' => '/configuration/create',
                                         'options' => ['class' => 'form-inline',
-                                        'role' => 'add_new_value'],
+                                        'role' => 'create_new_value'],
                                         'fieldConfig' => [
                                                           'inputOptions' => ['class' => 'form-control']
                                                         ],

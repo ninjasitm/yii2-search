@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\interfaces;
+namespace nitm\interfaces;
 
 /**
 	This is the interface for data and DB manipulation. This handles retrieval, creating and formatting of data

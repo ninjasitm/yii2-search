@@ -1,13 +1,13 @@
 <?php
 
-namespace nitm\module\models\search;
+namespace nitm\models\search;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use nitm\module\models\Revisions as RevisionsModel;
+use nitm\models\Revisions as RevisionsModel;
 
 /**
- * Revisions represents the model behind the search form about `nitm\module\models\Revisions`.
+ * Revisions represents the model behind the search form about `nitm\models\Revisions`.
  */
 class Revisions extends Model
 {

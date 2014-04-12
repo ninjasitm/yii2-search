@@ -1,14 +1,13 @@
 <?php
 
-namespace nitm\module\controllers;
+namespace nitm\controllers;
 
 use Yii;
 use yii\web\NotFoundHttpException;
-use yii\web\VerbFilter;
-use nitm\module\models\Revisions;
-use nitm\module\models\search\Revisions as RevisionsSearch;
+use nitm\models\Revisions;
+use nitm\models\search\Revisions as RevisionsSearch;
 use nitm\widgets\revisions\widget\Revisions as RevisionsWidget;
-use nitm\module\controllers\DefaultController;
+use nitm\controllers\DefaultController;
 
 /**
  * RevisionsController implements the CRUD actions for Revisions model.
@@ -19,7 +18,7 @@ class RevisionsController extends DefaultController
     {
         return [
             'verbs' => [
-                'class' => VerbFilter::className(),
+                'class' => \yii\filters\VerbFilter::className(),
                 'actions' => [
                     'delete' => ['post'],
                 ],

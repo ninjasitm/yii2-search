@@ -102,6 +102,6 @@ a.desc:after { content: /*"\e114"*/"\e152"; }
 	height: 90%;
 }
 
-.ui-autocomplete {
-	z-index: 10000;
+ul.ui-autocomplete, div.select2-drop {
+	z-index: 1000000;
 }

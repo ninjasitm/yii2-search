@@ -1,11 +1,11 @@
 <?php
 
-namespace nitm\module\helpers;
+namespace nitm\helpers;
 
 use yii\db\ActiveRecord;
 use yii\base\Model;
 
-//class that sets up and retrieves, deletes and handles modifying of contact data
+
 class Helper extends Model
 {
 	//data and logic flags

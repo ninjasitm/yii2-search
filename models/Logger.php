@@ -1,14 +1,11 @@
 <?php
 
-namespace nitm\module\models;
+namespace nitm\models;
 
 use yii\base\Model;
-use nitm\module\helpers\Session;
+use nitm\helpers\Session;
+use nitm\helpers\Network;
 
-if(!defined('AUTH_DOMAIN'))
-{
-	define('AUTH_DOMAIN', 'securer.'.str_replace('.', '', @$_SERVER['HTTP_HOST']));
-}
 class Logger extends DB
 {
 	//constant data

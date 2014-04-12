@@ -2,18 +2,12 @@
 function Configuration(items)
 {	
 	var self = this;
-	this.classes = {
-		warning: 'alert alert-warning',
-		success: 'alert alert-success',
-		information: 'alert alert-info',
-		error: 'alert alert-info',
-	};
 	this.views = {
 		containers: {
 			section: 'sections_container',
 			configuration: 'configuration_container',
 			showSection: 'show_section',
-			addValue: 'add_value_container'
+			createValue: 'create_value_container'
 		}
 	};
 	this.type = {
@@ -22,22 +16,22 @@ function Configuration(items)
 	};
 	this.forms = {
 		confirmThese: [
-			'delete_section', 
-			'delete_value',
+			'deleteSection', 
+			'deleteValue',
 		],
-		allowAdd: ['add_new_value'],
+		allowCreate: ['createNewValue'],
 		actions : {
-			add: '/configuration/add',
+			create: '/configuration/create',
 			del: '/configuration/delete',
-			edit: '/configuration/edit',
+			update: '/configuration/update',
 			undelete: '/configuration/undelete'
 		}
 	};
 	this.buttons = {
-		allowUpdate: ['edit_field_button']
+		allowUpdate: ['updateFieldButton']
 	};
 	this.blocks = {
-		allowUpdate: ['edit_field_div']
+		allowUpdate: ['updateFieldDiv']
 	};
 	this.dropdowns = {
 		submitOnChange: [
@@ -99,7 +93,7 @@ function Configuration(items)
 					var message = "Are you sure you want to delete section: "+value;
 					break;
 					
-					case 'delete_value':
+					case 'deleteValue':
 					var message = $(this).find(':submit').attr('title');
 					break;
 				}
@@ -115,28 +109,28 @@ function Configuration(items)
 	}
 	
 	this.prepareUpdating = function (container) {	
-		var container = (container == undefined) ? '' : container;
+		var container = (container == undefined) ? 'body' : container;
 		this.buttons.allowUpdate.map(function (v) {
-			var button = $nitm.getObj(container+"[role='"+v+"']");
+			var button = $nitm.getObj(container+' '+"[role='"+v+"']");
 			button.on('click', function (e) {
 				e.preventDefault();
-				self.edit(this);
+				self.update(this);
 			});
 		});
 		
 		this.blocks.allowUpdate.map(function (v) {
-			var block = $nitm.getObj(container+"[role='"+v+"']");
-			fn = function (e) {
-				self.edit(this);
+			var block = $nitm.getObj(container+' '+"[role='"+v+"']");
+			var fn = function (e) {
+				self.update(this);
 			};
 			block.on('click', fn);
 			block.data('action', fn);
 		});
 	}
 	
-	this.prepareAdding = function (container) {
+	this.prepareCreateing = function (container) {
 		var container = (container == undefined) ? 'body' : container;
-		this.forms.allowAdd.map(function (v) {
+		this.forms.allowCreate.map(function (v) {
 			var form = $nitm.getObj(container+" "+"form[role='"+v+"']");
 			form.off('submit');
 			form.on('submit', function (e) {
@@ -165,8 +159,8 @@ function Configuration(items)
 							self.afterGet(result);
 							break;
 								
-							case 'edit':
-							self.afterEdit(result);
+							case 'update':
+							self.afterUpdate(result);
 							break;
 								
 							case 'delete':
@@ -175,12 +169,13 @@ function Configuration(items)
 								
 							case 'create':
 							case 'undelete':
-							self.afterAdd(result, form);
+							self.afterCreate(result, form);
 							break;
 						}
 					},
 					function () {
-						$nitm.notify('Error Could not perform configuration action. Please try again', self.classes.error, false);
+						$nitm.notify('Error Could not perform configuration action. Please try again', $nitm.classes.error, false);
+						//try { self.restore(form);} catch(error) {}
 					}
 				);
 				break;
@@ -188,13 +183,13 @@ function Configuration(items)
 	}
 	
 	this.afterGet = function(result) {
-		var nClass = self.classes.warning;
+		var nClass = $nitm.classes.warning;
 		if(result.data)
 		{
 			message = 'Successfully loaded clean configuration information';
-			nClass = self.classes.success;
+			nClass = $nitm.classes.success;
 			var container = $('#'+self.views.containers.section).html(result.data);
-			var triggers = ['edit_field_div', 'edit_field_button'];
+			var triggers = ['updateFieldDiv', 'updateFieldButton'];
 			$.map(triggers, function (v) {
 				container.find("[role='"+v+"']").map(function (e) {
 					switch(new String(this.tagName).toLowerCase())
@@ -208,7 +203,7 @@ function Configuration(items)
 							break;
 					}
 					var fn = function (e) {
-						self.edit(elem);
+						self.update(elem);
 					};
 					$(this).on('click', function (e) {
 						fn();
@@ -217,8 +212,8 @@ function Configuration(items)
 				})
 			});
 			self.prepareDeleting('#'+self.views.containers.configuration, result);
-			self.prepareAdding('#'+self.views.containers.section);
-			self.prepareUpdating('#'+self.views.containers.section);
+			//self.prepareCreateing('#'+self.views.containers.section);
+			//self.prepareUpdating('#'+self.views.containers.section);
 		}
 		else
 		{
@@ -227,24 +222,24 @@ function Configuration(items)
 		$nitm.notify(message, nClass, false);
 	}
 	
-	this.afterAdd = function(result, form) {
-		var nClass = self.classes.warning;
+	this.afterCreate = function(result, form) {
+		var nClass = $nitm.classes.warning;
 		if(result.success)
 		{
-			nClass = self.classes.success;
+			nClass = $nitm.classes.success;
 		}
 		$nitm.notify(result.message, nClass, false);
 		var _form = $(form);
 		switch(_form.attr('role'))
 		{
-			case 'undelete_value':
+			case 'undeleteValue':
 			switch(result.success)
 			{
 				case true:
-				//if this value was recently deleted and is now re-added then enabled deleting
+				//if this value was recently deleted and is now re-createed then enabled deleting
 				_form.find(':submit').removeClass('').addClass('btn btn-danger').html('del');
 				_form.attr('action', self.forms.actions.del);
-				_form.attr('role', 'delete_value');
+				_form.attr('role', 'deleteValue');
 				_form.find(':input').attr('disabled', false);
 				$nitm.getObj('value_'+result.container).removeClass('disabled');
 				break;
@@ -252,23 +247,23 @@ function Configuration(items)
 			break;
 			
 			default:
-			$('#'+self.views.containers.addValue).before($(result.data));
+			$('#'+self.views.containers.createValue).before($(result.data));
 			self.prepareDeleting('#'+'value_'+result.unique_id);
 			self.prepareUpdating('#'+'value_'+result.unique_id);
 			break;
 		}
 	}
 	
-	this.afterEdit = function (result) {
-		var nClass = self.classes.warning;
-		var iClass = self.classes.information;
+	this.afterUpdate = function (result) {
+		var nClass = $nitm.classes.warning;
+		var iClass = $nitm.classes.information;
 		if(result.success)
 		{
-			nClass = self.classes.success;
+			nClass = $nitm.classes.success;
 		}
 		else
 		{
-			iClass = self.classes.warning;
+			iClass = $nitm.classes.warning;
 			$nitm.getObj(result.container+'.div').html(result.old_value);
 		}
 		$nitm.getObj(result.container+'.div').removeClass().addClass(iClass);
@@ -276,10 +271,10 @@ function Configuration(items)
 	}
 	
 	this.afterDelete = function(result, form) {
-		var nClass = self.classes.warning;
+		var nClass = $nitm.classes.warning;
 		if(result.success)
 		{
-			nClass = self.classes.success;
+			nClass = $nitm.classes.success;
 		}
 		$nitm.notify(result.message, nClass, false);
 		switch(result.success)
@@ -296,14 +291,14 @@ function Configuration(items)
 				default:
 				_form.find(':submit').removeClass().addClass('btn btn-warning').html('undel').attr('title', "Are you sure you want to undelete this value?");
 				_form.attr('action', self.forms.actions.undelete);
-				_form.attr('role', 'undelete_value');
+				_form.attr('role', 'undeleteValue');
 				_form.append("<input type='hidden' name='Configer[cfg_v\]' id='configer-cfg_v' value='"+$nitm.getObj(result.container+'.div').html()+"'/>");
 				var container = $nitm.getObj('value_'+result.container);
 				container.addClass('disabled');
 				container.children().map(function() {
 					switch($(this).attr('role'))
 					{
-						case 'undelete_value':
+						case 'undeleteValue':
 						break;
 						
 						default:
@@ -315,6 +310,16 @@ function Configuration(items)
 			}
 			break;
 		}
+	}
+	
+	this.restore = function(form) {
+		try {
+			var cellId = $(form).find('input[name="cellId"]').val();
+			var oldData = $(form).find('input[name="oldValue"]').val();
+			var container = $(form).find('input[name="container"]').val();
+			$nitm.getObj(cellId).html(oldData.stripslashes());
+		} catch(error) {}
+		//$nitm.getObj(cellId).on('click', $nitm.getObj(cellId).data('action'));
 	}
 	
 	this.parse = function(form) {
@@ -341,7 +346,7 @@ function Configuration(items)
 			/*input = $('<div id="'+cellId+'">'+newData+'</div>');
 			 *	input.off('click');
 			 *	input.on('click', function () {
-			 *		self.edit($nitm.getObj(cellId));
+			 *		self.update($nitm.getObj(cellId));
 		});*/
 			//$nitm.getObj(container).html(newData);
 		}
@@ -362,14 +367,14 @@ function Configuration(items)
 				newData = '';
 			}
 			newData = newData.toString();
-			var form = $nitm.getObj('edit_value_form_'+container);
+			var form = $nitm.getObj('update_value_form_'+container);
 			form.find("[role='value']").val(newData);
 			self.operation(form.get(0));
 			$nitm.getObj(cellId).css('border','none');
 			/*var container = $nitm.getObj(cellId).html('<div id="'+cellId+'">'+newData+'</div>');
 			 *	container.off('click');
 			 *	container.on('click', function () {
-			 *		self.edit($nitm.getObj(cellId));
+			 *		self.update($nitm.getObj(cellId));
 		});*/
 		}
 		$nitm.getObj(cellId).html(newData.stripslashes());
@@ -378,7 +383,7 @@ function Configuration(items)
 		
 	}
 	
-	this.edit = function (elem) {
+	this.update = function (elem) {
 		var id = $(elem).prop('id');
 		var container = $(elem).data('id');
 		var type = $(elem).data('type');
@@ -388,12 +393,12 @@ function Configuration(items)
 		switch(type)
 		{
 			case 'xml':
-				var style = 'font-weight:normal;font-size:12pt;';
-				break;
+			var style = 'font-weight:normal;font-size:12pt;';
+			break;
 				
 			default:
-				var style = 'font-weight:normal;font-size:12pt;';
-				break;
+			var style = 'font-weight:normal;font-size:12pt;';
+			break;
 		}
 		form = $("<form name='activeForm' id='activeForm_"+container+"' class='form-horizontal' onsubmit='return false;'></form><br>");
 		form.append("<input type='hidden' name='container' value='"+container+"'>");
@@ -440,7 +445,7 @@ String.prototype.trim = function () {
   return this.replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1");
 }
 
-String.prototype.addslashes = function() {
+String.prototype.createslashes = function() {
 	return this.replace(/([\\\"\'\.])/g, "\\$1").replace(/\u0000/g, "\\0");
 }
 

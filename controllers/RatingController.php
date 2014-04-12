@@ -1,10 +1,10 @@
 <?php
 
-namespace nitm\module\controllers;
+namespace nitm\controllers;
 
-use nitm\module\models\Rating;
+use nitm\models\Rating;
 
-class RatingController extends \nitm\module\controllers\DefaultController
+class RatingController extends \nitm\controllers\DefaultController
 {
 	
 	public function behaviors()

@@ -30,9 +30,9 @@ $this->params['breadcrumbs'][] = $this->title;
 		'attributes' => [
 			'id',
 			[
-				'attribute' => 'userid',
-				'name' => 'userid',
-				'value' => \nitm\module\models\api\Token::getUserName($model),
+				'attribute' => 'user_id',
+				'name' => 'user_id',
+				'value' => $model->getUserName(),
 			],
 			'token:ntext',
 			'added',

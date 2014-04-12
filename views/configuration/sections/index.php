@@ -42,7 +42,7 @@ use yii\widgets\ActiveField;
         <?php $form = ActiveForm::begin(['id' => 'delete_section',
                         'action' => '/configuration/delete',
                         'options' => ['class' => 'form-inline',
-                        'role' => 'delete_section'],
+                        'role' => 'deleteSection'],
                         'fieldConfig' => [
                                 'inputOptions' => ['class' => 'form-control']
                                 ],
@@ -70,9 +70,9 @@ use yii\widgets\ActiveField;
     <div class="col-md-12 col-lg-12">
         <div class="bottom">
             <hr>
-            <h4>Add a new section to the configuration</h4>
+            <h4>Create a new section to the configuration</h4>
             <?php $form = ActiveForm::begin(['id' => 'new_section',
-                            'action' => '/configuration/add',
+                            'action' => '/configuration/create',
                             'options' => ['class' => 'form-inline' ],
                             'fieldConfig' => [
                                     'inputOptions' => ['class' => 'form-control pull-left']
@@ -86,7 +86,7 @@ use yii\widgets\ActiveField;
             <?php
                 echo Html::activeHiddenInput($model, 'cfg_w', array('value' => "section"));
                 echo Html::activeHiddenInput($model, 'cfg_c', array('value' => $model->config['current']['container']));
-                echo Html::submitButton('Add Section', array('class' => 'btn btn-primary'));
+                echo Html::submitButton('Create Section', array('class' => 'btn btn-primary'));
             ?>
             <?php ActiveForm::end(); ?>
         </div>

@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\models\security;
+namespace nitm\models\security;
 
 use \yii\helpers\Security;
 
@@ -219,7 +219,7 @@ class Fingerprint extends Security
 	*/
 	private static function logEvent() 
 	{
-		$log = new \nitm\module\models\Logger();
+		$log = new \nitm\models\Logger();
 		/* Log events to a text file for troubleshooting analysis */
 		$header = date("Y.m.d H:i:s (l)") . ': START\n';
 		$footer = date("Y.m.d H:i:s (l)") . ': END\n';

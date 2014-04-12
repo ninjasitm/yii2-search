@@ -12,6 +12,9 @@ $this->params['breadcrumbs'][] = ['label' => 'Tokens', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="token-create">
+	<?= yii\widgets\Breadcrumbs::widget([
+		'links' => $this->params['breadcrumbs']
+	]); ?>
 
 	<h1><?= Html::encode($this->title) ?></h1>
 

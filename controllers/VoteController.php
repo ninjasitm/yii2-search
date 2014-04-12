@@ -1,15 +1,15 @@
 <?php
 
-namespace nitm\module\controllers;
+namespace nitm\controllers;
 
-use nitm\module\models\Vote;
+use nitm\models\Vote;
 
 /**
  * Upvoting based on democratic one vote per user system
  *
  */
 
-class VoteController extends \nitm\module\controllers\DefaultController
+class VoteController extends \nitm\controllers\DefaultController
 {
 	
 	public function behaviors()

@@ -65,8 +65,8 @@ use yii\widgets\ActiveForm;
 		</div>
 </div>
 <div class="well">
-<?php $form = ActiveForm::begin(['id' => 'container_add',
-				 'action' => '/configuration/add',
+<?php $form = ActiveForm::begin(['id' => 'container_create',
+				 'action' => '/configuration/create',
 				 'options' => [
 					       'class' => 'form-inline',
 					       ],
@@ -78,11 +78,11 @@ use yii\widgets\ActiveForm;
 
 		<div class="form-group">
 		<?=
-				$form->field($model, 'cfg_v')->textInput(array('placeholder' => 'Container name...'))->label("Add a new container");
+				$form->field($model, 'cfg_v')->textInput(array('placeholder' => 'Container name...'))->label("Create a new container");
 		?>
 		<?php
 				echo Html::activeHiddenInput($model, 'cfg_w', array('value' => 'container'));
-				echo Html::submitButton('Add Container', array('class' => 'btn btn-primary pull-right'));
+				echo Html::submitButton('Create Container', array('class' => 'btn btn-primary pull-right'));
 		?>
 		</div>
 <?php ActiveForm::end(); ?>

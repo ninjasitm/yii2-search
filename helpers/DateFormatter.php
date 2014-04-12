@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\helpers;
+namespace nitm\helpers;
 
 /**
  * This is a utility classs for date formatting

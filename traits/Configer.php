@@ -1,7 +1,7 @@
 <?php
-namespace nitm\module\traits;
+namespace nitm\traits;
 
-use nitm\module\helpers\Session;
+use nitm\helpers\Session;
 
  /**
   * Configuration traits that can be shared

@@ -1,16 +1,16 @@
 <?php
 
-namespace nitm\module;
+namespace nitm;
 
-use nitm\module\helpers\Session;
-use nitm\module\models\DB;
+use nitm\helpers\Session;
+use nitm\models\DB;
 
 class Module extends \yii\base\Module
 {
-	public $controllerNamespace = 'nitm\module\controllers';
+	public $controllerNamespace = 'nitm\controllers';
 	
 	/*
-	 * @var array options for nitm\module\models\Configer
+	 * @var array options for nitm\models\Configer
 	 */
 	public $configOptions = [
 		'dir' => './config/ini/',
@@ -19,7 +19,7 @@ class Module extends \yii\base\Module
 	];
 	
 	/*
-	 * @var array options for nitm\module\models\Logger
+	 * @var array options for nitm\models\Logger
 	 */
 	public $logOptions = [
 		'db' => null,
@@ -27,12 +27,12 @@ class Module extends \yii\base\Module
 	];
 	
 	/*
-	 * @var nitm\module\models\Configer object
+	 * @var nitm\models\Configer object
 	 */
 	public $configModel;
 	
 	/*
-	 * @var nitm\module\models\Logger object
+	 * @var nitm\models\Logger object
 	 */
 	public $logModel;
 
@@ -48,7 +48,7 @@ class Module extends \yii\base\Module
 		/**
 		 * Aliases for nitm module
 		 */
-		\Yii::setAlias('@nitm', dirname(__DIR__)."/yii2-nitm-module");
-		\Yii::setAlias('@nitm/widgets', dirname(__DIR__)."/yii2-nitm-widgets");
+		\Yii::setAlias('nitm', dirname(__DIR__)."/yii2-nitm-module");
+		\Yii::setAlias('nitm/widgets', dirname(__DIR__)."/yii2-nitm-widgets");
 	}
 }

@@ -1,18 +1,19 @@
 <?php
 
-namespace nitm\module\controllers;
+namespace nitm\controllers;
 
 use yii\web\NotFoundHttpException;
-use yii\web\VerbFilter;
-use nitm\module\models\search\Token as TokenSearch;
-use nitm\module\models\api\Token;
-use nitm\module\interfaces\DefaultControllerInterface;
+use nitm\models\search\Token as TokenSearch;
+use nitm\models\api\Token;
+use nitm\interfaces\DefaultControllerInterface;
 
 /**
  * TokenController implements the CRUD actions for Token model.
  */
 class TokenController extends DefaultController implements DefaultControllerInterface
 {
+	use \nitm\traits\Widgets;
+	
 	public $legend = [
 		'success' => 'Active Token',
 		'danger' => 'Revoked Token',
@@ -23,13 +24,13 @@ class TokenController extends DefaultController implements DefaultControllerInte
 	{
 		return [
 			'verbs' => [
-				'class' => VerbFilter::className(),
+				'class' => \yii\filters\VerbFilter::className(),
 				'actions' => [
 					'delete' => ['post'],
 				],
 			],
 			'access' => [
-				'class' => \yii\web\AccessControl::className(),
+				'class' => \yii\filters\AccessControl::className(),
 				'rules' => [
 					[
 						'actions' => ['login', 'error'],

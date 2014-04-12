@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\interfaces;
+namespace nitm\interfaces;
 
 /**
 	This interface returns custom values based on certain scenarios

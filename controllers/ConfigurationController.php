@@ -1,12 +1,12 @@
 <?php
 
-namespace nitm\module\controllers;
+namespace nitm\controllers;
 
 use Yii;
-use nitm\module\helpers\Helper;
-use nitm\module\helpers\Session;
-use nitm\module\models\Configer;
-use nitm\module\interfaces\DefaultControllerInterface;
+use nitm\helpers\Helper;
+use nitm\helpers\Session;
+use nitm\models\Configer;
+use nitm\interfaces\DefaultControllerInterface;
 
 class ConfigurationController extends DefaultController implements DefaultControllerInterface
 {
@@ -24,7 +24,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		$behaviors = [
 			'access' => [
 				'class' => \yii\filters\AccessControl::className(),
-				//'only' => ['index', 'edit', 'add', 'index', 'get', 'delete', 'convert', 'undelete'],
+				//'only' => ['index', 'update', 'create', 'index', 'get', 'delete', 'convert', 'undelete'],
 				'rules' => [
 					[
 						'actions' => ['login', 'error'],
@@ -32,7 +32,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 						'roles' => ['?']
 					],
 					[
-						'actions' => ['index',  'add',  'edit',  'delete', 'get','convert', 'undelete'],
+						'actions' => ['index',  'create',  'update',  'delete', 'get','convert', 'undelete'],
 						'allow' => true,
 						'roles' => ['@'],
 					],
@@ -44,8 +44,8 @@ class ConfigurationController extends DefaultController implements DefaultContro
 					'index' => ['get'],
 					'delete' => ['post'],
 					'undelete' => ['post'],
-					'add' => ['post'],
-					'edit' => ['post'],
+					'create' => ['post'],
+					'update' => ['post'],
 					'convert' => ['post'],
 				],
 			],
@@ -138,11 +138,11 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		$name = explode('.', $_REQUEST[$this->model->formName()]['cfg_n']);
 		$_REQUEST[$this->model->formName()]['cfg_s'] = array_shift($section);
 		$_REQUEST[$this->model->formName()]['cfg_n'] = array_pop($name);
-		$this->action->id = 'add';
-		$this->actionAdd();
+		$this->action->id = 'create';
+		$this->actionCreate();
 	}
 	
-	public function actionAdd()
+	public function actionCreate()
 	{
 		switch(isset($_REQUEST[$this->model->formName()]))
 		{
@@ -160,12 +160,12 @@ class ConfigurationController extends DefaultController implements DefaultContro
 				case true:
 				switch($this->model->getScenario())
 				{
-					case 'addContainer':
+					case 'createContainer':
 					$this->model->createContainer($this->model->cfg_v, null, $this->model->cfg_e);
 					break;
 					
-					case 'addValue':
-					$view['data']['data'] = $this->model->add($this->model->cfg_s.'.'.$this->model->cfg_n,
+					case 'createValue':
+					$view['data']['data'] = $this->model->create($this->model->cfg_s.'.'.$this->model->cfg_n,
 							$this->model->cfg_v,
 							$this->model->cfg_c,
 							null,
@@ -181,8 +181,8 @@ class ConfigurationController extends DefaultController implements DefaultContro
 							];
 					break;
 					
-					case 'addSection':
-					$this->model->add($this->model->cfg_v,
+					case 'createSection':
+					$this->model->create($this->model->cfg_v,
 							null,
 							$this->model->cfg_c,
 							null,
@@ -271,7 +271,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 				switch($this->model->getScenario())
 				{
 					case 'deleteContainer':
-					//$this->model->edit_container($this->model->cfg_v);
+					//$this->model->update_container($this->model->cfg_v);
 					break;
 					
 					case 'deleteValue':
@@ -296,7 +296,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		$this->finalAction();
 	}
 	
-	public function actionEdit()
+	public function actionUpdate()
 	{
 		switch(isset($_REQUEST[$this->model->formName()]))
 		{
@@ -314,20 +314,25 @@ class ConfigurationController extends DefaultController implements DefaultContro
 				case true:
 				switch($this->model->getScenario())
 				{
-					case 'editContainer':
-					//$this->model->edit_container($this->model->cfg_v);
+					case 'updateContainer':
+					//$this->model->update_container($this->model->cfg_v);
 					break;
 					
-					case 'editValue':
-					$this->model->edit($this->model->cfg_n,
+					case 'updateValue':
+					if (is_array($this->model->cfg_c)) 
+					{
+						print_r($this->model->cfg_c); 
+						exit;
+					}
+					$this->model->update($this->model->cfg_n,
 							$this->model->cfg_v,
 							$this->model->cfg_c,
 							null,
 							$this->model->cfg_e);
 					break;
 					
-					case 'editSection':
-					/*$this->model->add($this->model->cfg_v,
+					case 'updateSection':
+					/*$this->model->create($this->model->cfg_v,
 							null,
 							$this->model->cfg_c);*/
 					break;

@@ -1,13 +1,13 @@
 <?php
 
-namespace nitm\module\controllers;
+namespace nitm\controllers;
 
 use Yii;
 use yii\web\Controller;
 use yii\web\BadRequestHttpException;
 use yii\helpers\Security;
-use nitm\module\models\Helper;
-use nitm\module\models\Replies;
+use nitm\models\Helper;
+use nitm\models\Replies;
 
 class ReplyController extends DefaultController
 {	
@@ -26,7 +26,7 @@ class ReplyController extends DefaultController
 				],
 			],
 			"Helper" => array(
-				"class" => \nitm\module\models\Helper::className(),
+				"class" => \nitm\models\Helper::className(),
 			),
 		];
 	}
@@ -42,7 +42,7 @@ class ReplyController extends DefaultController
 	
 	public function init()
 	{
-		$this->model = new \nitm\module\models\Replies();
+		$this->model = new \nitm\models\Replies();
 	}
 
 	public function actionNew()
@@ -106,15 +106,15 @@ class ReplyController extends DefaultController
 		echo $this->renderResponse($ret_val, $this->_view);	
 	}
 	
-	public function actionHide($unique)
+	public function actionHide($id)
 	{
 		$ret_val = [
-			'id' => $unique,
+			'id' => $id,
 			'success' => false,
 			'message' => 'Unable to hide reply',
 			'action' => 'unhide'
 		];
-		$this->model = $this->model->find($unique);
+		$this->model = $this->model->find($id);
 		$this->model->setScenario('hide');
 		$this->model->hidden = !$this->model->hidden;
 		switch($this->model->save())

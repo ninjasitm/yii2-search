@@ -4,7 +4,7 @@
  * @copyright Copyright (c) 2014 NITM Inc
  */
 
-namespace nitm\module\assets;
+namespace nitm\assets;
 
 use yii\web\AssetBundle;
 

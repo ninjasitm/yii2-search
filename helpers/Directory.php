@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\helpers;
+namespace nitm\helpers;
 
 use yii\base\Behavior;
 

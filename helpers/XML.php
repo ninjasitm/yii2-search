@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\helpers;
+namespace nitm\helpers;
 
 use yii\db\ActiveRecord;
 use yii\base\Behavior;
@@ -13,7 +13,7 @@ class XML extends Behavior
 	 * Function to iterate over a SimpleXML object
 	 * @param SimpleXML $simplexml = SimpleXML object
 	 */
-	public static function extract_simple_xml($simplexml)
+	public static function extract($simplexml)
 	{
 		$ret_val = false;
 		switch(!($simplexml->children()))

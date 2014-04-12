@@ -27,31 +27,3 @@ use yii\helpers\Html;
 							"section" => $parent,
 							"container" => $model->config['current']['container']));
 ?>
-
-<?php if(@is_array($this->js)) : ?>
-<?php
-	$aman = $this->getAssetManager();
-	array_walk($aman->bundles, function ($bundle) use($aman){
-		 foreach($bundle->js as $file)
-		 {
-			 //Only load the validtion scripts
-			 switch($file)
-			 {
-				case 'yii.validation.js':
-				case 'yii.activeForm.js':
-				$aman->publish($bundle->sourcePath);
-				echo Html::jsFile($aman->getPublishedUrl($bundle->sourcePath)."/".$file)."\n";
-				break;
-			 }
-		 }
-	});
-?>
-<script type="text/javascript">
-<?php
-	array_walk($this->js[static::POS_READY], function ($v) {
-		echo $v;
-	});
-?>
-
-</script>
-<?php endif; ?>

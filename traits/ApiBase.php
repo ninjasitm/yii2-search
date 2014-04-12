@@ -1,9 +1,9 @@
 <?php
-namespace nitm\module\traits;
+namespace nitm\traits;
 
 /**
  * Class Provisioning
- * @package nitm\module\models
+ * @package nitm\models
  *
  * @property string $type The type of item being added
  * @property string $in The context we're in
@@ -82,7 +82,7 @@ trait ApiBase
 		switch(empty(self::$type) || $parentOnly)
 		{
 			case false:
-			$class = "\nitm\module\models\descriptors\\".self::safeName(self::$type);
+			$class = "\nitm\models\descriptors\\".self::safeName(self::$type);
 			$method = "filters";
 			$filters = $class::$method();
 			break;
@@ -187,7 +187,7 @@ trait ApiBase
 		$ret_val = array();
 		$class = static::$_descriptors.self::safeName(self::$type);
 		$db = $class::categoriesLocation();
-		$data = new \nitm\module\models\Data(self::$type, $for);
+		$data = new \nitm\models\Data(self::$type, $for);
 		$data->changeDb($db['db'], $db['table']);
 		$categories = $data->getRecords();
 		$columnSelector = $for."Columns";

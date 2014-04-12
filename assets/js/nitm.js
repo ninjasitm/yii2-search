@@ -9,8 +9,14 @@ if (typeof jQuery === 'undefined') { throw new Error('Nitm\'s JavaScript require
 function Nitm ()
 {
 	var self = this;
-	var r = {'url':'/r/', 'type':'POST', 'dataType':'json'};
-	var responseSection = 'alert';
+	this.r = {'url':'/r/', 'type':'POST', 'dataType':'json'};
+	this.responseSection = 'alert';
+	this.classes = {
+		warning: 'alert alert-warning',
+		success: 'alert alert-success',
+		information: 'alert alert-info',
+		error: 'alert alert-info',
+	};
 
 	/* gap is in millisecs */
 	this.delay = function(gap) { 
@@ -37,8 +43,8 @@ function Nitm ()
 	
 	this.animateScroll = function (elem, parent, highlight, highlight_class)
 	{
-		var element = $(this.getObj('#'+elem).get(0));
-		var container = this.getObj('#'+((!parent) ? element.parent().attr('id') : parent));
+		var element = $(this.getObj(elem).get(0));
+		var container = this.getObj(((!parent) ? element.parent().attr('id') : parent));
 		switch(true)
 		{
 			case (element.position().top > container.height()) && (element.position().top < 0):
@@ -62,20 +68,21 @@ function Nitm ()
 		});
 	}
 	
-	this.animateSubmit = function (_form, before)
+	this.animateSubmit = function (form, before)
 	{
+		var _form = getObj(form);
 		switch(1)
 		{
-			case this.getObj("#"+_form+" input[type='submit']", null, false, false).get(0) !== undefined:
-			var submit_method = "#"+_form+" input[type='submit']";
+			case _form.find("input[type='submit']").get(0) !== undefined:
+			var button = _form.find("input[type='submit']");
 			break;
 			
-			case this.getObj('#'+_form+" button[type=submit]", null, false, false).get(0) !== undefined:
-			var submit_method = "#"+_form+" button[type='submit']";
+			case _form.find("button[type='submit']").get(0) !== undefined:
+			var button = _form.find("button[type='submit']");
 			break;
 			
 			default:
-			var submit_method = "#"+_form+" input[type='image']";
+			var button = _form.find("input[type='image']");
 			break;
 		}
 		switch(before)
@@ -83,7 +90,6 @@ function Nitm ()
 			case true:
 			try
 			{
-				var button = this.getObj(submit_method, null, false, false);
 				button.attr('oldtype', button.attr('type'));
 				button.attr('type', 'image');
 				button.attr('oldsrc', button.attr('src'));
@@ -97,7 +103,6 @@ function Nitm ()
 			default:
 			try
 			{
-				var button = this.getObj(submit_method, null, false, false);
 				button.attr('src', button.attr('oldsrc'));
 				button.attr('onclick', button.attr('oldonclick'));
 				button.attr('type', button.attr('oldtype'));
@@ -142,20 +147,6 @@ function Nitm ()
 		}
 		return dumped_text;
 	} 
-	
-	this.notify = function (nMsg, nClass, nApp)
-	{
-		var nMessage = new String(nMsg);
-		if(nMessage.length <= 5)
-		{
-			return false;
-		}
-		else
-		{
-			this.getObj(responseSection).removeClass().addClass(nClass);
-			this.getObj(responseSection).html(nMessage);
-		}
-	}
 		
 	this.objectLength = function (obj)
 	{
@@ -178,6 +169,20 @@ function Nitm ()
 		return count;
 	}
 	
+	this.notify = function (nMsg, nClass, nApp)
+	{
+		var nMessage = new String(nMsg);
+		if(nMessage.length <= 5)
+		{
+			return false;
+		}
+		else
+		{
+			this.getObj(this.responseSection).removeClass().addClass(nClass);
+			this.getObj(this.responseSection).html(nMessage);
+		}
+	}
+	
 	this.updateSingle = function (uMsg, uClass, uApp, uID)
 	{
 		var uMessage = new String(uMsg);
@@ -195,7 +200,7 @@ function Nitm ()
 	
 	this.clearNotify = function ()
 	{
-		this.getObj(responseSection).html("");
+		this.getObj(this.responseSection).html("");
 	}
 	
 	//function fo focus items with special box
@@ -340,13 +345,23 @@ function Nitm ()
 	this.getObj = function (selector, by, alert_obj, esc)
 	{
 		esc = (esc == undefined) ? true : esc;
-		switch(typeof selector)
+		if(selector instanceof jQuery)
 		{
-			case 'string':
-			case 'number':
-			break;
-			
-			case 'object':
+			try
+			{
+				switch(!selector.attr('id'))
+				{
+					case true:
+					uniqueId = new Date().getTime();
+					$(selector).attr('id', 'object'+uniqueId);
+					break;
+				}
+			} catch (error) {};
+			selector = selector.attr('id');
+		} else if((typeof HTMLElement === "object" && selector instanceof HTMLElement) || //DOM2
+			(selector && typeof selector === "object" && 
+			selector !== null && selector.nodeType === 1 && 
+			typeof selector.nodeName==="string")) {
 			try
 			{
 				switch(!selector.id)
@@ -358,11 +373,17 @@ function Nitm ()
 				}
 			} catch (error) {};
 			selector = selector.id;
-			break;
-			
-			default:
-			return false;
-			break;
+		} else {
+			switch(typeof selector)
+			{
+				case 'string':
+				case 'number':
+				break;
+				
+				default:
+				return false;
+				break;
+			}
 		}
 		selector = (esc === true) ? this.jqEscape(selector) : selector;
 		switch(by)
@@ -425,21 +446,21 @@ function Nitm ()
 	
 	this.doRequest = function (rUrl, rData, success, error, timeout, headers)
 	{
-		switch(r.hasOwnProperty('token'))
+		switch(this.r.hasOwnProperty('token'))
 		{
 			case true:
-			r.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Basic "+r.token);};
+			this.r.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Basic "+this.r.token);};
 			break;
 		}
 		if (rUrl != undefined) {
 			//code
-			r.url = rUrl;
+			this.r.url = rUrl;
 		}
-		r.data = rData;
-		r.success = success;
-		r.error = (error == undefined) ? function (e) { console.log(e) } : error;
-		r.timeout = (timeout !== undefined) ? timeout : 30000;
-		r.type = 'POST';
+		this.r.data = rData;
+		this.r.success = success;
+		this.r.error = (error == undefined) ? function (e) { console.log(e) } : error;
+		this.r.timeout = (timeout !== undefined) ? timeout : 30000;
+		this.r.type = 'POST';
 		if(headers != undefined)
 		{
 			for(var key in headers)
@@ -447,7 +468,7 @@ function Nitm ()
 				r[key] = headers[key];
 			}
 		}
-		var ret_val = $.ajax(r);
+		var ret_val = $.ajax(this.r);
 		return ret_val;
 	}
 	
@@ -661,96 +682,93 @@ function Nitm ()
 		});
 	}
 	
-	this.place = function (newElem, data, addTo, format, clear)
+	this.place = function (newElem, data, addToElem, format, clear)
 	{
 		switch(typeof(newElem))
 		{
 			case 'object':
-			switch(newElem.insert)
+			var addTo = self.getObj(addToElem);
+			var scrollToPos = 0;
+			switch(format)
 			{
-				case true:
-				var scrollToPos = 0;
-				switch(format)
+				case 'text':
+				var newElement = $('<div style="width:100%; padding:10px;" id="text_result"><br>'+data+'</div>');
+				scrollToPos = newElement.get(0).id;
+				break;
+				
+				default:
+				var newElement = $(data);
+				scrollToPos = newElement.get(0).id;
+				break;
+			}
+			switch(typeof clear)
+			{
+				case 'string':
+				addTo.find(clear).html('');
+				break;
+				
+				case 'boolean':
+				if(clear === true) {addTo.html('')};
+				break;
+			}
+			if(newElem.prepend === true) {
+				try 
 				{
-					case 'text':
-					var newElement = $('<div style="width:100%; padding:10px;" id="text_result"><br>'+data+'</div>');
-					scrollToPos = newElement.get(0).id;
-					break;
-					
-					default:
-					var newElement = $(data);
-					scrollToPos = newElement.get(0).id;
-					break;
-				}
-				switch(typeof clear)
-				{
-					case 'string':
-					$('#'+addTo).find(clear).html('');
-					break;
-					
-					case 'boolean':
-					if(clear === true) {getObj('#'+addTo).html('')};
-					break;
-				}
-				switch(newElem.append)
-				{
-					case false:
-					try 
+					switch(1)
 					{
-						switch($('#'+addTo).children().length)
+						case 1:
+						switch(addTo.find(':first-child').attr('id'))
 						{
-							case 0:
-							$('#'+addTo).append(newElement).next().hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+							case 'noreplies':
+							addTo.find(':first-child').remove();
+							break;
+						}
+						newElement.appendTo(addTo);
+						addTo.hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+						break;
+					}
+					self.animateScroll(scrollToPos, addTo);
+				}catch(error){}
+			} else if(newElem.replace === true) {
+				try 
+				{
+					addTo.replaceWith(data).effect('pulsate', {times:1}, 150);
+					//self.animateScroll(scrollToPos, addTo);
+				}catch(error){}
+			} else {
+				try 
+				{
+					switch(addTo.children().length)
+					{
+						case 0:
+						addTo.append(newElement).next().hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+						break;
+						
+						default:
+						switch(addTo.find(':first-child').attr('id'))
+						{
+							case 'noreplies':
+							addTo.find(':first-child').hide();
+							newElement.prependTo('#'+addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
 							break;
 							
 							default:
-							switch($('#'+addTo+' :first-child').attr('id'))
+							switch(newElem.index)
 							{
-								case 'noreplies':
-								$('#'+addTo+' :first-child').hide();
-								newElement.prependTo('#'+addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+								case -1:
+								newElement.prependTo(addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
 								break;
 								
 								default:
-								switch(newElem.index)
-								{
-									case -1:
-									newElement.prependTo('#'+addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
-									break;
-									
-									default:
-									$('#'+addTo).children().eq(newElem.index).after(newElement).next().hide().slideDown('fast').effect('pulsate', {times:2}, 150);
-									break;
-								}
+								addTo.children().eq(newElem.index).after(newElement).next().hide().slideDown('fast').effect('pulsate', {times:2}, 150);
 								break;
 							}
 							break;
 						}
-						//animateScroll(scrollToPos, addTo);
-					}catch(error){}
-					break;
-					
-					case true:
-					try 
-					{
-						switch(1)
-						{
-							case 1:
-							switch($('#'+addTo+' :first-child').attr('id'))
-							{
-								case 'noreplies':
-								$('#'+addTo+' :first-child').remove();
-								break;
-							}
-							newElement.appendTo('#'+addTo);
-							$('#'+addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
-							break;
-						}
-						//animateScroll(scrollToPos, addTo);
-					}catch(error){}
-					break;
-				}
-				break;
+						break;
+					}
+					self.animateScroll(scrollToPos, addTo);
+				} catch(error){}
 			}
 			break;
 		}

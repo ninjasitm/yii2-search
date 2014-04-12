@@ -1,12 +1,12 @@
 <?php
 
-namespace nitm\module\models;
+namespace nitm\models;
 
 use PDO;
 use yii\db\Connection;
 use yii\db\Query;
 use yii\base\Behavior;
-use nitm\module\helpers\Helper;
+use nitm\helpers\Helper;
 
 //DB.php class which handles database conectivity.
 class DB extends Query

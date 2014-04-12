@@ -1,6 +1,6 @@
 <?php
 
-namespace nitm\module\models;
+namespace nitm\models;
 
 use Yii;
 use yii\base\Event;
@@ -22,11 +22,11 @@ use ReflectionClass;
  * @property array $filter
  */
  
-class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
+class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 {
-	use \nitm\module\traits\Configer,
-	\nitm\module\traits\Query,
-	\nitm\module\traits\Relation;
+	use \nitm\traits\Configer,
+	\nitm\traits\Query,
+	\nitm\traits\Relation;
 	
 	//public members
 	public $unique;
@@ -427,7 +427,8 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	}
 
 	/*
-	 * Get the records for this provisioning template
+	 * Get the array of arrays
+	 * @return mixed
 	 */
 	public function getArrays()
 	{
@@ -446,9 +447,8 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 	}
 
 	/*
-	 * Get the records for this provisioning template
-	 * @param boolean $templates Should we get the templates?
-	 * @param boolead $files Should we get the files?
+	 * Get array of objects
+	 * @return mixed
 	 */
 	public function getModels()
 	{
@@ -463,6 +463,25 @@ class Data extends ActiveRecord implements \nitm\module\interfaces\DataInterface
 		static::applyFilters($query, $this->queryFilters);
 		$ret_val = $query->all();
 		$this->success = (sizeof($ret_val) >= 1) ? true : false;
+		return $ret_val;
+	}
+
+	/*
+	 * Get a single record
+	 */
+	public function getOne()
+	{
+		switch($this->getScenario() == null)
+		{
+			case true:
+			$this->setScenario('default');
+			break;
+		}
+		$query = $this->find();
+		static::aliasColumns($query);
+		static::applyFilters($query, $this->queryFilters);
+		$ret_val = $query->one();
+		$this->success = (!is_null($ret_val)) ? true : false;
 		return $ret_val;
 	}
 	

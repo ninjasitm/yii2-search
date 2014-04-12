@@ -1,14 +1,14 @@
 <?php
 
-namespace nitm\module\models;
+namespace nitm\models;
 
 use Yii;
 use yii\base\Model;
 use yii\base\Event;
-use nitm\module\models\Data;
-use nitm\module\models\User;
-use nitm\module\models\security\Fingerprint;
-use nitm\module\interfaces\DataInterface;
+use nitm\models\Data;
+use nitm\models\User;
+use nitm\models\security\Fingerprint;
+use nitm\interfaces\DataInterface;
 
 /**
  * Class Replies
@@ -25,13 +25,7 @@ class Replies extends BaseWidget
 	protected static $is = 'replies';
 	
 	private $_lastActivity = '___lastActivity';
-	private $_dateFormat = "D M d Y h:iA";
-	
-	public function __construct($constrain=null)
-	{
-		$this->constrain($constrain);
-		$this->init();
-	}
+	private $_dateFormat = "D M d Y g:iA";
 	
 	public function init()
 	{
@@ -152,8 +146,11 @@ class Replies extends BaseWidget
 	public function setConstraints($using)
 	{
 		parent::setConstraints($using);
-		//if(!empty($using[2]))
-		//	$this->constraints['parent_key'] = date($this->_dateFormat, strtotime($using[2]));
+		if(!empty($using[2]))
+		{
+			$this->constraints['parent_key'] = date($this->_dateFormat, strtotime($using[2]));
+			$this->queryFilters['parent_key'] = $this->constraints['parent_key'];
+		}
 		//constrain for admin user
 		switch(\Yii::$app->userMeta->isAdmin())
 		{
@@ -193,7 +190,7 @@ class Replies extends BaseWidget
 		{
 			case true:
 			$ret_val = $this->save();
-			$this->added_hr = \nitm\module\helpers\DateFormatter::formatDate();
+			$this->added_hr = \nitm\helpers\DateFormatter::formatDate();
 			break;
 		}
 		return $ret_val;

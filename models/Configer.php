@@ -1,17 +1,17 @@
 <?php
 
-namespace nitm\module\models;
+namespace nitm\models;
 
 use Yii;
 use yii\web\Application;
 use yii\base\Event;
 use yii\base\Model;
-use nitm\module\helpers\Session;
-use nitm\module\helpers\Directory;
+use nitm\helpers\Session;
+use nitm\helpers\Directory;
 
 /**
  * Class Configer
- * @package nitm\module\models
+ * @package nitm\models
  *
  * @property integer $cfg_id
  * @property string $cfg_n
@@ -116,7 +116,7 @@ class Configer extends Model
 				"class" => \yii\base\Behavior::className(),
 			],
 			"DB" => [
-				"class" => \nitm\module\models\DB::className(),
+				"class" => \nitm\models\DB::className(),
 			],
 		];
 		return array_merge(parent::behaviors(), $behaviors);
@@ -125,12 +125,12 @@ class Configer extends Model
 	public function rules()
 	{
 		return [
-			[['cfg_w', 'cfg_v', 'cfg_s', 'cfg_n', 'cfg_c'], 'required', 'on' => ['addValue']],
-			[['cfg_w', 'cfg_v', 'cfg_c'], 'required', 'on' => ['addSection']],
-			[['cfg_w', 'cfg_v'], 'required', 'on' => ['addContainer']],
-			[['cfg_w', 'cfg_v', 'cfg_n', 'cfg_c', 'cfg_id'], 'required', 'on' => ['editValue']],
-			[['cfg_w', 'cfg_v', 'cfg_s', 'cfg_c'], 'required', 'on' => ['editSection']],
-			[['cfg_w', 'cfg_v', 'cfg_c'], 'required', 'on' => ['editContainer']],
+			[['cfg_w', 'cfg_v', 'cfg_s', 'cfg_n', 'cfg_c'], 'required', 'on' => ['createValue']],
+			[['cfg_w', 'cfg_v', 'cfg_c'], 'required', 'on' => ['createSection']],
+			[['cfg_w', 'cfg_v'], 'required', 'on' => ['createContainer']],
+			[['cfg_w', 'cfg_v', 'cfg_n', 'cfg_c', 'cfg_id'], 'required', 'on' => ['updateValue']],
+			[['cfg_w', 'cfg_v', 'cfg_s', 'cfg_c'], 'required', 'on' => ['updateSection']],
+			[['cfg_w', 'cfg_v', 'cfg_c'], 'required', 'on' => ['updateContainer']],
 			[['cfg_w', 'cfg_n', 'cfg_c', 'cfg_id'], 'required', 'on' => ['deleteValue']],
 			[['cfg_w', 'cfg_v', 'cfg_c'], 'required', 'on' => ['deleteSection']],
 			[['cfg_w', 'cfg_v'], 'required', 'on' => ['deleteContainer']],
@@ -144,11 +144,11 @@ class Configer extends Model
 	{
 		return [
 			'default' => ['cfg_v', 'cfg_c', 'cfg_s', 'cfg_w', 'cfg_e', 'get_values',],
-			'addValue' => ['cfg_v', 'cfg_n', 'cfg_c', 'cfg_s', 'cfg_w'],
-			'addSection' => ['cfg_v', 'cfg_c', 'cfg_w'],
-			'addContainer' => ['cfg_v', 'cfg_w'],
-			'editValue' => ['cfg_v', 'cfg_n', 'cfg_s', 'cfg_c', 'cfg_w', 'cfg_id'],
-			'editSection' => ['cfg_v', 'cfg_c', 'cfg_w', 'cfg_id'],
+			'createValue' => ['cfg_v', 'cfg_n', 'cfg_c', 'cfg_s', 'cfg_w'],
+			'createSection' => ['cfg_v', 'cfg_c', 'cfg_w'],
+			'createContainer' => ['cfg_v', 'cfg_w'],
+			'updateValue' => ['cfg_v', 'cfg_n', 'cfg_s', 'cfg_c', 'cfg_w', 'cfg_id'],
+			'updateSection' => ['cfg_v', 'cfg_c', 'cfg_w', 'cfg_id'],
 			'deleteValue' => ['cfg_s', 'cfg_n', 'cfg_w', 'cfg_id'],
 			'deleteSection' => ['cfg_n', 'cfg_c', 'cfg_w', 'cfg_id'],
 			'deleteContainer' => ['cfg_v', 'cfg_w', 'cfg_id'],
@@ -186,7 +186,7 @@ class Configer extends Model
 	 */
 	public function initEvents()
 	{
-		$this->on("afterAdd", function($e) {
+		$this->on("afterCreate", function($e) {
 			$this->config['current']['section'] = $this->event['data']['section'];
 			switch($this->container == \Yii::$app->getModule('nitm')->configOptions['container'])
 			{
@@ -204,7 +204,7 @@ class Configer extends Model
 					  $this->event['data']['message']);
 		});
 		
-		$this->on("afterEdit", function($e) {
+		$this->on("afterUpdate", function($e) {
 			switch($this->container == @Yii::$app->getModule('nitm')->configOptions['container'])
 			{
 				case true:
@@ -219,13 +219,6 @@ class Configer extends Model
 					  $this->event['data']['table'],
 					  $this->event['data']['action'],
 					  $this->event['data']['message']);
-		});
-		
-		$this->on("afterCreate", function($e) {
-			$this->_o['logger']->addTrans($this->event['data']['db'],
-				    $this->event['data']['table'],
-				    $this->event['data']['action'],
-				    $this->event['data']['message']);
 		});
 		
 		$this->on("afterDelete", function($e) {
@@ -251,7 +244,7 @@ class Configer extends Model
 	}
 	
 	/*
-     * Prepare the config info for editing
+     * Prepare the config info for updateing
 	 * @param string $engine
 	 * @param string $container
 	 * @param boolean $get_values
@@ -334,7 +327,7 @@ class Configer extends Model
 			{
 				case in_array('xml', $this->config['from'][$from]['types']) !== false:
 				//$fb::$compatible = ['text' => '.xml');
-				//$freeswitch_base = '/usr/local/freeswitch/conf/';
+				//$freswitch_base = '/usr/local/freswitch/conf/';
 				$this->config['current']['container'] = $engine;
 				$this->config['current']['from'][$engine]['selected'] = "selected='selected'";
 				$this->config['current']['path'] = $this->config['from'][$from]['dir'];
@@ -487,7 +480,7 @@ class Configer extends Model
 	 * @param string $engine
 	 * @return boolean success flag
 	 */
-	public function writeTo($container, $data, $engine='file')
+	public function writeTo($container, $data, $engine='db')
 	{
 		$sections = '';
 		$content = '';
@@ -568,7 +561,7 @@ class Configer extends Model
 				$section = ['author' => \Yii::$app->user->getId(), "containerid" => $container];
 				$message = "";
 				$result = 'failure';
-				$action = ["success" => "Add Config", "failure" => "Add Config Fail"];
+				$action = ["success" => "Create Config", "failure" => "Create Config Fail"];
 				$this->setTable($this->configTables['sections']);
 				$pri['sections'] = $this->getCurPri();
 				//write the sections
@@ -635,7 +628,7 @@ class Configer extends Model
 					$this->close();
 				}
 				/*
-					After a change has been made and commited remove the current values in index $this->container
+					After a change has ben made and commited remove the current values in index $this->container
 					to save memory/space and to not allow any new changes to be made
 				*/
 				$this->setBase($container);
@@ -659,7 +652,7 @@ class Configer extends Model
 	 * @param boolean $force Force a load?
 	 * @return mixed configuration
 	 */
-	public function loadFrom($container=null, $from_sess=false, $force=false, $engine='file')
+	public function loadFrom($container=null, $from_sess=false, $force=false, $engine='db')
 	{
 		$ret_val = null;
 		switch($from_sess === true)
@@ -707,7 +700,7 @@ class Configer extends Model
 					'name' => $this->getCurPri()
 				];
 				/*
-				 * We need to use activity states here to determine when to load form the database
+				 * We ned to use activity states here to determine when to load form the database
 				 */
 				$this->select("1", true, [
 					"key" => ['1000'], 
@@ -831,11 +824,11 @@ class Configer extends Model
 	 * @param mixed $contents
 	 * @param string $commentchar
 	 * @param string $decode
-	 * @param boolean $editing
+	 * @param boolean $updateing
 	 * @param string $engine
 	 * @return mixed $ret_val
 	 */
-	public function readFrom($contents=null, $commentchar=';', $decode='json', $editing=false, $engine='file') 
+	public function readFrom($contents=null, $commentchar=';', $decode='json', $updateing=false, $engine='db') 
 	{
 		$ret_val = [];
 		$decode = is_array($decode) ? $decode : [$decode];
@@ -849,7 +842,7 @@ class Configer extends Model
 				foreach($contents as $idx=>$data) 
 				{
 					//is the section already set?
-					switch($editing)
+					switch($updateing)
 					{
 						case true:
 						$section = $data['section_name'];
@@ -916,14 +909,14 @@ class Configer extends Model
 										$value = substr($value, 1, -1); 
 									}
 									//$ret_val[$section][$key] = stripslashes($value);
-									//we may return comments if we're editing
-									$ret_val[$section][$key] = ($editing == false) ? $value : ["value" => $value, "comment" => @$comment, 'section' => $section, "name" => $key, "unique" => "$section.$key"];
+									//we may return comments if we're updateing
+									$ret_val[$section][$key] = ($updateing == false) ? $value : ["value" => $value, "comment" => @$comment, 'section' => $section, "name" => $key, "unique" => "$section.$key"];
 								}
 								else
 								{
-									//we may return comments if we're editing
+									//we may return comments if we're updateing
 									//...without a value
-									$ret_val[$section][trim($dataline)] = ($editing === false) ? $value : ["value" => '', "comment" => @$comment, 'section' => $section, "name" => $key, "unique" => "$section.$key"];
+									$ret_val[$section][trim($dataline)] = ($updateing === false) ? $value : ["value" => '', "comment" => @$comment, 'section' => $section, "name" => $key, "unique" => "$section.$key"];
 								}
 							}
 						}
@@ -950,8 +943,8 @@ class Configer extends Model
 					switch($dec)
 					{
 						case 'json':
-						array_walk_recursive($ret_val, function (&$v) use ($editing) {
-							switch($editing)
+						array_walk_recursive($ret_val, function (&$v) use ($updateing) {
+							switch($updateing)
 							{
 								case false:
 								$v = is_array($v) ? $v['value'] : $v;
@@ -959,7 +952,7 @@ class Configer extends Model
 							}
 							switch(1)
 							{
-								case ((@$v[0] == "{") && ($v[strlen($v)-1] == "}")) && ($editing === false):
+								case ((@$v[0] == "{") && ($v[strlen($v)-1] == "}")) && ($updateing === false):
 								$v = ((!is_null($data = json_decode($v, true))) ? $data : $v);
 								break;
 								
@@ -972,13 +965,13 @@ class Configer extends Model
 						
 						case 'csv':
 						array_walk_recursive($ret_val, function (&$v) {
-							switch($editing)
+							switch($updateing)
 							{
 								case false:
 								$v = $v['value'];
 								break;
 							}
-							switch((@$v[0] == "{") && ($v[strlen($v)-1] == "}") && ($editing === false))
+							switch((@$v[0] == "{") && ($v[strlen($v)-1] == "}") && ($updateing === false))
 							{
 								case true:
 								$v = explode(',', $v);
@@ -996,19 +989,19 @@ class Configer extends Model
 	}
 	
 	/*
-	 * Add a value to the configuration
+	 * Create a value to the configuration
 	 * @param string $key
 	 * @param string $container
 	 * @param string sess_member
 	 * @param string $engine
-	 * @return mixed added value and success flag
+	 * @return mixed created value and success flag
 	 */
-	public function add($key, $value, $container, $sess_member=null, $engine='file')
+	public function create($key, $value, $container, $sess_member=null, $engine='db')
 	{
 		$ret_val = [
 			"success" => false, 
-			"message" => "Couldn't perform the add: [$key], [$value], [$container]", 
-			"action" => 'edit', 
+			"message" => "Couldn't perform the create: [$key], [$value], [$container]", 
+			"action" => 'update', 
 			"class" => $this->classes["failure"]
 		];
 		$this->setEngine($engine);
@@ -1017,7 +1010,7 @@ class Configer extends Model
 		switch($this->location)
 		{
 			case 'db':
-			$ret_val = array_merge($ret_val, $this->_add($container, $key, $value));
+			$ret_val = array_merge($ret_val, $this->_create($container, $key, $value));
 			$ret_val['data'] = [$key, $value];
 			$ret_val['class'] = $this->classes['failure'];
 			switch($ret_val['success'])
@@ -1028,10 +1021,10 @@ class Configer extends Model
 				$this->event['data'] = array_merge($ret_val, [
 					'table' => 'config',
 					'db' => $this->configDb,
-					'action' => 'Add Config',
-					'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username') ." added new key->value ($key -> ".var_export($value, true).") to config ".$container
+					'action' => 'Create Config',
+					'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username') ." created new key->value ($key -> ".var_export($value, true).") to config ".$container
 				]);
-				$this->trigger('afterAdd');
+				$this->trigger('afterCreate');
 				break;
 			}
 			break;
@@ -1041,10 +1034,10 @@ class Configer extends Model
 			
 			case 'file':
 			$container = $this->resolveDir($this->config['current']['path']);
-			Session::set_csdm(self::dm.'.'.$this->location);
+			Session::setCsdm(self::dm.'.'.$this->location);
 			switch(sizeof($hierarchy))
 			{
-				///we might be adding a container
+				///we might be createing a container
 				case 1:
 				switch(empty($contaienr))
 				{
@@ -1058,15 +1051,15 @@ class Configer extends Model
 				switch(1)
 				{
 					case !$container:
-					$ret_val['debug'] = "Sorry I cannot add a value to a container that doesn't exist\nPlease try again again by passing the correct parameters to me.\nadd($key, ".var_export($value).", ".basename($container).", $sess_member) (0);";
+					$ret_val['debug'] = "Sorry I cannot create a value to a container that doesn't exist\nPlease try again again by passing the correct parameters to me.\ncreate($key, ".var_export($value).", ".basename($container).", $sess_member) (0);";
 					break;
 				
 					case !$key:
-					$ret_val['debug'] = "Sorry I cannot add an empty key\nPlease try again again by passing the correct parameters to me.\nadd($key, ".var_export($value, true)."), ".basename($container).", $sess_member) (1);";
+					$ret_val['debug'] = "Sorry I cannot create an empty key\nPlease try again again by passing the correct parameters to me.\ncreate($key, ".var_export($value, true)."), ".basename($container).", $sess_member) (1);";
 					break;
 					
 					default:
-					$ret_val = array_merge($ret_val, $this->_add($container, $key, $value));
+					$ret_val = array_merge($ret_val, $this->_create($container, $key, $value));
 					$ret_val['class'] = $this->classes['failure'];
 					$sess_member = (empty($sess_member)) ? Session::settings : $sess_member.'.'.$this->container;
 					switch($ret_val['success'])
@@ -1077,10 +1070,10 @@ class Configer extends Model
 						$this->event['data'] = array_merge($ret_val, [
 							'table' => 'NULL',
 							'db' => 'NULL',
-							'action' => 'Add Config',
-							'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username') ." added new key->value ($key -> ".var_export($value, true).") to config file ".basename($container)
+							'action' => 'Create Config',
+							'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username') ." created new key->value ($key -> ".var_export($value, true).") to config file ".basename($container)
 						]);
-						$this->trigger('afterAdd');
+						$this->trigger('afterCreate');
 						break;
 					}
 					break;
@@ -1089,25 +1082,33 @@ class Configer extends Model
 			}
 			break;
 		}
-		$ret_val['action'] = 'add';
+		$ret_val['action'] = 'create';
 		$this->config['current']['action'] = $ret_val;
 		Session::set(Configer::dm.'.action', $ret_val);
 	}
 	
 	/*
-	 * Edit a value in the configuration
+	 * Update a value in the configuration
 	 * @param string $key
 	 * @param string $container
 	 * @param string sess_member
 	 * @param string $engine
-	 * @return mixed edited value and success flag
+	 * @return mixed updated value and success flag
 	 */
-	public function edit($key, $value, $container, $sess_member=null, $engine='file')
+	public function update($key, $value, $container, $sess_member=null, $engine='db')
 	{
+		$key = is_array($key) ? implode('.', $key) : $key;
+		$value = is_array($value) ? json_encode($value) : $value;
+		if(is_array($container))
+		{
+			debug_print_backtrace();
+			exit;
+		}
+		$container = is_array($container) ? implode('.', $container) : $container;
 		$ret_val = [
 			"success" => false, 
-			"message" => "Couldn't perform the edit: [$key], [$value], [$container]", 
-			"action" => 'edit', 
+			"message" => "Couldn't perform the update: $key, $value, $container", 
+			"action" => 'update', 
 			"class" => $this->classes["failure"]
 		];
 		$this->setEngine($engine);
@@ -1118,7 +1119,7 @@ class Configer extends Model
 		switch($this->location)
 		{
 			case 'db':
-			$ret_val = array_merge($ret_val, $this->_edit($container, $key, $value));
+			$ret_val = array_merge($ret_val, $this->_update($container, $key, $value));
 			switch($ret_val['success'])
 			{
 				case true:
@@ -1128,30 +1129,29 @@ class Configer extends Model
 					'db' => $this->configDb,
 					'key' => $key,
 					'value' => $value,
-					'action' => "Edit Config",
-					'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." edited value ($key from '".var_export($ret_val['old_value'], true)."' to '".var_export($value, true)."') in container ".basename($container)
+					'action' => "Update Config",
+					'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." updated value ($key from '".var_export($ret_val['old_value'], true)."' to '".var_export($value, true)."') in container ".basename($container)
 				];
-				$this->trigger('afterEdit');
+				$this->trigger('afterUpdate');
 				break;
 			}
 			break;
 			
 			case 'file':
-			Session::set_csdm(self::dm.'.'.$this->location);
 			switch(1)
 			{
 				case !$container:
 				$ret_val['class'] = $this->classes['failure'];
-				$ret_val['debug'] ="Sorry I cannot edit a value in a file that doesn't exist\nPlease try again again by passing the correct parameters to me.\nedit($key, ".var_export($value).", ".basename($container).", $sess_member) (0);";
+				$ret_val['debug'] ="Sorry I cannot update a value in a file that doesn't exist\nPlease try again again by passing the correct parameters to me.\nupdate($key, ".var_export($value).", ".basename($container).", $sess_member) (0);";
 				break;
 				
 				case !$key:
-				$ret_val['debug'] ="Sorry I cannot edit an empty key\nPlease try again again by passing the correct parameters to me.\nedit($key, ".var_export($value, true).", ".basename($container).", $sess_member) (1);";
+				$ret_val['debug'] ="Sorry I cannot update an empty key\nPlease try again again by passing the correct parameters to me.\nupdate($key, ".var_export($value, true).", ".basename($container).", $sess_member) (1);";
 				break;
 				
 				default:
-				//use sed for editing
-				$ret_val = array_merge($ret_val, $this->_edit($container, $key, $value));
+				//use sed for updateing
+				$ret_val = array_merge($ret_val, $this->_update($container, $key, $value));
 				$sess_member = (empty($sess_member)) ? Session::settings : $sess_member.'.'.$this->container;
 				switch($ret_val['success'])
 				{
@@ -1162,16 +1162,16 @@ class Configer extends Model
 						'db' => 'NULL',
 						'key' => $key,
 						'value' => $value,
-						'action' => "Edit Config File",
-						'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." edited value ($key from '".var_export($ret_val['old_value'], true)."' to '".var_export($value, true)."') in config file ".basename($container)
+						'action' => "Update Config File",
+						'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." updated value ($key from '".var_export($ret_val['old_value'], true)."' to '".var_export($value, true)."') in config file ".basename($container)
 					];
-					$this->trigger('afterEdit');
+					$this->trigger('afterUpdate');
 					break;
 				}
 				break;
 			}
 		}
-		$ret_val['action'] = 'edit';
+		$ret_val['action'] = 'update';
 		$ret_val['value'] = rawurlencode($value);
 		$this->config['current']['action'] = $ret_val;
 		Session::set(Configer::dm.'.action', $ret_val);
@@ -1185,7 +1185,7 @@ class Configer extends Model
 	 * @param string $engine
 	 * @return mixed deleted value and success flag
 	 */
-	public function delete($key, $container, $sess_member=null, $engine='file')
+	public function delete($key, $container, $sess_member=null, $engine='db')
 	{
 		$ret_val = [
 			"success" => false, 
@@ -1260,7 +1260,7 @@ class Configer extends Model
 		Session::set(Configer::dm.'.action', $ret_val);
 	}
 	
-	public function createContainer($name, $in=null, $engine='file')
+	public function createContainer($name, $in=null, $engine='db')
 	{
 		$this->setEngine($engine);
 		$ret_val = ["success" => false, 'class' => 'error'];
@@ -1270,7 +1270,7 @@ class Configer extends Model
 			$data = ["containers" => ['author' => \Yii::$app->user->getId()]];
 			$message = "";
 			$result = 'failure';
-			$action = ["success" => "Add Container", "failure" => "Add Container Fail"];
+			$action = ["success" => "Create Container", "failure" => "Create Container Fail"];
 			$this->setTable($this->configTables['containers']);
 			$pri['containers'] = $this->getCurPri();
 			$data['containers']['name'] = $name;
@@ -1287,7 +1287,7 @@ class Configer extends Model
 				switch($this->insert(array_keys($data['containers']), array_values($data['containers'])))
 				{
 					case true:
-					$message .= "added container for $in";
+					$message .= "created container for $in";
 					$container_id = $this->last_id['insert'];
 					$data["sections"][$pri['containers']] = $container_id;; 
 					$data["sections"]['name'] = 'global';
@@ -1305,7 +1305,7 @@ class Configer extends Model
 				break;
 					
 				default:
-				$message = "was unable to add a new configuration container for $name becuase it already exists";
+				$message = "was unable to create a new configuration container for $name becuase it already exists";
 				break;
 			}
 			$ret_val['message'] = "The system ".$message;
@@ -1330,8 +1330,8 @@ class Configer extends Model
 						$this->event['data'] = [
 							'table' => 'NULL',
 							'db' => 'NULL',
-							'action' => 'Add Config File',
-							'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." added a new config file: ".basename($new_config_file)
+							'action' => 'Create Config File',
+							'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." created a new config file: ".basename($new_config_file)
 						];
 						$this->trigger('afterCreate');
 						$ret_val['class'] = $this->classes['success'];
@@ -1357,7 +1357,7 @@ class Configer extends Model
 	 * @param boolean $get_values
      * @return mixed $config
      */
-	public function getConfig($engine=null, $container=null, $get_values=false, $editing=false)
+	public function getConfig($engine=null, $container=null, $get_values=false, $updateing=false)
 	{
 		//$directory, $apppath=false, $match=null, $group=false, $empty=false, $skipthese=null, $parent=null
 		$this->container = !empty($container) ? $container : $this->container;
@@ -1375,13 +1375,13 @@ class Configer extends Model
 			
 			case 'file':
 			$ret_val = $this->readFrom($this->loadFrom($this->config['current']['path'], false, true), 
-				null, 'json', $editing, $engine);
+				null, 'json', $updateing, $engine);
 			break;
 			
 			
 			case 'db':
 			$ret_val = $this->readFrom($this->loadFrom($this->config['current']['container'], false, true), 
-				null, 'json', $editing, $engine);
+				null, 'json', $updateing, $engine);
 			break;
 				
 			default:
@@ -1391,7 +1391,7 @@ class Configer extends Model
 	}	
 	
 	/*
-	 * Convert configuration between formats
+	 * Convert configuration betwen formats
 	 * @param string $container
 	 * @param string $from
 	 * @param string $to
@@ -1424,12 +1424,12 @@ class Configer extends Model
 	---------------------*/
 	
 	/*
-	 * Handle adding to DB or to file to simplify add function
+	 * Handle createing to DB or to file to simplify create function
 	 * @param string|int $container
 	 * @param string|int $key
 	 * @return mixed
 	 */
-	protected function _add($container, $key, $value=null)
+	protected function _create($container, $key, $value=null)
 	{
 		$correctKey = $this->correctKey($key);
 		$hierarchy = explode('.', $correctKey);
@@ -1440,7 +1440,7 @@ class Configer extends Model
 			'key' => $correctKey,
 			'section' =>$sectionName,
 			'container' => $container,
-			'message' => "Unable to add value ".$value
+			'message' => "Unable to create value ".$value
 		];
 		$container = $this->getContainerId($container);
 		switch($this->location)
@@ -1448,7 +1448,7 @@ class Configer extends Model
 			case 'db':
 			switch(sizeof($hierarchy))
 			{
-				//We're adding a section
+				//We're createing a section
 				case 5:
 				case 2:
 				$section = [
@@ -1466,7 +1466,7 @@ class Configer extends Model
 						case true:
 						$ret_val['value'] = [];
 						$ret_val['success'] = true;
-						$ret_val['message'] = "Added section ".$sectionName;
+						$ret_val['message'] = "Created section ".$sectionName;
 						break;
 					}
 					break;
@@ -1497,7 +1497,7 @@ class Configer extends Model
 						$ret_val['section_name'] = $sectionName;
 						$ret_val = array_merge($ret_val, $val);
 						$ret_val['success'] = true;
-						$ret_val['message'] = "Added $name to section $sectionName";
+						$ret_val['message'] = "Created $name to section $sectionName";
 						break;
 					}
 					break;
@@ -1510,26 +1510,26 @@ class Configer extends Model
 			$args = [];
 			switch(sizeof($hierarchy))
 			{
-				//we're adding a section
+				//we're createing a section
 				case 5:
 				case 2:
 				$args['command'] = "sed -i '\$a\\\n\\n[%s]' ";
 				$args['args'] = [$name];
-				$message = "Added new section [".$sectionName."] to ".$container;
+				$message = "Created new section [".$sectionName."] to ".$container;
 				break;
 				
 	
-				//we're adding a value
+				//we're createing a value
 				case 6:
 				case 3:
 				$args['command'] = "sed -i '/\[%s\]/a %s = %s' ";
 				$args['args'] = [$sectionName, $name, $value];
-				$message = "Added new config option [".$name."] to ".$sectionName;
+				$message = "Created new config option [".$name."] to ".$sectionName;
 				break;
 			}
 			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).' "'.$container.'.'.$this->types[$this->location].'"';
 			exec($args['command'], $output, $cmd_ret_val);
-			//sed should return an empty value for success when editing files
+			//sed should return an empty value for success when updateing files
 			switch($cmd_ret_val)
 			{
 				case 0:
@@ -1549,12 +1549,12 @@ class Configer extends Model
 	}
 	
 	/*
-	 * Handled editing in DB or in file to simplify edit function
+	 * Handled updateing in DB or in file to simplify update function
 	 * @param string|int $container
 	 * @param string|int $key
 	 * @return mixed
 	 */
-	protected function _edit($container, $key, $value)
+	protected function _update($container, $key, $value)
 	{
 		$correctKey = $this->correctKey($key);
 		$hierarchy = explode('.', $correctKey);
@@ -1569,14 +1569,14 @@ class Configer extends Model
 			'section' => $sectionName,
 			'container' => $key,
 			'key' => $correctKey,
-			'message' => "Unable to edit value ".$value
+			'message' => "Unable to update value ".$value
 		];
 		switch($this->location)
 		{
 			case 'db':
 			switch(sizeof($hierarchy))
 			{
-				//we're editing a section
+				//we're updateing a section
 				case 5:
 				case 2:
 				$update['editor'] = \Yii::$app->user->getId();
@@ -1584,7 +1584,7 @@ class Configer extends Model
 				$update['table'] = $this->configTables['sections'];
 				$update['keys'] = ['name'];
 				$update['values'] = [$value];
-				$message = "Edited the section name to $value";
+				$message = "Updated the section name to $value";
 				$update['condition'] = [
 					'key' => ['id'], 
 					'data' => [$this->cfg_id]
@@ -1592,7 +1592,7 @@ class Configer extends Model
 				$update['process'] = true;
 				break;
 			
-				//we're editing a value
+				//we're updateing a value
 				case 6:
 				case 3:
 				$update['editor'] = \Yii::$app->user->getId();
@@ -1600,7 +1600,7 @@ class Configer extends Model
 				$update['table'] = $this->configTables['values'];
 				$update['keys'] = ['value'];
 				$update['values'] = [$value];
-				$message = "Edited the value [$key] from ".$old_value." to $value";
+				$message = "Updated the value [$key] from ".$old_value." to $value";
 				$update['condition'] = [
 					'key' => ['id'], 
 					'data' => [$this->cfg_id]
@@ -1613,7 +1613,7 @@ class Configer extends Model
 			{
 				case true:
 				$this->setTable($update['table']);
-				switch($this->update($update['keys'], $update['values'], $update['condition']))
+				switch(parent::update($update['keys'], $update['values'], $update['condition']))
 				{
 					case true:
 					$ret_val['success'] = true;
@@ -1629,25 +1629,25 @@ class Configer extends Model
 			$container = $this->resolveDir($this->config['current']['path']);
 			switch(sizeof($hierarchy))
 			{
-				//we're editing a section
+				//we're updateing a section
 				case 5:
 				case 2:
 				$args['command'] = 'sed -i -e "s/^\[%s\]/%s/" ';	
 				$args['args'] = [$sectionName, $value];
-				$message = "Edited the section name from ".$name." to $value";
+				$message = "Updated the section name from ".$name." to $value";
 				break;
 			
-				//no support for editing section names as of yet
+				//no support for updateing section names as of yet
 				case 6: 
 				case 3:    
 				$args['command'] = 'sed -i -e "/^\[%s\]/,/^$/{s/%s =.*/%s = %s/}" ';
 				$args['args'] = [$sectionName, $name, $name, $value];
-				$message = "Edited the value name from ".$name." to $value";
+				$message = "Updated the value name from ".$name." to $value";
 				break;
 			}
 			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).'"'.$container.'.'.$this->types[$this->location].'"';
 			exec($args['command'], $output, $cmd_ret_val);
-			//sed should return an empty value for success when editing files
+			//sed should return an empty value for success when updateing files
 			switch($cmd_ret_val)
 			{
 				case 0:
@@ -1752,7 +1752,7 @@ class Configer extends Model
 			}
 			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).' "'.$container.'.'.$this->types[$this->location].'"';
 			exec($args['command'], $output, $cmd_ret_val);
-			//sed should return an empty value for success when editing files
+			//sed should return an empty value for success when updateing files
 			switch($cmd_ret_val)
 			{
 				case 0:
@@ -1793,7 +1793,7 @@ class Configer extends Model
 	 * @param boolean $containers_only
 	 * @return mixed
 	 */
-	protected function getContainers($in=null, $multi=false, $containers_only=false)
+protected function getContainers($in=null, $multi=false, $containers_only=false)
 	{
 		$in = ($in == null) ? $this->dir['config'] : $in;
 		$ret_val = [];
@@ -1948,7 +1948,7 @@ class Configer extends Model
 		{
 			die("Attempting to open an empty file\n$this->open($container, $rw, $mode) (2);");
 		}
-		//the handle that needs to be returned if successful
+		//the handle that neds to be returned if successful
 		$ret_val = false;
 		$continue = false;
 		$flmode = null;
@@ -2013,8 +2013,8 @@ class Configer extends Model
 			$interval = 10;
 			while(flock($this->handle, $flmode) === false)
 			{
-				//sleep a little longer each time (in microseconds)
-				usleep($interval+10);
+				//slep a little longer each time (in microseconds)
+				uslep($interval+10);
 			}
 			$ret_val = $this->handle;
 		}

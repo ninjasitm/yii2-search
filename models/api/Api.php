@@ -1,8 +1,8 @@
 <?php
 
-namespace common\models\api;
+namespace nitm\models\api;
 
-class Api extends \common\models\Data
+class Api extends \nitm\models\Data
 {
 
 }

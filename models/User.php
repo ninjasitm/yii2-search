@@ -1,5 +1,5 @@
 <?php
-namespace nitm\module\models;
+namespace nitm\models;
 
 use yii\db\ActiveRecord;
 use yii\helpers\Security;
@@ -86,8 +86,17 @@ class User extends Data
 	public static function getStatus(User $user=null)
 	{
 		$user = is_null($user) ? \Yii::$app->user->getIdentity() : $user;
-		$statuses = static::getStatuses();
+		$statuses = self::getStatuses();
 		return $statuses[$user->status ? $user->status : self::STATUS_INACTIVE];
+	}
+	
+	/**
+	 * Get the status value for a user
+	 * @return string
+     */
+	public function status()
+	{
+		return self::getStatus($this);
 	}
 	
 	/**
@@ -113,15 +122,24 @@ class User extends Data
 	public static function getRole(User $user=null)
 	{
 		$user = is_null($user) ? \Yii::$app->user->getIdentity() : $user;
-		$roles = static::getRoles();
+		$roles = self::getRoles();
 		return @$roles[$user->role ? $user->role : self::ROLE_USER];
+	}
+	
+	/**
+     * Get the role value for a user
+	 * @return string name of role
+     */
+	public function role()
+	{
+		return self::getRole($this);
 	}
  
 	/**
      * Get the supported roles
 	 * @return array statuses
      */
-	public static function getRoles()
+	public function getRoles()
 	{
 		$roles = [
 			self::ROLE_USER => 'User', 
@@ -205,6 +223,7 @@ class User extends Data
 			$ret_val = $sessionActivity;
 			break;
 		}
+		\Yii::$app->getSession()->set($this->_lastActivity, strtotime('now'));
 		return $ret_val;
 	}
 	
@@ -272,7 +291,7 @@ class User extends Data
 	public static function hasApiTokens(User $user=null)
 	{
 		$user = is_null($user) ? \Yii::$app->user->getIdentity() : $user;
-		return (bool) ($user->hasMany(\nitm\module\models\api\Token::className(), ['userid' => 'id'])->count() >= 1);
+		return (bool) ($user->hasMany(\nitm\models\api\Token::className(), ['userid' => 'id'])->count() >= 1);
 	}
 	
 	/**
@@ -283,7 +302,17 @@ class User extends Data
 	public static function getApiTokens(User $user=null)
 	{
 		$user = is_null($user) ? \Yii::$app->user->getIdentity() : $user;
-		return $user->hasMany(\nitm\module\models\api\Token::className(), ['userid' => 'id'])->all();
+		return $user->hasMany(\nitm\models\api\Token::className(), ['userid' => 'id'])->all();
+	}
+	
+	/**
+	 * Get the fullname of a user
+	 * @param boolean $withUsername
+	 * @return string
+	 */
+	public function fullName($withUsername=false)
+	{
+		return static::getFullName($withUsername, $this);
 	}
 	
 	/**

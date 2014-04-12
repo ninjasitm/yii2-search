@@ -4,7 +4,7 @@
  * @copyright Copyright (c) 2014 NITM Inc
  */
 
-namespace nitm\module\assets;
+namespace nitm\assets;
 
 use yii\web\AssetBundle;
 
@@ -27,6 +27,6 @@ class ConfigurationAsset extends AssetBundle
 		'yii\bootstrap\BootstrapPluginAsset',
 		'yii\jui\AutoCompleteAsset',
 		'yii\jui\ThemeAsset',
-		'nitm\module\assets\AppAsset',
+		'nitm\assets\AppAsset',
 	];
 }

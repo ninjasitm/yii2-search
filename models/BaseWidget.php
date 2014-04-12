@@ -1,15 +1,15 @@
 <?php
 
-namespace nitm\module\models;
+namespace nitm\models;
 
 use Yii;
 use yii\base\Exception;
 use yii\base\Model;
 use yii\base\Event;
-use nitm\module\models\Data;
-use nitm\module\models\User;
-use nitm\module\models\security\Fingerprint;
-use nitm\module\interfaces\DataInterface;
+use nitm\models\Data;
+use nitm\models\User;
+use nitm\models\security\Fingerprint;
+use nitm\interfaces\DataInterface;
 
 /**
  * Class Replies
@@ -30,14 +30,9 @@ class BaseWidget extends Data implements DataInterface
 	
 	private $_dateFormat = "D M d Y h:iA";
 	
-	public function __construct($constrain=null)
-	{
-		$this->constrain($constrain);
-		$this->init();
-	}
-	
 	public function init()
 	{
+		$this->setConstraints($this->constrain);
 		parent::init();
 	}
 	
@@ -71,18 +66,9 @@ class BaseWidget extends Data implements DataInterface
 	 * Set the constrining parameters
 	 * @param mixed $using
 	 */
-	public function constrain($using)
-	{
-		$this->setConstraints($using);
-		$this->queryFilters = array_merge($this->queryFilters, $this->constraints);
-	}
-	
-	/*
-	 * Set the constrining parameters
-	 * @param mixed $using
-	 */
 	public function setConstraints($using)
 	{
+		$this->queryFilters = [];
 		if(!empty($using[0]))
 		{
 			$this->constraints['parent_id'] = $using[0];
@@ -93,6 +79,7 @@ class BaseWidget extends Data implements DataInterface
 			$this->constraints['parent_type'] = strtolower(array_pop(explode('\\', $using[1])));
 			$this->parent_type = $this->constraints['parent_type'];
 		}
+		$this->queryFilters = array_replace($this->queryFilters, $this->constraints);
 	}
 	
 	/**
@@ -178,11 +165,11 @@ class BaseWidget extends Data implements DataInterface
 	 * Get the count for the current parameters
 	 * @return int count
 	 */
-	 public static function findModel($constrain)
+	 public static function findModel($constrain=null)
 	 {
 		$class = static::className();
 		$model = new $class;
-		$model->constrain($constrain);
+		$model->setConstraints($constrain);
 		$ret_val = $model->find()
 		 	->with([
 				'last' => function ($query) use ($model) {

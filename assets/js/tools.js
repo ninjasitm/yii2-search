@@ -14,7 +14,8 @@ function Tools ()
 		'initDynamicDropdown',
 		'initOffCanvasMenu',
 		'initAutocompleteSelect',
-		'initSubmitSelect'
+		'initSubmitSelect',
+		'initScrolledIntoView'
 	];
 
 	this.init = function () {
@@ -72,6 +73,111 @@ function Tools ()
 	}
 	
 	/**
+	 * Use data attributes to load a URL into a container/element
+	 */
+	this.initScrolledIntoView = function (container) {
+		_self = this;
+		var container = (container == undefined) ? 'body' : container;
+		this._watch = [];
+		this.$window = $(window),
+			this._buffer = null;
+		
+		this.init = function () {
+			/**
+			 * Scrolled into view plugin
+			 */
+			var pluginName = 'scrolledIntoView',
+				settings = {
+				  scrolledin: null,
+				  scrolledout: null
+				}
+			 
+			$.fn[pluginName] = function( options ) {
+			  var options = $.extend({}, settings, options);
+			  this.each( function () {
+					var $el = $(this),
+						instance = $.data( this, pluginName );
+					if ( instance ) {
+					   instance.options = options;
+					} else {
+					   $.data(this, pluginName, _self.monitor( $el, options ) );
+					}
+				 });
+			  return this;
+			}
+			/**
+			 * Intiialze scroll monitor
+			 */
+			this.$window.on('scroll', function ( e ) {
+			  if ( !_self._buffer ) {
+				 _self._buffer = setTimeout(function () {
+					_self.isInView( e );
+					_self._buffer = null;
+				 }, 300);
+			  }
+			});
+			
+
+			/*
+			 * enable hide/unhide functionality with optional data retrieval
+			 */
+			$(container).find("[role='onScrolledIntoView']").map(function(e) {
+				var inCallback = window[$(this).data('on-scrolled-in')];
+				var outCallback = window[$(this).data('on-scrolled-out')];
+				switch(_self.test($(this)))
+				{
+					case true:
+					try {inCallback()} catch(error) {};
+					break;
+					
+					default:
+					$(this)
+					  .scrolledIntoView()
+					  .on('scrolledin', function () { try {inCallback()} catch(error) {}})
+					  .on('scrolledout', function () { try {outCallback()} catch(error) {}});
+					break;
+				}
+			});
+			return this;
+		}
+		 
+		this.monitor = function( element, options ) {
+		   var item = { element: element, options: options, invp: false };
+		   _self._watch.push(item);
+		   return item;
+		}
+		
+		this.test = function ($el) {
+		   var docViewTop = this.$window.scrollTop(),
+			   docViewBottom = docViewTop + this.$window.height(),
+			   elemTop = $el.offset().top,
+			   elemBottom = elemTop + $el.height();
+		 
+		   return ((elemBottom >= docViewTop) && (elemTop <= docViewBottom)
+					 && (elemBottom <= docViewBottom) &&  (elemTop >= docViewTop) );
+		}
+		 
+		this.isInView = function ( e ) {
+		 
+		   $.each(_self._watch, function () {
+		 
+			  if ( _self.test( this.element ) ) {
+				 if ( !this.invp ) {
+					this.invp = true;
+					if ( this.options.scrolledin ) this.options.scrolledin.call( this.element, e );
+					this.element.trigger( 'scrolledin', e );
+				 }
+			  } else if ( this.invp ) {
+				 this.invp = false;
+				 if ( this.options.scrolledout ) this.options.scrolledout.call( this.element, e );
+				 this.element.trigger( 'scrolledout', e );
+			  }
+		   });
+		}
+		this.init();
+	}
+	
+	/**
 	 * Populate another dropdown with data from the current dropdown
 	 */
 	this.initDynamicDropdown = function (container) {
@@ -84,7 +190,7 @@ function Tools ()
 				case true:
 					$(this).on('change', function (e) {
 						e.preventDefault();
-						var container = getObj('#'+id);
+						var container = $nitm.getObj('#'+id);
 						var url = $(this).data('url');
 						switch(url != undefined)
 						{
@@ -122,7 +228,7 @@ function Tools ()
 				case true:
 					$(this).on('click', function (e) {
 						e.preventDefault();
-						var container = getObj('#'+id);
+						var container = $nitm.getObj('#'+id);
 						var url = $(this).data('url');
 						switch(url != undefined)
 						{
@@ -338,11 +444,11 @@ function Tools ()
 		$(container).find("[role='autocompleteSelect']").each(function() {
 			$(this).on('autocompleteselect', function (e, ui) {
 				e.preventDefault();
-				var options = $(this).data('select');
-				switch(options.hasOwnProperty('container'))
+				var container = $(this).data('real-input');
+				switch(container != undefined)
 				{
 					case true:
-					getObj(options.container).val(ui.item.value);
+					$nitm.getObj(container).val(ui.item.value);
 					$(this).val(ui.item.label);
 					break;
 					

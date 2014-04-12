@@ -7,7 +7,7 @@ $this->title = "Edit configration parameters";
 <div class="col-md-3 col-lg-3 col-sm-12 full-height">
 	<div class="row">
         <div class="configuration-actions">
-        <?= \nitm\widgets\alert\widget\Alert::widget(); ?>
+        <?= \nitm\widgets\alert\Alert::widget(); ?>
         <?php
             echo $this->render('containers/index',
                        array("model" => $model)
