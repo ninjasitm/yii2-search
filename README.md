@@ -11,13 +11,13 @@ The preferred way to install this extension is through [composer](http://getcomp
 Either run
 
 ```
-php composer.phar require --prefer-dist nitm/yii2-nitm-module "*"
+php composer.phar require --prefer-dist nitm/yii2-module "*"
 ```
 
 or add
 
 ```
-"nitm/yii2-nitm-module": "*"
+"nitm/yii2-module": "*"
 ```
 
 to the require section of your `composer.json` file.
@@ -31,7 +31,7 @@ Once the extension is installed, simply use it in your code by adding the follow
 ```php
 <?= 
 	'nitm' => [
-		'class' => "nitm\module\Module"
+		'class' => "nitm\Module"
 	]; 
 ?>```
 
@@ -56,5 +56,5 @@ Additionally you can enable the required routes by adding the following to your 
 	'configuration/load/<engine:\w+>/<container:\w+>' => 'nitm/configuration/',
 ?>```
 =======
-yii2-nitm-module
+yii2-module
 =================
