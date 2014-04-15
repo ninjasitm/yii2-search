@@ -3,9 +3,8 @@
 namespace nitm\controllers;
 
 use Yii;
-use app\models\Issues;
-use app\models\search\Issues as IssuesSearch;
-use common\controllers\DefaultController;
+use nitm\models\Issues;
+use nitm\models\search\Issues as IssuesSearch;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 
@@ -28,9 +27,11 @@ class IssueController extends DefaultController
 
     /**
      * Lists all Issues models.
+	 * @param string $type The parent type of the issue
+	 * @param int $id The id of the parent
      * @return mixed
      */
-    public function actionIndex()
+    public function actionIndex($type, $id)
     {
         $searchModel = new IssuesSearch;
         $dataProvider = $searchModel->search(Yii::$app->request->getQueryParams());
@@ -38,6 +39,8 @@ class IssueController extends DefaultController
         return $this->render('index', [
             'dataProvider' => $dataProvider,
             'searchModel' => $searchModel,
+			'type' => $type,
+			'id' => $id
         ]);
     }
 
@@ -52,23 +55,95 @@ class IssueController extends DefaultController
             'model' => $this->findModel($id),
         ]);
     }
+	
+	/*
+	 * Get the forms associated with this controller
+	 * @param string $param What are we getting this form for?
+	 * @param int $unique The id to load data for
+	 * @return string | json
+	 */
+	public function actionForm($param=null, $id=null)
+	{
+		//$this->_view['args']['content'] = $ret_val['data'];
+		$force = false;
+		$options = [
+			'id' => $id,
+			'param' => $param
+		];
+		switch($param)
+		{	
+			//This is for generating the form for updating and creating a request
+			default:
+			$options['title'] = ['title', 'Create Refund'];
+			$options['scenario'] = 'create';
+			$options['provider'] = null;
+			$options['dataProvider'] = null;
+			$options['view'] = 'form/_form';
+			$options['args'] = [false, true, true];
+			$options['modelClass'] = Refunds::className();
+			$options['force'] = true;
+			break;
+		}
+		$modalOptions = [
+			'contentOnly' => true,
+			'body' => [
+				'class' => 'modal-full'
+			],
+			'content' => [
+				'class' => 'modal-full'
+			],
+			'dialog' => [
+				'class' => 'modal-full'
+			],
+		];
+		$this->setResponseFormat(\Yii::$app->request->isAjax ? 'modal' : 'html');
+		echo $this->renderResponse($this->getFormVariables($options, $modalOptions), $this->_view, \Yii::$app->request->isAjax);
+	}
 
     /**
      * Creates a new Issues model.
+	 * @param string $type The parent type of the issue
+	 * @param int $id The id of the parent
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
      */
-    public function actionCreate()
+    public function actionCreate($type, $id)
     {
-        $model = new Issues;
-
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'id' => $model->id]);
-        } else {
-            return $this->render('create', [
-                'model' => $model,
-            ]);
+        $model = new Issues();
+		$model->setScenario('create');
+		$model->load(Yii::$app->request->post());
+		switch(\Yii::$app->request->isAjax && (@\nitm\helpers\Helper::boolval($_REQUEST['do']) !== true))
+		{
+			case true:
+			$this->setResponseFormat('json');
+			$model->validate();
+			return $model->getErrors();
+			break;
+		}
+		$ret_val = [
+			'success' => false,
+			'action' => 'create'
+		];
+        if($model->save()) {
+			$ret_val['success'] = true;
+			$model->completed = 0;
+			$model->closed = 0;
+			switch(\Yii::$app->request->isAjax)
+			{
+				case true:
+           		$this->_view['view'] = 'data';
+				$dataProvider = new ArrayDataProvider([
+					'allModels' => [$model]
+				]);
+				$ret_val['data'] = $this->renderAjax($this->_view['view'], ["dataProvider" => $dataProvider]);
+				break;
+				
+				default:
+            	return $this->redirect(['index']);
+				break;
+			}
         }
+		echo $this->renderResponse($ret_val, $this->_view, \Yii::$app->request->isAjax);
     }
 
     /**

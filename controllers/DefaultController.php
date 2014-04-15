@@ -6,6 +6,7 @@ use Yii;
 use yii\helpers\Html;
 use yii\web\Controller;
 use nitm\helpers\Session;
+use nitm\helpers\Response;
 use nitm\models\Configer;
 
 class DefaultController extends Controller
@@ -15,13 +16,8 @@ class DefaultController extends Controller
 	public $model;
 	public $settings;
 	public $metaTags = array();
-	public $forceAjax = false;
 	
 	protected $responseFormat;
-	protected $_view = [
-		'view' => '@nitm/views/utils/wrapper', //The view file
-		'args' => [] //the arguments to the view file
-	];
 	
 	/**
 	 * Indicator types supports
@@ -475,7 +471,7 @@ class DefaultController extends Controller
 				
 				default:
 				$this->setResponseFormat('html');
-				$this->_view['args'] = [
+				Response::$viewOptions['args'] = [
 					"content" => $this->renderAjax('data', ["model" => $this->model]),
 				];
 				$partial = false;
@@ -483,18 +479,17 @@ class DefaultController extends Controller
 			}
 			break;
 		}
-		echo $this->renderResponse($ret_val, $this->_view, $partial);
+		echo $this->renderResponse($ret_val, Response::$viewOptions, $partial);
+	}
+	
+	public function getFormVariables($options, $modalOptions=[], $model)
+	{
+		return \nitm\helpers\Form::getVariables($options, $modalOptions, $model);
 	}
 	
 	public function getResponseFormat()
 	{
-		switch(empty($this->responseFormat))
-		{
-			case true:
-			$this->setResponseFormat();
-			break;
-		}
-		return $this->responseFormat;
+		return Response::getFormat();
 	}
 	
 	/*
@@ -503,45 +498,9 @@ class DefaultController extends Controller
 	 */
 	protected function renderResponse($result=null, $params=null, $partial=true)
 	{
-		$contentType = "text/html";
-		$render = (($partial === true) || ($this->forceAjax === true)) ? 'renderAjax' : 'render';
-		switch($this->getResponseFormat())
-		{
-			case 'xml':
-			//implement handlig of XML responses
-			$contentType = "application/xml";
-			$ret_val = $result;
-			break;
-			
-			case 'html':
-			$params ['view'] =  empty($params['view']) ? '@nitm/views/utils/wrapper' :  $params['view'];
-			$ret_val = $this->$render($params['view'], $params['args']);
-			break;
-			
-			case 'modal':
-			$params = is_null($params) ? $this->_view : $params;
-			$params ['view'] =  empty($params['view']) ? '@nitm/views/utils/wrapper' :  $params['view'];
-			$ret_val = $this->$render('@nitm/views/utils/modal', 
-				[
-					'content' => $this->$render($params['view'], $params['args']),
-					'title' => @$params['title'],
-					'modalOptions' => @$params['modalOptions'],
-				]
-			);
-			break;
-			
-			case 'text':
-			$contentType = "text/plain";
-			$ret_val = @strip_tags($result['data']);
-			break;
-			
-			default:
-			$contentType = "application/json";
-			$ret_val = @\yii\helpers\Json::encode($result);
-			break;
-		}
-		\Yii::$app->response->getHeaders()->set('Content-Type', $contentType);
-		return $ret_val;
+		Response::initContext(\Yii::$app->controller,  \Yii::$app->controller->getView());
+		$render = (($partial === true) || (Response::$forceAjax === true)) ? 'renderAjax' : 'render';
+		return $this->$render(Response::$viewPath, ['content' => Response::render($result, $params, $partial)]);
 	}
 	
 	/*
@@ -550,39 +509,7 @@ class DefaultController extends Controller
 	 */
 	protected function setResponseFormat($format=null)
 	{
-		$ret_val = null;
-		$format = (is_null($format)) ? (!\Yii::$app->request->get('__format') ? null : \Yii::$app->request->get('__format')) : $format;
-		switch($format)
-		{
-			case 'text':
-			case 'raw':
-			$ret_val = 'raw';
-			\Yii::$app->response->format = \yii\web\Response::FORMAT_RAW;
-			break;
-			
-			case 'html':
-			case 'modal':
-			$ret_val = $format;
-			\Yii::$app->response->format = \yii\web\Response::FORMAT_HTML;
-			break;
-			
-			case 'xml':
-			$ret_val = $format;
-			\Yii::$app->response->format = \yii\web\Response::FORMAT_XML;
-			break;
-			
-			case 'jsonp':
-			$ret_val = $format;
-			\Yii::$app->response->format = \yii\web\Response::FORMAT_JSONP;
-			break;
-			
-			default:
-			$ret_val = 'json';
-			\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-			break;
-		}
-		$this->responseFormat = $ret_val;
-		return $ret_val;
+		return Response::setFormat($format);
 	}
 	
 	/*

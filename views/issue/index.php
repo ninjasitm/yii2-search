@@ -19,9 +19,16 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
 
     <p>
-        <?= Html::a(Yii::t('app', 'Create {modelClass}', [
-  'modelClass' => 'Issues',
-]), ['create'], ['class' => 'btn btn-success']) ?>
+	<?= Html::a(Yii::t('app', 'Create {modelClass}', [
+			'modelClass' => 'Issues',
+		]), 
+		['/issue/create/'.$parentType."/".$parentId], 
+		[
+			'class' => 'btn btn-success',
+			'data-toggle' => 'modal',
+			'data-target' => '#issue-tracker-modal'
+		]
+	) ?>
     </p>
 
     <?= GridView::widget([
@@ -45,7 +52,15 @@ $this->params['breadcrumbs'][] = $this->title;
             // 'duplicate',
             // 'duplicate_id',
 
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+				'class' => 'yii\grid\ActionColumn',
+				"urlCreator" => function ($action, $model) {
+						$params = [
+								"/".$model->isWhat().'/'.$action."/".$model->id
+						];
+						return \yii\helpers\Url::toRoute($params);
+				}
+			],
         ],
     ]); ?>
 

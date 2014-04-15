@@ -48,7 +48,7 @@ class Module extends \yii\base\Module
 		/**
 		 * Aliases for nitm module
 		 */
-		\Yii::setAlias('nitm', dirname(__DIR__)."/yii2-nitm-module");
-		\Yii::setAlias('nitm/widgets', dirname(__DIR__)."/yii2-nitm-widgets");
+		\Yii::setAlias('nitm', dirname(__DIR__)."/yii2-module");
+		\Yii::setAlias('nitm/widgets', dirname(__DIR__)."/yii2-widgets");
 	}
 }

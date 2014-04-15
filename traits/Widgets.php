@@ -18,7 +18,7 @@ trait Widgets
 		return \nitm\widgets\issueTracker\IssueTracker::widget($options);
 	}
 	
-	public function activityWidget($options)
+	public function activityWidget(array $options = null)
 	{
 		return \nitm\widgets\activityIndicator\ActivityIndicator::widget($options);
 	}
