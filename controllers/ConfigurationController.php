@@ -204,7 +204,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		switch(\Yii::$app->request->isAjax && (Helper::boolval(@$_REQUEST['getHtml']) === true))
 		{
 			case true:
-			$this->model->config['current']['action']['data'] = $this->renderPartial($view['view'], $view['data']);
+			$this->model->config['current']['action']['data'] = $this->renderAjax($view['view'], $view['data']);
 			break;
 		}
 		$this->finalAction();

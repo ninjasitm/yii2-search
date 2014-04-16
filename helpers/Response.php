@@ -27,7 +27,7 @@ class Response extends Behavior
 			self::setFormat();
 			break;
 		}
-		return \Yii::$app->response->format;
+		return self::$format;
 	}
 	
 	public static function initContext($controller=null, $view=null)
@@ -100,7 +100,6 @@ class Response extends Behavior
 			\Yii::$app->response->format = \yii\web\Response::FORMAT_RAW;
 			break;
 			
-			case 'html':
 			case 'modal':
 			$ret_val = $format;
 			\Yii::$app->response->format = \yii\web\Response::FORMAT_HTML;
@@ -116,9 +115,14 @@ class Response extends Behavior
 			\Yii::$app->response->format = \yii\web\Response::FORMAT_JSONP;
 			break;
 			
-			default:
-			$ret_val = 'json';
+			case 'json':
+			$ret_val = $format;
 			\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+			break;
+			
+			default:
+			$ret_val = 'html';
+			\Yii::$app->response->format = \yii\web\Response::FORMAT_HTML;
 			break;
 		}
 		self::$format = $ret_val;

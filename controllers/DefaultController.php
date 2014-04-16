@@ -498,7 +498,6 @@ class DefaultController extends Controller
 	 */
 	protected function renderResponse($result=null, $params=null, $partial=true)
 	{
-		Response::setFormat();
 		Response::initContext(\Yii::$app->controller,  \Yii::$app->controller->getView());
 		$render = (($partial === true) || (Response::$forceAjax === true)) ? 'renderAjax' : 'render';
 		return Response::render($result, $params, $partial);

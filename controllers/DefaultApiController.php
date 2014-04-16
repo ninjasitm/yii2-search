@@ -9,7 +9,7 @@ use nitm\helpers\Session;
 use nitm\helpers\Response;
 use nitm\models\Configer;
 
-class DefaultController extends Controller
+class DefaultApiController extends Controller
 {
 	use \nitm\traits\Configer;
 	
