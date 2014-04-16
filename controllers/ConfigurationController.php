@@ -114,7 +114,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 	
 	public function actionIndex()
 	{
-		return $this->render('index', array("model" => $this->model));
+		return $this->render('index', ["model" => $this->model]);
 	}
 	
 	/*
@@ -212,7 +212,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 	
 	public function actionGet()
 	{
-		$ret_val = array("success" => false, 'action' => 'get');
+		$ret_val = ["success" => false, 'action' => 'get'];
 		switch($this->model->validate())
 		{
 			case true:
@@ -234,9 +234,11 @@ class ConfigurationController extends DefaultController implements DefaultContro
 				switch($_REQUEST['__format'])
 				{
 					case true:
-					$ret_val['data'] = $this->renderPartial('values/index', array("model" => $this->model,
-												      "values" => $this->model->config['current']['config'],
-												      "parent" => $this->model->cfg_s));
+					$ret_val['data'] = $this->renderAjax('values/index', [
+						"model" => $this->model,
+						"values" => $this->model->config['current']['config'],
+						"parent" => $this->model->cfg_s
+					]);
 					break;
 				
 					default:
@@ -250,7 +252,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		Response::$viewOptions['args'] = [
 			'content' => $ret_val['data']
 		];
-		echo $this->renderResponse($ret_val, Response::$viewOptions, true);
+		return $this->renderResponse($ret_val, Response::$viewOptions, true);
 	}
 	
 	public function actionDelete()
@@ -294,7 +296,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			}
 			break;
 		}
-		$this->finalAction();
+		return $this->finalAction();
 	}
 	
 	public function actionUpdate()
@@ -320,11 +322,11 @@ class ConfigurationController extends DefaultController implements DefaultContro
 					break;
 					
 					case 'updateValue':
-					if (is_array($this->model->cfg_c)) 
+					/*if (is_array($this->model->cfg_c)) 
 					{
 						print_r($this->model->cfg_c); 
 						exit;
-					}
+					}*/
 					$this->model->update($this->model->cfg_n,
 							$this->model->cfg_v,
 							$this->model->cfg_c,
@@ -342,7 +344,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			}
 			break;
 		}
-		$this->finalAction();
+		return $this->finalAction();
 	}
 	
 	/*---------------------
@@ -364,15 +366,12 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			case true:
 			$this->model->config['current']['action']['flash'] = \Yii::$app->getSession()->getFlash(
 			$this->model->config['current']['action']['class'], null, true);
-			$params = [
-				'view' => '@common/views/utils/wrapper'
-			];
-			echo $this->renderResponse($this->model->config['current']['action'], $params, true);
+			return $this->renderResponse($this->model->config['current']['action'], null, true);
 			break;
 			
 			//otherwise we're going back to the index
 			default;
-			$this->redirect(\Yii::$app->urlManager->createUrl('configuration/'));
+			$this->redirect(\Yii::$app->request->getReferrer());
 			break;
 		}
 	}

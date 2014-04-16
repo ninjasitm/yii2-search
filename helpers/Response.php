@@ -27,7 +27,7 @@ class Response extends Behavior
 			self::setFormat();
 			break;
 		}
-		return self::$format;
+		return \Yii::$app->response->format;
 	}
 	
 	public static function initContext($controller=null, $view=null)
@@ -77,7 +77,7 @@ class Response extends Behavior
 			
 			default:
 			$contentType = "application/json";
-			$ret_val = @\yii\helpers\Json::encode($result);
+			$ret_val = $result;
 			break;
 		}
 		\Yii::$app->response->getHeaders()->set('Content-Type', $contentType);
