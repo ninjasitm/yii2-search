@@ -6,6 +6,7 @@ use Yii;
 use nitm\helpers\Helper;
 use nitm\helpers\Session;
 use nitm\models\Configer;
+use nitm\helpers\Response;
 use nitm\interfaces\DefaultControllerInterface;
 
 class ConfigurationController extends DefaultController implements DefaultControllerInterface
@@ -246,10 +247,10 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			}
 			break;
 		}
-		$this->_view['args'] = [
+		Response::$viewOptions['args'] = [
 			'content' => $ret_val['data']
 		];
-		echo $this->renderResponse($ret_val, $this->_view, true);
+		echo $this->renderResponse($ret_val, Response::$viewOptions, true);
 	}
 	
 	public function actionDelete()
