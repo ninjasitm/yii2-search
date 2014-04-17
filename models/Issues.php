@@ -24,6 +24,13 @@ use Yii;
  */
 class Issues extends BaseWidget
 {
+	
+	public static $statuses = [
+		'normal' => 'default',
+		'important' => 'info',
+		'critical' => 'error'
+	];
+	
     /**
      * @inheritdoc
      */
@@ -31,6 +38,24 @@ class Issues extends BaseWidget
     {
         return 'issues';
     }
+	
+	public static function has()
+	{
+		$has = [
+			'created_at' => null, 
+			'updated_at' => null,
+		];
+		return array_merge(parent::has(), $has);
+	}
+	
+	public function scenarios()
+	{
+		$scenarios = [
+			'create' => ['created_at', 'parent_id', 'parent_type', 'notes', 'status', 'duplicate', 'duplicate_id'],
+			'update' => ['notes', 'status', 'closed', 'closed_by', 'resolved', 'resolved_by'],
+		];
+		return array_merge(parent::scenarios(), $scenarios);
+	}
 
     /**
      * @inheritdoc
@@ -38,7 +63,7 @@ class Issues extends BaseWidget
     public function rules()
     {
         return [
-            [['parent_id', 'parent_type', 'notes', 'created_at', 'author'], 'required'],
+            [['parent_id', 'parent_type', 'notes'], 'required', 'on' => ['create']],
             [['parent_id', 'resolved', 'author', 'closed_by', 'resolved_by', 'closed', 'duplicate', 'duplicate_id'], 'integer'],
             [['notes'], 'string'],
             [['created_at', 'resolved_on', 'closed_on'], 'safe'],
@@ -68,4 +93,15 @@ class Issues extends BaseWidget
             'duplicate_id' => Yii::t('app', 'Duplicate ID'),
         ];
     }
+	
+	public function getStatus()
+	{
+		return self::$statuses[$this->status];
+	}
+	
+	public static function getStatusLabels()
+	{
+		$statuses = array_keys(self::$statuses);
+		return array_combine($statuses, array_map('ucfirst', $statuses));
+	}
 }

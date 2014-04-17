@@ -75,6 +75,11 @@ trait Widgets
 		return \nitm\widgets\revisions\RevisionsModal::widget();
 	}
 	
+	public function issueModalWidget()
+	{
+		return \nitm\widgets\issueTracker\IssueTrackerModal::widget();
+	}
+	
 	public function alertWidget(array $options)
 	{
 		return \nitm\widgets\alert\Alert::widget($options);

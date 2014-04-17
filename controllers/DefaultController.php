@@ -482,9 +482,9 @@ class DefaultController extends Controller
 		echo $this->renderResponse($ret_val, Response::$viewOptions, $partial);
 	}
 	
-	public function getFormVariables($options, $modalOptions=[], $model)
+	public function getFormVariables($model, $options, $modalOptions=[])
 	{
-		return \nitm\helpers\Form::getVariables($options, $modalOptions, $model);
+		return \nitm\helpers\Form::getVariables($model, $options, $modalOptions);
 	}
 	
 	public function getResponseFormat()
@@ -500,7 +500,7 @@ class DefaultController extends Controller
 	{
 		Response::initContext(\Yii::$app->controller,  \Yii::$app->controller->getView());
 		$render = (($partial === true) || (Response::$forceAjax === true)) ? 'renderAjax' : 'render';
-		return Response::render($result, $params, $partial);
+		return $this->$render(Response::$viewPath, ['content' => Response::render($result, $params, $partial)]);
 	}
 	
 	/*

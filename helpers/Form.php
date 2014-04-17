@@ -74,18 +74,18 @@ class Form extends Behavior
 				switch((sizeof($model) >= 1) || $force)
 				{
 					case true:
+					$options['viewArgs'] = (isset($options['viewArgs']) && is_array($options['viewArgs'])) ? $options['viewArgs'] : (isset($otions['viewArgs']) ? [$options['viewArgs']] : []);
 					$data = (!is_null($options['dataProvider']) && $model->hasProperty($options['dataProvider'])) ? $data->$dataProvider : $model;
 					Response::$viewOptions = [
-						"view" => $options['view'], 
-						"args" => [
-							"action" => $options['param'],
-							"model" => $model,
-							'data' => $data,
-							$model->isWhat() => $model,
-						],
+						"view" => $options['view'],
 						'modalOptions' => $modalOptions,
 						'title' => (($model->hasProperty(@$options['title'][0]) || $model->hasAttribute(@$options['title'][0])) ? @$model->$options['title'][0] : ($model->getIsNewRecord() ? "Create" : "Update")." ".ucfirst($model->isWhat()))
 					];
+					Response::$viewOptions["args"] = array_merge([
+							"action" => $options['param'],
+							"model" => $model,
+							'data' => $data,
+						], $options['viewArgs']);
 					$ret_val['data'] = $data;
 					$ret_val['success'] = true;
 					$ret_val['action'] = 'view_'.$options['param'];

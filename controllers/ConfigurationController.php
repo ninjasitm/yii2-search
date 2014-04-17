@@ -252,6 +252,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		Response::$viewOptions['args'] = [
 			'content' => $ret_val['data']
 		];
+		$this->setResponseFormat('json');
 		return $this->renderResponse($ret_val, Response::$viewOptions, true);
 	}
 	

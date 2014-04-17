@@ -5,6 +5,7 @@ namespace nitm\controllers;
 use Yii;
 use nitm\models\Issues;
 use nitm\models\search\Issues as IssuesSearch;
+use nitm\helpers\Response;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 
@@ -13,6 +14,19 @@ use yii\filters\VerbFilter;
  */
 class IssueController extends DefaultController
 {
+	use \nitm\traits\Widgets;
+	
+	public $legend = [
+		'success' => 'Closed and Resolved',
+		'warning' => 'Closed and Unresolved',
+	];
+	
+	public function init()
+	{
+		parent::init();
+		$this->model = new Issues(['scenario' => 'default']);
+	}
+	
     public function behaviors()
     {
         return [
@@ -39,8 +53,9 @@ class IssueController extends DefaultController
         return $this->render('index', [
             'dataProvider' => $dataProvider,
             'searchModel' => $searchModel,
-			'type' => $type,
-			'id' => $id
+			'useModal' => \Yii::$app->request->isAjax,
+			'parentType' => $type,
+			'parentId' => $id,
         ]);
     }
 
@@ -62,25 +77,28 @@ class IssueController extends DefaultController
 	 * @param int $unique The id to load data for
 	 * @return string | json
 	 */
-	public function actionForm($param=null, $id=null)
+	public function actionForm($type=null, $id=null)
 	{
-		//$this->_view['args']['content'] = $ret_val['data'];
+		//Response::$viewOptions['args']['content'] = $ret_val['data'];
 		$force = false;
 		$options = [
-			'id' => $id,
-			'param' => $param
+			'param' => $type
 		];
 		switch($param)
 		{	
 			//This is for generating the form for updating and creating a request
 			default:
-			$options['title'] = ['title', 'Create Refund'];
+			$options['title'] = ['title', 'Create Issue'];
 			$options['scenario'] = 'create';
 			$options['provider'] = null;
 			$options['dataProvider'] = null;
 			$options['view'] = 'form/_form';
+			$options['viewArgs'] = [
+				'parentId' => $id,
+				'parentType' => $type
+			];
 			$options['args'] = [false, true, true];
-			$options['modelClass'] = Refunds::className();
+			$options['modelClass'] = Issues::className();
 			$options['force'] = true;
 			break;
 		}
@@ -96,8 +114,7 @@ class IssueController extends DefaultController
 				'class' => 'modal-full'
 			],
 		];
-		$this->setResponseFormat(\Yii::$app->request->isAjax ? 'modal' : 'html');
-		echo $this->renderResponse($this->getFormVariables($options, $modalOptions), $this->_view, \Yii::$app->request->isAjax);
+		return $this->renderResponse($this->getFormVariables($this->model, $options, $modalOptions), Response::$viewOptions, \Yii::$app->request->isAjax);
 	}
 
     /**
@@ -107,7 +124,7 @@ class IssueController extends DefaultController
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
      */
-    public function actionCreate($type, $id)
+    public function actionCreate()
     {
         $model = new Issues();
 		$model->setScenario('create');
@@ -116,8 +133,7 @@ class IssueController extends DefaultController
 		{
 			case true:
 			$this->setResponseFormat('json');
-			$model->validate();
-			return $model->getErrors();
+            return \yii\widgets\ActiveForm::validate($model);
 			break;
 		}
 		$ret_val = [
@@ -126,16 +142,14 @@ class IssueController extends DefaultController
 		];
         if($model->save()) {
 			$ret_val['success'] = true;
-			$model->completed = 0;
-			$model->closed = 0;
 			switch(\Yii::$app->request->isAjax)
 			{
 				case true:
-           		$this->_view['view'] = 'data';
+           		Response::$viewOptions['view'] = 'data';
 				$dataProvider = new ArrayDataProvider([
 					'allModels' => [$model]
 				]);
-				$ret_val['data'] = $this->renderAjax($this->_view['view'], ["dataProvider" => $dataProvider]);
+				$ret_val['data'] = $this->renderAjax(Response::$viewOptions['view'], ["dataProvider" => $dataProvider]);
 				break;
 				
 				default:
@@ -143,7 +157,7 @@ class IssueController extends DefaultController
 				break;
 			}
         }
-		echo $this->renderResponse($ret_val, $this->_view, \Yii::$app->request->isAjax);
+		echo $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
     }
 
     /**
@@ -177,20 +191,15 @@ class IssueController extends DefaultController
 
         return $this->redirect(['index']);
     }
-
-    /**
-     * Finds the Issues model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param integer $id
-     * @return Issues the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    protected function findModel($id)
-    {
-        if (($model = Issues::findOne($id)) !== null) {
-            return $model;
-        } else {
-            throw new NotFoundHttpException('The requested page does not exist.');
-        }
-    }
+	
+	/**
+	 * Get the class indicator value for the users status
+	 * @param Object $item
+	 * @return string $css class
+	 */
+	public function getStatusIndicator(Issues $item)
+	{
+		$indicator = $item->getStatus();
+		return isset($this->statusIndicators[$indicator]) ? $this->statusIndicators[$indicator] : 'default';
+	}
 }
