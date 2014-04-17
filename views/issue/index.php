@@ -1,7 +1,7 @@
 <?php
 
 use yii\helpers\Html;
-use yii\grid\GridView;
+use yii\widgets\ListView;
 use kartik\icons\Icon;
 
 /**
@@ -30,14 +30,25 @@ if($useModal == true) {
 
     <p>
 	<?= Html::a(Yii::t('app', 'Create {modelClass}', [
-			'modelClass' => 'Issues',
+			'modelClass' => 'Issue',
 		]), 
 		['/issue/form/'.$parentType."/".$parentId, '__format' => 'modal'],
 		$modalOptions 
 	) ?>
     </p>
 
-    <?= GridView::widget([
+	<?php echo ListView::widget([
+		'dataProvider' => $dataProvider,
+		'itemOptions' => ['class' => 'item'],
+		'itemView' => function ($model, $key, $index, $widget) {
+				return $this->render('view',['model' => $model]);
+		},
+	
+	]); ?>
+
+
+
+    <?php /*GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
 		'rowOptions' => function ($model, $key, $index, $grid)
@@ -141,6 +152,6 @@ if($useModal == true) {
 					"class" => $this->context->getStatusIndicator($model)
 				]);
 		}
-    ]); ?>
+    ]);*/ ?>
 
 </div>

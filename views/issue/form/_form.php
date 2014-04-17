@@ -10,13 +10,15 @@ use nitm\models\Issues;
  * @var app\models\Issues $model
  * @var yii\widgets\ActiveForm $form
  */
+
+$action = ($model->getIsNewRecord()) ? "create" : "update";
 ?>
 
 <div class="issues-form">
 
 	<?php $form = ActiveForm::begin([
 		"type" => ActiveForm::TYPE_HORIZONTAL,
-		'action' => '/issue/create',
+		'action' => '/issue/'.$action."/".$model->id,
 		'options' => [
 			"role" => "filter"
 		],
@@ -28,7 +30,8 @@ use nitm\models\Issues;
 		'enableAjaxValidation' => true
 	]); ?>
 
-    <?= $form->field($model, 'notes')->textarea()->label("Issue", ['class' => 'sr-only']) ?>
+    <?= $form->field($model, 'title') ?>
+    <?= $form->field($model, 'notes')->textarea()->label("Issue") ?>
 	<?=	$form->field($model, 'status')->radioList(Issues::getStatusLabels(), ['inline' => true])->label("Urgency"); ?>
 	<?php
 		switch($model->getIsNewRecord())
@@ -40,7 +43,7 @@ use nitm\models\Issues;
 		}
 	?>
 
-    <div class="form-group">
+    <div class="fixed-actions text-right">
         <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
     </div>
 

@@ -18,17 +18,6 @@ class DefaultController extends Controller
 	public $metaTags = array();
 	
 	protected $responseFormat;
-	
-	/**
-	 * Indicator types supports
-	 */
-	protected $statusIndicators = [
-		'error' => 'content bg-danger',
-		'default' => 'content',
-		'success' => 'content bg-success',
-		'info' => 'content bg-info',
-		'warning' => 'content bg-warning'
-	];
 
 	private $_cssFiles = array();
 	private $_jsFiles = array();
@@ -386,7 +375,7 @@ class DefaultController extends Controller
 			}
 			break;
 		}
-		$indicator = $this->statusIndicators[$ret_val];
+		$indicator = static::$statusIndicators[$ret_val];
 		return $indicator;
 	}
 	

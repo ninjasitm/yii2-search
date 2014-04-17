@@ -12,7 +12,7 @@ use yii\filters\VerbFilter;
 /**
  * IssueController implements the CRUD actions for Issues model.
  */
-class IssueController extends DefaultController
+class IssueController extends WidgetController
 {
 	use \nitm\traits\Widgets;
 	
@@ -67,7 +67,7 @@ class IssueController extends DefaultController
     public function actionView($id)
     {
         return $this->render('view', [
-            'model' => $this->findModel($id),
+            'model' => $this->findModel(Issues::className(), $id),
         ]);
     }
 	
@@ -126,9 +126,10 @@ class IssueController extends DefaultController
      */
     public function actionCreate()
     {
+		$post = \Yii::$app->request->post();
         $model = new Issues();
 		$model->setScenario('create');
-		$model->load(Yii::$app->request->post());
+		$model->load($post);
 		switch(\Yii::$app->request->isAjax && (@\nitm\helpers\Helper::boolval($_REQUEST['do']) !== true))
 		{
 			case true:
@@ -168,9 +169,19 @@ class IssueController extends DefaultController
      */
     public function actionUpdate($id)
     {
-        $model = $this->findModel($id);
+		$post = \Yii::$app->request->post();
+        $model = $this->findModel(Issues::className(), $id);
+		$model->setScenario('update');
+		$model->load($post);
+		switch(\Yii::$app->request->isAjax && (@\nitm\helpers\Helper::boolval($_REQUEST['do']) !== true))
+		{
+			case true:
+			$this->setResponseFormat('json');
+            return \yii\widgets\ActiveForm::validate($model);
+			break;
+		}
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+        if (!empty($post) && $model->save()) {
             return $this->redirect(['view', 'id' => $model->id]);
         } else {
             return $this->render('update', [
@@ -197,9 +208,9 @@ class IssueController extends DefaultController
 	 * @param Object $item
 	 * @return string $css class
 	 */
-	public function getStatusIndicator(Issues $item)
+	public static function getStatusIndicator(Issues $item)
 	{
 		$indicator = $item->getStatus();
-		return isset($this->statusIndicators[$indicator]) ? $this->statusIndicators[$indicator] : 'default';
+		return isset(parent::$statusIndicators[$indicator]) ? parent::$statusIndicators[$indicator] : 'default';
 	}
 }

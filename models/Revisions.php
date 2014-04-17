@@ -19,6 +19,11 @@ class Revisions extends BaseWidget
 	private $_lastActivity = '___lastActivity';
 	private $_dateFormat = "D M d Y h:iA";
 	
+	public function init()
+	{
+		parent::init();
+	}
+	
     /**
      * @inheritdoc
      */

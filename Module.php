@@ -6,7 +6,12 @@ use nitm\helpers\Session;
 use nitm\models\DB;
 
 class Module extends \yii\base\Module
-{
+{	
+	/**
+	 * @string the module id
+	 */
+	public $id = 'nitm';
+	
 	public $controllerNamespace = 'nitm\controllers';
 	
 	/*

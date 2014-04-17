@@ -6,13 +6,14 @@ use Yii;
 use yii\web\NotFoundHttpException;
 use nitm\models\Revisions;
 use nitm\models\search\Revisions as RevisionsSearch;
-use nitm\widgets\revisions\widget\Revisions as RevisionsWidget;
-use nitm\controllers\DefaultController;
+use nitm\widgets\revisions\Revisions as RevisionsWidget;
+use nitm\controllers\WidgetController;
+use nitm\helpers\Response;
 
 /**
  * RevisionsController implements the CRUD actions for Revisions model.
  */
-class RevisionsController extends DefaultController
+class RevisionsController extends WidgetController
 {
     public function behaviors()
     {
@@ -42,7 +43,7 @@ class RevisionsController extends DefaultController
 				'searchModel' => $searchModel,
         	],
 		];*/
-		$this->_view = [
+		Response::$viewOptions = [
 			'args' => [
 				"content" => RevisionsWidget::widget([
 					"parentId" => $id, 
@@ -68,7 +69,7 @@ class RevisionsController extends DefaultController
     {
         $ret_val = [
 			'args' => [
-            	'model' => $this->findModel($id),
+            	'model' => $this->findModel(Revisions::className(), $id),
         	],
 			'view' => 'view',
 			'modalOptions' => [
@@ -135,7 +136,7 @@ class RevisionsController extends DefaultController
      */
     public function actionUpdate($id)
     {
-        $model = $this->findModel($id);
+        $model = $this->findModel(Revisions::className(), $id);
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
             return $this->redirect(['view', 'user_id' => $model->user_id, 'remote_type' => $model->remote_type, 'remote_id' => $model->remote_id]);
@@ -156,26 +157,8 @@ class RevisionsController extends DefaultController
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
+        $this->findModel(Revisions::className(), $id)->delete();
 
         return $this->redirect(['index']);
-    }
-
-    /**
-     * Finds the Revisions model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param integer $user_id
-     * @param string $remote_type
-     * @param integer $remote_id
-     * @return Revisions the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    protected function findModel($id)
-    {
-        if (($model = Revisions::find(['id' => $id])) !== null) {
-            return $model;
-        } else {
-            throw new NotFoundHttpException('The requested page does not exist.');
-        }
     }
 }

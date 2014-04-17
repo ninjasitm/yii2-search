@@ -51,8 +51,8 @@ class Issues extends BaseWidget
 	public function scenarios()
 	{
 		$scenarios = [
-			'create' => ['created_at', 'parent_id', 'parent_type', 'notes', 'status', 'duplicate', 'duplicate_id'],
-			'update' => ['notes', 'status', 'closed', 'closed_by', 'resolved', 'resolved_by'],
+			'create' => ['title', 'created_at', 'parent_id', 'parent_type', 'notes', 'status', 'duplicate', 'duplicate_id'],
+			'update' => ['title', 'notes', 'status', 'closed', 'closed_by', 'resolved', 'resolved_by'],
 		];
 		return array_merge(parent::scenarios(), $scenarios);
 	}
@@ -63,7 +63,7 @@ class Issues extends BaseWidget
     public function rules()
     {
         return [
-            [['parent_id', 'parent_type', 'notes'], 'required', 'on' => ['create']],
+            [['parent_id', 'parent_type', 'notes', 'title'], 'required', 'on' => ['create']],
             [['parent_id', 'resolved', 'author', 'closed_by', 'resolved_by', 'closed', 'duplicate', 'duplicate_id'], 'integer'],
             [['notes'], 'string'],
             [['created_at', 'resolved_on', 'closed_on'], 'safe'],

@@ -7,7 +7,18 @@ use nitm\helpers\Response;
  * Traits defined for expanding active relation scopes until yii2 resolves traits issue
  */
  trait Controller {
-
+	
+	/**
+	 * Indicator types supports
+	 */
+	protected static $statusIndicators = [
+		'error' => 'content bg-danger',
+		'default' => 'content',
+		'success' => 'content bg-success',
+		'info' => 'content bg-info',
+		'warning' => 'content bg-warning'
+	];
+	
     /*
 	 * Check to see if somethign is supported
 	 * @param mixed $what
