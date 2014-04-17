@@ -11,7 +11,7 @@ use nitm\models\Configer;
 
 class DefaultController extends Controller
 {
-	use \nitm\traits\Configer;
+	use \nitm\traits\Configer, \nitm\traits\Controller;
 	
 	public $model;
 	public $settings;
@@ -149,15 +149,6 @@ class DefaultController extends Controller
 			}
 			break;
 		}
-	}
-	
-	/*
-	 * Check to see if somethign is supported
-	 * @param mixed $what
-	 */
-	public function isSupported($what)
-	{
-		return (@$this->settings['supported'][$what] == true);
 	}
 
 	/*
@@ -480,47 +471,6 @@ class DefaultController extends Controller
 			break;
 		}
 		echo $this->renderResponse($ret_val, Response::$viewOptions, $partial);
-	}
-	
-	public function getFormVariables($model, $options, $modalOptions=[])
-	{
-		return \nitm\helpers\Form::getVariables($model, $options, $modalOptions);
-	}
-	
-	public function getResponseFormat()
-	{
-		return Response::getFormat();
-	}
-	
-	/*
-	 * Determine how to return the data
-	 * @param mixed $result Data to be displayed
-	 */
-	protected function renderResponse($result=null, $params=null, $partial=true)
-	{
-		Response::initContext(\Yii::$app->controller,  \Yii::$app->controller->getView());
-		$render = (($partial === true) || (Response::$forceAjax === true)) ? 'renderAjax' : 'render';
-		return $this->$render(Response::$viewPath, ['content' => Response::render($result, $params, $partial)]);
-	}
-	
-	/*
-	 * Get the desired display format supported
-	 * @return string format
-	 */
-	protected function setResponseFormat($format=null)
-	{
-		return Response::setFormat($format);
-	}
-	
-	/*
-	 * Return a string imploded with ucfirst characters
-	 * @param string $name
-	 * @return string
-	 */
-	protected static function properName($value)
-	{
-		$ret_val = empty($value) ?  [] : array_map('ucfirst', preg_split ("/[_-]/", $value));
-		return implode($ret_val);
 	}
 }
 
