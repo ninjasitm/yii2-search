@@ -44,6 +44,7 @@ class Issues extends BaseWidget
 		$has = [
 			'created_at' => null, 
 			'updated_at' => null,
+			'updates' => null
 		];
 		return array_merge(parent::has(), $has);
 	}
@@ -53,6 +54,9 @@ class Issues extends BaseWidget
 		$scenarios = [
 			'create' => ['title', 'created_at', 'parent_id', 'parent_type', 'notes', 'status', 'duplicate', 'duplicate_id'],
 			'update' => ['title', 'notes', 'status', 'closed', 'closed_by', 'resolved', 'resolved_by'],
+			'close' => ['closed'],
+			'resolve' => ['resolved'],
+			'duplicate' => ['duplicate_id', 'duplicate']
 		];
 		return array_merge(parent::scenarios(), $scenarios);
 	}
@@ -96,7 +100,29 @@ class Issues extends BaseWidget
 	
 	public function getStatus()
 	{
-		return self::$statuses[$this->status];
+		switch(1)
+		{
+			case $this->duplicate:
+			$ret_val = 'duplicate'; //need to add duplicate css class
+			break;
+			
+			case $this->closed && $this->resolved:
+			$ret_val = 'success';
+			break;
+			
+			case $this->closed && !$this->resolved:
+			$ret_val = 'warning';
+			break;
+			
+			case !$this->closed && $this->resolved:
+			$ret_val = 'info';
+			break;
+			
+			default:
+			$ret_val = isset(self::$statuses[$this->status]) ? self::$statuses[$this->status] : 'default';
+			break;
+		}
+		return $ret_val;
 	}
 	
 	public static function getStatusLabels()

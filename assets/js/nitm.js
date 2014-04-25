@@ -169,7 +169,7 @@ function Nitm ()
 		return count;
 	}
 	
-	this.notify = function (nMsg, nClass, nApp)
+	this.notify = function (nMsg, nClass, nObj)
 	{
 		var nMessage = new String(nMsg);
 		if(nMessage.length <= 5)
@@ -178,8 +178,8 @@ function Nitm ()
 		}
 		else
 		{
-			this.getObj(this.responseSection).removeClass().addClass(nClass);
-			this.getObj(this.responseSection).html(nMessage);
+			this.getObj((!nObj) ? this.responseSection : nObj).removeClass().addClass(nClass);
+			this.getObj((!nObj) ? this.responseSection : nObj).html(nMessage);
 		}
 	}
 	

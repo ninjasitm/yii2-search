@@ -14,13 +14,15 @@ use nitm\models\Issues;
 $action = ($model->getIsNewRecord()) ? "create" : "update";
 ?>
 
-<div class="issues-form">
+<div class="issues-form" id='issues-form'>
+	<?= \nitm\widgets\alert\Alert::widget(); ?>
+	<div id="alert"></div>
 
 	<?php $form = ActiveForm::begin([
 		"type" => ActiveForm::TYPE_HORIZONTAL,
-		'action' => '/issue/'.$action."/".$model->id,
+		'action' => '/issue/'.$action.($model->getIsNewRecord() ? '' : "/".$model->id),
 		'options' => [
-			"role" => "filter"
+			"role" => "updateIssue"
 		],
 		'fieldConfig' => [
 			'inputOptions' => ['class' => 'form-control'],
@@ -50,3 +52,9 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
     <?php ActiveForm::end(); ?>
 
 </div>
+
+<script type='text/javascript'>
+$nitm.addOnLoadEvent(function () {
+	$nitm.issueTracker.initCreateUpdate('#issues-form');
+});
+</script>

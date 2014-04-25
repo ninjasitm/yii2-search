@@ -75,4 +75,26 @@ class Revisions extends BaseWidget
             'parent_id' => 'Remote ID',
         ];
     }
+	
+	public static function has()
+	{
+		$has = [
+			'created_at' => null, 
+			'updated_at' => null,
+			'updates' => null,
+		];
+		return array_merge(parent::has(), $has);
+	}
+	
+	public function getStatus()
+	{
+		$status = 'normal';
+		switch(1)
+		{	
+			default:
+			$ret_val = isset(self::$statuses[$status]) ? self::$statuses[$status] : 'default';
+			break;
+		}
+		return $ret_val;
+	}
 }

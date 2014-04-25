@@ -54,6 +54,7 @@ class AutocompleteController extends DefaultController
 				'label' => $name." (".$user->getStatus().", ".$user->getRole().")"
 			];
 		};
+		$this->setResponseFormat('json');
 		$this->renderResponse($ret_val);
 	}
 }

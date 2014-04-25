@@ -195,18 +195,18 @@ function Tools ()
 						switch(url != undefined)
 						{
 							case true:
-								container.removeAttr('disabled');
-								container.empty();	$.get(url+$(this).find(':selected').val()).done( function (result) {
-									var result = $.parseJSON(result);
-									container.append( $('<option></option>').val('').html('Select value...') );
-									if(typeof result == 'object')
-									{
-										$.each(result, function(val, text) {
-											container.append( $('<option></option>').val(text.value).html(text.label) );
-										});
-									}
-								}, 'json');
-								break;
+							container.removeAttr('disabled');
+							container.empty();	$.get(url+$(this).find(':selected').val()).done( function (result) {
+								var result = $.parseJSON(result);
+								container.append( $('<option></option>').val('').html('Select value...') );
+								if(typeof result == 'object')
+								{
+									$.each(result, function(val, text) {
+										container.append( $('<option></option>').val(text.value).html(text.label) );
+									});
+								}
+							}, 'json');
+							break;
 						}
 					});
 					break;
@@ -215,7 +215,7 @@ function Tools ()
 	}
 	
 	/**
-	 * Set the value for an element sing data attributes
+	 * Set the value for an element using data attributes
 	 */
 	this.initDynamicValue = function (container) {
 		var container = (container == undefined) ? 'body' : container;
@@ -233,12 +233,12 @@ function Tools ()
 						switch(url != undefined)
 						{
 							case true:
-								container.removeAttr('disabled');
-								container.empty();	$.get(url+$(this).find(':selected').val()).done( function (result) {
-									var result = $.parseJSON(result);
-									container.val(result);
-								}, 'json');
-								break;
+							container.removeAttr('disabled');
+							container.empty();	$.get(url+$(this).find(':selected').val()).done( function (result) {
+								var result = $.parseJSON(result);
+								container.val(result);
+							}, 'json');
+							break;
 						}
 					});
 					break;

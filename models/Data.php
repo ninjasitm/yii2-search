@@ -142,6 +142,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 							ActiveRecord::EVENT_BEFORE_INSERT => 'created_at',
 							ActiveRecord::EVENT_BEFORE_UPDATE => 'updated_at',
 						],
+						'value' => new \yii\db\Expression('NOW()')
 					];
 					break;
 					

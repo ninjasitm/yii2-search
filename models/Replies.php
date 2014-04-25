@@ -57,8 +57,9 @@ class Replies extends BaseWidget
 	public static function has()
 	{
 		$has = [
-			'author' => null, 
-			'editor' => null,
+			'created_at' => null, 
+			'updated_at' => null,
+			'updates' => null,
 			'hidden' => null,
 			'deleted' => null,
 		];

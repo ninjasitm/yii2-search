@@ -74,7 +74,7 @@ class Form extends Behavior
 				switch((sizeof($model) >= 1) || $force)
 				{
 					case true:
-					$options['viewArgs'] = (isset($options['viewArgs']) && is_array($options['viewArgs'])) ? $options['viewArgs'] : (isset($otions['viewArgs']) ? [$options['viewArgs']] : []);
+					$options['viewArgs'] = (isset($options['viewArgs']) && is_array($options['viewArgs'])) ? $options['viewArgs'] : (isset($options['viewArgs']) ? [$options['viewArgs']] : []);
 					$data = (!is_null($options['dataProvider']) && $model->hasProperty($options['dataProvider'])) ? $data->$dataProvider : $model;
 					Response::$viewOptions = [
 						"view" => $options['view'],
@@ -86,6 +86,14 @@ class Form extends Behavior
 							"model" => $model,
 							'data' => $data,
 						], $options['viewArgs']);
+					switch(\yii::$app->request->isAjax)
+					{
+						case false:
+						Response::$viewOptions['options'] = [
+							'class' => 'wrapper full-width full-height'
+						];
+						break;
+					}
 					$ret_val['data'] = $data;
 					$ret_val['success'] = true;
 					$ret_val['action'] = 'view_'.$options['param'];

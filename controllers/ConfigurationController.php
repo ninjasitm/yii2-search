@@ -28,11 +28,6 @@ class ConfigurationController extends DefaultController implements DefaultContro
 				//'only' => ['index', 'update', 'create', 'index', 'get', 'delete', 'convert', 'undelete'],
 				'rules' => [
 					[
-						'actions' => ['login', 'error'],
-						'allow' => true,
-						'roles' => ['?']
-					],
-					[
 						'actions' => ['index',  'create',  'update',  'delete', 'get','convert', 'undelete'],
 						'allow' => true,
 						'roles' => ['@'],
@@ -212,7 +207,12 @@ class ConfigurationController extends DefaultController implements DefaultContro
 	
 	public function actionGet()
 	{
-		$ret_val = ["success" => false, 'action' => 'get'];
+		$ret_val = [
+			'succes' => false,
+			'action' => 'get',
+			'message' => 'Get configuration',
+			'class' => ''
+		];
 		switch($this->model->validate())
 		{
 			case true:
@@ -252,8 +252,9 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		Response::$viewOptions['args'] = [
 			'content' => $ret_val['data']
 		];
-		$this->setResponseFormat('json');
-		return $this->renderResponse($ret_val, Response::$viewOptions, true);
+		$this->model->config['current']['action'] = $ret_val;
+		return $this->finalAction();
+		//return $this->renderResponse($ret_val, Response::$viewOptions, true);
 	}
 	
 	public function actionDelete()
@@ -367,6 +368,9 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			case true:
 			$this->model->config['current']['action']['flash'] = \Yii::$app->getSession()->getFlash(
 			$this->model->config['current']['action']['class'], null, true);
+			Response::$viewOptions['args']['content'] = $this->model->config['current']['action'];
+			$format = Response::formatSpecified() ? $this->getResponseFormat() : 'json';
+			$this->setResponseFormat($format);
 			return $this->renderResponse($this->model->config['current']['action'], null, true);
 			break;
 			

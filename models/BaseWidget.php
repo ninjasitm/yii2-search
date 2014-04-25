@@ -25,6 +25,12 @@ class BaseWidget extends Data implements DataInterface
 	public $constrain;
 	public $constraints = [];
 	
+	public static $statuses = [
+		'normal' => 'default',
+		'important' => 'info',
+		'critical' => 'error'
+	];
+	
 	protected $authorIdKey = 'author';
 	protected $editorIdKey = 'editor';
 	
@@ -79,6 +85,9 @@ class BaseWidget extends Data implements DataInterface
 			$this->constraints['parent_type'] = strtolower(array_pop(explode('\\', $using[1])));
 			$this->parent_type = $this->constraints['parent_type'];
 		}
+		$trace=debug_backtrace();
+$caller=$trace[1];
+print_r($caller['function'].' '.@$caller['class'].' '.$caller['line'].' '.$caller['file'].'<br>');
 		$this->queryFilters = array_replace($this->queryFilters, $this->constraints);
 	}
 	
@@ -181,6 +190,7 @@ class BaseWidget extends Data implements DataInterface
 		switch(is_a($ret_val, static::className()))
 		{
 			case true:
+			$ret_val->queryFilters = $model->queryFilters;
 			$ret_val->count = $model->getCount();
 			$ret_val->hasNew = $model->hasNew();
 			$ret_val->hasAny = $model->hasAny();

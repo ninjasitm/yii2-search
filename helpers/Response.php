@@ -12,12 +12,19 @@ class Response extends Behavior
 	public static $viewOptions = [
 		'content' => '',
 		'view' => '@nitm/views/response/index', //The view file
-		'args' => [] //the arguments to the view file
+		'args' => [], //the arguments to the view file,
+		'options' => [
+			'class' => ''
+		],
 	];
 	public static $format;
 	public static $forceAjax = false;
 	public static $viewPath = '@nitm/views/response/index';
 	public static $viewModal = '@nitm/views/response/modal';
+	
+	protected static $layouts = [
+		'column1' => '@nitm/views/layouts/column1'
+	];
 	
 	public static function getFormat()
 	{
@@ -54,12 +61,39 @@ class Response extends Behavior
 			break;
 			
 			case 'html':
-			$params ['view'] =  empty($params['view']) ? self::$viewPath :  $params['view'];
-			$ret_val = \Yii::$app->controller->getView()->$render($params['view'], $params['args'], static::$controller);
+			$params['view'] =  empty($params['view']) ? self::$viewPath :  $params['view'];
+			$params['options'] = isset(self::$viewOptions['options']) ? self::$viewOptions['options'] : [];
+			switch(\Yii::$app->request->isAjax)
+			{
+				case false:
+				switch($params['view'])
+				{
+					case self::$viewPath:
+					$ret_val = \Yii::$app->controller->getView()->$render($params['view'], $params['args'], static::$controller);
+					break;
+					
+					default:
+					$ret_val = static::$controller->getView()->$render(self::getLayoutPath(@$params['layout']), 
+						[
+							'content' => static::$view->$render($params['view'], $params['args'], static::$controller),
+							'title' => @$params['title'],
+							'options' => @$params['options'],
+						],
+						static::$controller
+					);
+					break;
+				}
+				break;
+				
+				default:
+				$ret_val = \Yii::$app->controller->getView()->$render($params['view'], $params['args'], static::$controller);
+				break;
+			}
 			break;
 			
 			case 'modal':
-			$params ['view'] =  empty($params['view']) ? self::$viewPath :  $params['view'];
+			$params['view'] =  empty($params['view']) ? self::$viewPath :  $params['view'];
+			$params['args']['options'] = isset(self::$viewOptions['options']) ? self::$viewOptions['options'] : [];
 			$ret_val = static::$controller->getView()->$render(self::$viewModal, 
 				[
 					'content' => static::$view->$render($params['view'], $params['args'], static::$controller),
@@ -129,5 +163,29 @@ class Response extends Behavior
 		return $ret_val;
 	}
 	
+	/**
+	 * Has the user reuqested a specific format?
+	 * @return boolean
+	 */
+	public static function formatSpecified()
+	{
+		return \Yii::$app->request->get('__format') != null;
+	}
+	
+	/**
+	 * Get the layout file
+	 * @param string $layout
+	 * @return string
+	 */
+	protected static function getLayoutPath($layout='column1')
+	{
+		switch(isset(static::$layouts[$layout]))
+		{
+			case false:
+			$layout = 'column1';
+			break;
+		}
+		return static::$layouts[$layout];
+	}
 }
 ?>
