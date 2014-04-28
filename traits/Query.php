@@ -23,7 +23,11 @@ trait Query {
 				{
 					case true:
 					switch($name)
-					{	
+					{
+						case 'custom':
+						$query->orWhere($value['attribute'], $value['value']);
+						break;
+						
 						case 'order_by':
 						$query->orderBy($value);
 						if(@isset($filters['order']))

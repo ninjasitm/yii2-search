@@ -385,35 +385,46 @@ function Nitm ()
 				break;
 			}
 		}
-		selector = (esc === true) ? this.jqEscape(selector) : selector;
-		switch(by)
+		switch(selector)
 		{
-			case 'name':
-			var obj = '[name="'+selector+'"]';
-			break;
-			
-			case 'class':
-			var obj = (selector[0] != '.') ? '.'+selector : selector;
-			obj = '\\'+obj;
+			case 'body':
+			case 'document':
+			case 'window':
+			var obj = selector;
 			break;
 			
 			default:
-			switch(["["].indexOf(selector[0]) != -1)
+			selector = (esc === true) ? this.jqEscape(selector) : selector;
+			switch(by)
 			{
-				case true:
-				var obj = selector;
+				case 'name':
+				var obj = '[name="'+selector+'"]';
+				break;
+				
+				case 'class':
+				var obj = (selector[0] != '.') ? '.'+selector : selector;
+				obj = '\\'+obj;
 				break;
 				
 				default:
-				var obj = (selector[0] != '#') ? '#'+selector : selector;
+				switch(["["].indexOf(selector[0]) != -1)
+				{
+					case true:
+					var obj = selector;
+					break;
+					
+					default:
+					var obj = (selector[0] != '#') ? '#'+selector : selector;
+					break;
+				}
+				break
+			}
+			switch(alert_obj)
+			{
+				case true:
+				alert(selector+" -> "+obj);
 				break;
 			}
-			break
-		}
-		switch(alert_obj)
-		{
-			case true:
-			alert(selector+" -> "+obj);
 			break;
 		}
 		return $(obj);
