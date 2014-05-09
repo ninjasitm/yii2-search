@@ -101,27 +101,26 @@ function Tools ()
 					   instance.options = options;
 					} else {
 					   $.data(this, pluginName, _self.monitor( $el, options ) );
+							$el.on( 'remove', $.proxy( function () {
+								$.removeData(this, pluginName);
+								self.unmonitor( instance );
+							 }, this ) );
 					}
 				 });
 			  return this;
 			}
+			
 			/**
 			 * Intiialze scroll monitor
 			 */
-			this.$window.on('scroll', function ( e ) {
-			  if ( !_self._buffer ) {
-				 _self._buffer = setTimeout(function () {
-					_self.isInView( e );
-					_self._buffer = null;
-				 }, 300);
-			  }
-			});
+			this.monitorElement(window);
+			this.monitorElement("[role~='scrolledIntoViewContainer']");
 			
 
 			/*
-			 * enable hide/unhide functionality with optional data retrieval
+			 * Find elements that need to be activated on scrolledIntoView
 			 */
-			$(container).find("[role='onScrolledIntoView']").map(function(e) {
+			$(container).find("[role~='onScrolledIntoView']").map(function(e) {
 				var inCallback = window[$(this).data('on-scrolled-in')];
 				var outCallback = window[$(this).data('on-scrolled-out')];
 				switch(_self.test($(this)))
@@ -141,11 +140,36 @@ function Tools ()
 			return this;
 		}
 		 
+		this.monitorElement = function(container) {
+			var container = (container == undefined) ? 'body' : container;
+			$(container).on('scroll', function (e) {
+			  if ( !this._buffer ) {
+				 _self._buffer = setTimeout(function () {
+					_self.isInView(e);
+					_self._buffer = null;
+				 }, 300);
+				_self.monitor($(container));
+			  }
+			});
+		}
+		 
 		this.monitor = function( element, options ) {
 		   var item = { element: element, options: options, invp: false };
 		   _self._watch.push(item);
 		   return item;
 		}
+		
+
+		this.unmonitor = function( item ) {
+		  for ( var i=0;i<_watch.length;i++ ) {
+			 if ( _self._watch[i] === item ) {
+				_self._watch.splice( i, 1 );
+				item.element = null;
+				break;
+			 }
+		  }
+		}
+   
 		
 		this.test = function ($el) {
 		   var docViewTop = this.$window.scrollTop(),
@@ -157,14 +181,14 @@ function Tools ()
 					 && (elemBottom <= docViewBottom) &&  (elemTop >= docViewTop) );
 		}
 		 
-		this.isInView = function ( e ) {
+		this.isInView = function (e) {
 		 
 		   $.each(_self._watch, function () {
 		 
 			  if ( _self.test( this.element ) ) {
 				 if ( !this.invp ) {
 					this.invp = true;
-					if ( this.options.scrolledin ) this.options.scrolledin.call( this.element, e );
+					if ( this.options && this.options.scrolledin ) this.options.scrolledin.call( this.element, e );
 					this.element.trigger( 'scrolledin', e );
 				 }
 			  } else if ( this.invp ) {

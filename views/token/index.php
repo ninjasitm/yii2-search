@@ -55,7 +55,7 @@ $this->params['breadcrumbs'][] = $this->title;
 		'rowOptions' => function ($model, $key, $index, $grid)
 		{
 			return [
-						"class" => $this->context->getStatusIndicator($model)
+						"class" => \nitm\helpers\Statuses::getIndicator($model->getStatus())
 					];
 		},
 		"tableOptions" => [

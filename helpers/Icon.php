@@ -25,11 +25,16 @@ class Icon
 				break;
 				
 				case 'resolve':
+				case 'complete':
 				$icon = ($model->$attribute == 1) ? 'check-circle' : 'circle';
 				break;
 				
 				case 'duplicate':
 				$icon = ($model->$attribute == 1) ?  'flag' : 'flag-o';
+				break;
+				
+				case 'disable':
+				$icon = ($model->$attribute == 1) ?  'circle-o' : 'circle';
 				break;
 			}
 			$ret_val = BaseIcon::show($icon, $options);

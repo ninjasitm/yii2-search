@@ -14,6 +14,7 @@ class Statuses
 		'default' => 'content',
 		'success' => 'content bg-success',
 		'info' => 'content bg-info',
+		'disabled' => 'content bg-disabled',
 		'warning' => 'content bg-warning'
 	];
 	
@@ -25,7 +26,8 @@ class Statuses
 		'default' => 'list-group-item',
 		'success' => 'list-group-item  list-group-item-success',
 		'info' => 'list-group-item list-group-item-info',
-		'warning' => 'list-group-item list-group-item-warning'
+		'warning' => 'list-group-item list-group-item-warning',
+		'disabled' => 'list-group-item list-group-item-disabled'
 	];
 	
 	/**

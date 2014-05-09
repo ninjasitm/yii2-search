@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use yii\widgets\ListView;
 use kartik\icons\Icon;
+use nitm\widgets\issueTracker\IssueTrackerModal;
 
 /**
  * @var yii\web\View $this
@@ -10,21 +11,27 @@ use kartik\icons\Icon;
  * @var app\models\search\Issues $searchModel
  */
 
-$this->title = Yii::t('app', 'Issues: '.ucfirst($parentType).": ".$parentId);
-$this->params['breadcrumbs'][] = $this->title;
+$title = Yii::t('app', 'Issues: '.ucfirst($parentType).": ".$parentId);
+switch(\Yii::$app->request->isAjax)
+{
+	case true:
+	$this->title = $title;
+	break;
+}
+$this->params['breadcrumbs'][] = $title;
 if($useModal == true) {
 	$modalOptions =[
 		'class' => 'btn btn-success',
 		'data-toggle' => 'modal',
-		'data-target' => '#issue-tracker-modal'
+		'data-target' => '#issue-tracker-modal-form'
 	];
 } else {
 	$modalOptions = ['class' => 'btn btn-success'];
 }
 ?>
-<div class="issues-index">
+<div class="issues-index" id="issue-tracker<?=$parentId?>">
 
-    <h1><?= Html::encode($this->title) ?></h1>
+    <h1><?= Html::encode($title) ?></h1>
 
     <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
 
@@ -38,8 +45,8 @@ if($useModal == true) {
     </p>
 <?php
 	$issuesTabs = Html::tag('ul', 
-		Html::tag('li', Html::a('Open', '#open-issues', ['data-toggle' => 'tab']), ['class' => 'tab-pane active']). 
-		Html::tag('li', Html::a('Closed', '#closed-issues', ['data-toggle' => 'tab']), ['class' => 'tab-pane']),
+		Html::tag('li', Html::a('Open '.Html::tag('span', $dataProviderOpen->getCount(), ['class' => 'badge']), '#open-issues', ['data-toggle' => 'tab']), ['class' => 'tab-pane active']). 
+		Html::tag('li', Html::a('Closed '.Html::tag('span', $dataProviderClosed->getCount(), ['class' => 'badge']), '#closed-issues', ['data-toggle' => 'tab']), ['class' => 'tab-pane']),
 		[
 			'class' => 'nav nav-tabs'
 		]
@@ -61,6 +68,12 @@ if($useModal == true) {
 	?>
 
 </div>
+
+<script type="text/javascript">
+$nitm.addOnLoadEvent(function () {
+	$nitm.issueTracker.init("issue-tracker<?=$parentId?>");
+});
+</script>
 
 <?php 
 	function getIssues($dataProvider)

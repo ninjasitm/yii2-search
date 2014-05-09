@@ -18,6 +18,11 @@ trait Widgets
 		return \nitm\widgets\issueTracker\IssueTracker::widget($options);
 	}
 	
+	public function issueCountWidget(array $constrain)
+	{
+		return \nitm\widgets\issueTracker\IssueCount::widget($constrain);
+	}
+	
 	public function activityWidget(array $options = null)
 	{
 		return \nitm\widgets\activityIndicator\ActivityIndicator::widget($options);
@@ -28,9 +33,9 @@ trait Widgets
 		return \nitm\widgets\replies\Replies::widget($constrain);
 	}
 	
-	public function replyFormWidget(array $constrain)
+	public function replyFormWidget(array $options)
 	{
-		return \nitm\widgets\replies\RepliesForm::widget($constrain);
+		return \nitm\widgets\replies\RepliesForm::widget($options);
 	}
 	
 	public function replyCountWidget(array $constrain)
@@ -75,9 +80,14 @@ trait Widgets
 		return \nitm\widgets\revisions\RevisionsModal::widget();
 	}
 	
-	public function issueModalWidget()
+	public function issueModalWidget(array $options=[])
 	{
-		return \nitm\widgets\issueTracker\IssueTrackerModal::widget();
+		return \nitm\widgets\issueTracker\IssueTrackerModal::widget($options);
+	}
+	
+	public function replyModalWidget(array $options=[])
+	{
+		return \nitm\widgets\replies\RepliesModal::widget($options);
 	}
 	
 	public function alertWidget(array $options)

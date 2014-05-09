@@ -7,6 +7,7 @@ use nitm\models\Issues;
 use nitm\models\search\Issues as IssuesSearch;
 use nitm\helpers\Response;
 use nitm\helpers\Icon;
+use nitm\widgets\issueTracker\IssueTracker;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\data\ArrayDataProvider;
@@ -75,35 +76,20 @@ class IssueController extends WidgetController
      */
     public function actionIndex($type, $id)
     {
-        $searchModel = new IssuesSearch;
-		$get = !\Yii::$app->request->getQueryParams() ? [] : \Yii::$app->request->getQueryParams();
-        $dataProviderOpen = $searchModel->search(array_merge($get, ['closed' => 0]));
-        $dataProviderClosed = $searchModel->search(array_merge($get, ['closed' => 1]));
-		
-        Response::$viewOptions['view'] = 'index';
-		Response::$viewOptions['args'] = [
-            'dataProviderOpen' => $dataProviderOpen,
-            'dataProviderClosed' => $dataProviderClosed,
-            'searchModel' => $searchModel,
-			'useModal' => \Yii::$app->request->isAjax,
-			'parentType' => $type,
-			'parentId' => $id,
-        ];
-		switch(\Yii::$app->request->isAjax)
-		{
-			case false:
-			Response::$viewOptions['args']['modal'] = \nitm\widgets\modal\Modal::widget([
-				'options' => [
-					'id' => 'issue-tracker-modal',
-					"style" => "z-index: 10000",
-				],
-				'dialogOptions' => [
-					"class" => "modal-vertical-centered"
-				]
-			]);
-			break;
-		}
-		return $this->renderResponse(null, Response::$viewOptions, \Yii::$app->request->isAjax);
+		Response::$viewOptions = [
+			'args' => [
+				"content" => IssueTracker::widget([
+					"parentId" => $id, 
+					"parentType" => $type,
+					'useModal' => false
+				])
+			],
+			'modalOptions' => [
+				'contentOnly' => true
+			]
+		];
+		$this->setResponseFormat(\Yii::$app->request->isAjax ? 'modal' : 'html');
+		return $this->renderResponse(null, null, \Yii::$app->request->isAjax);
     }
 
     /**
@@ -203,6 +189,7 @@ class IssueController extends WidgetController
     {
 		$post = \Yii::$app->request->post();
         $this->model = $this->findModel(Issues::className(), $id);
+		$this->model->edits++;
 		$this->model->setScenario($scenario);
 		$this->model->load($post);
 		switch(\Yii::$app->request->isAjax && (@\nitm\helpers\Helper::boolval($_REQUEST['do']) !== true))
@@ -233,24 +220,31 @@ class IssueController extends WidgetController
 		return $this->booleanAction($this->action->id, $id);
 	}
 	
-	public function booleanAction($action, $id)
+	protected function booleanAction($action, $id)
 	{
 		\Yii::$app->request->setQueryParams([]);
         $this->model = $this->findModel(Issues::className(), $id);
 		switch($action)
 		{
 			case 'close':
-			$attribute = 'closed';
 			$scenario = 'close';
+			$attributes = [
+				'attribute' => 'closed',
+				'blamable' => 'closed_by',
+				'date' => 'closed_at'
+			];
 			break;
 			
 			case 'resolve':
-			$attribute = 'resolved';
 			$scenario = 'resolve';
+			$attributes = [
+				'attribute' => 'resolved',
+				'blamable' => 'resolved_by',
+				'date' => 'resolved_at'
+			];
 			break;
 			
 			case 'duplicate':
-			$attribute = 'duplicate';
 			$scenario = 'duplicate';
 			$this->model->load(\Yii::$app->request->post());
 			switch(is_array($this->model->duplicate_id))
@@ -259,11 +253,28 @@ class IssueController extends WidgetController
 				$this->model->duplicate_id = implode(',', $this->model->duplicate_id);
 				break;
 			}
+			$attributes = [
+				'attribute' => 'duplicate',
+				'blamable' => 'duplicated_by',
+			];
 			break;
 		}
 		$this->model->setScenario($scenario);
-		$this->result = !$this->model->getAttribute($attribute) ? 1 : 0;
-		$this->model->setAttribute($attribute, $this->result);
+		$this->result = !$this->model->getAttribute($attributes['attribute']) ? 1 : 0;
+		foreach($attributes as $key=>$value)
+		{
+			switch($key)
+			{
+				case 'blamable':
+				$this->model->setAttribute($value, (!$this->result ? null : \Yii::$app->user->getId()));
+				break;
+				
+				case 'date':
+				$this->model->setAttribute($value, (!$this->result ? null : new \yii\db\Expression('NOW()')));
+				break;
+			}
+		}
+		$this->model->setAttribute($attributes['attribute'], $this->result);
 		$this->setResponseFormat('json');
 		return $this->finalAction();
 	}
@@ -324,6 +335,13 @@ class IssueController extends WidgetController
 					default:
 					$format = Response::formatSpecified() ? $this->getResponseFormat() : 'json';
 					$this->setResponseFormat($format);
+					$this->model->created_at = \nitm\helpers\DateFormater::formatDate($this->model->created_at);
+					switch($this->action->id)
+					{
+						case 'update':
+						$this->model->updated_at = \nitm\helpers\DateFormater::formatDate($this->model->updated);
+						break;
+					}
 					switch($this->getResponseFormat())
 					{
 						case 'json':

@@ -71,9 +71,9 @@ class Replies extends BaseWidget
 		return [
 			[
 				[
-					'unique_one', 
-					'unique_two', 
-					'reply_for', 
+					'parent_id', 
+					'parent_key', 
+					'parent_type', 
 					'author', 
 					'message',
 				], 
@@ -108,9 +108,9 @@ class Replies extends BaseWidget
 	{
 		$scenarios =  [
 			'create' => [
-				'unique_one', 
-				'unique_two', 
-				'reply_for',
+				'parent_id', 
+				'parent_key', 
+				'parent_type',
 				'message',
 				'constrain',
 				'ip_addr',
@@ -120,9 +120,9 @@ class Replies extends BaseWidget
 				'reply_to_author', 
 			],
 			'update' => [
-				'unique_one', 
-				'unique_two', 
-				'reply_for', 
+				'parent_id', 
+				'parent_key', 
+				'parent_type', 
 				'message',  
 				'public', 
 				'disabled', 
@@ -151,6 +151,7 @@ class Replies extends BaseWidget
 		{
 			$this->constraints['parent_key'] = date($this->_dateFormat, strtotime($using[2]));
 			$this->queryFilters['parent_key'] = $this->constraints['parent_key'];
+			$this->parent_key = $this->constraints['parent_key'];
 		}
 		//constrain for admin user
 		switch(\Yii::$app->userMeta->isAdmin())
@@ -191,7 +192,7 @@ class Replies extends BaseWidget
 		{
 			case true:
 			$ret_val = $this->save();
-			$this->added_hr = \nitm\helpers\DateFormatter::formatDate();
+			$this->created_at = \nitm\helpers\DateFormatter::formatDate();
 			break;
 		}
 		return $ret_val;
@@ -201,17 +202,9 @@ class Replies extends BaseWidget
 	 * Return the reply author information
 	 * @param string $what The property to return
 	 */
-	public function getReplyToAuthor($what='username')
+	public function getReplyToAuthor()
 	{
-		$ret_val = null;
-		$user = $this->hasOne(User::className(), ['id' => 'reply_to_author'])->select(['username'])->one();
-		switch($user instanceof User)
-		{
-			case true:
-			$ret_val = User::getFullName($user);
-			break;
-		}
-		return $ret_val; 
+		return $this->hasOne(User::className(), ['id' => 'reply_to_author']);; 
 	}
 	
 	/**

@@ -5,18 +5,18 @@ namespace nitm\models\search;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use nitm\models\Issues as IssuesModel;
+use nitm\models\Replies as RepliesModel;
 
 /**
- * Issues represents the model behind the search form about `app\models\Issues`.
+ * Replies represents the model behind the search form about `app\models\Replies`.
  */
-class Issues extends IssuesModel
+class Replies extends RepliesModel
 {
     public function rules()
     {
         return [
-            [['id', 'parent_id', 'resolved', 'author', 'closed_by', 'resolved_by', 'closed', 'duplicate', 'duplicate_id'], 'integer'],
-            [['parent_type', 'notes', 'created_at', 'resolved_at', 'closed_at'], 'safe'],
+            [['id', 'parent_id', 'hidden', 'disabled', 'public', 'author'], 'integer'],
+            [['parent_type', 'message', 'created_at', 'ip_addr', 'ip_host', 'email'], 'safe'],
         ];
     }
 
@@ -28,7 +28,7 @@ class Issues extends IssuesModel
 
     public function search($params)
     {
-        $query = IssuesModel::find();
+        $query = RepliesModel::find();
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
@@ -41,20 +41,15 @@ class Issues extends IssuesModel
         $query->andFilterWhere([
             'id' => $this->id,
             'parent_id' => $this->parent_id,
-            'resolved' => $this->resolved,
+            'parent_key' => $this->parent_key,
             'created_at' => $this->created_at,
+            'reply_to' => $this->reply_to,
+            'reply_to_author' => $this->reply_to_author,
             'author' => $this->author,
-            'closed_by' => $this->closed_by,
-            'resolved_by' => $this->resolved_by,
-            'resolved_at' => $this->resolved_at,
-            'closed' => $this->closed,
-            'closed_at' => $this->closed_at,
-            'duplicate' => $this->duplicate,
-            'duplicate_id' => $this->duplicate_id,
         ]);
 
         $query->andFilterWhere(['like', 'parent_type', $this->parent_type])
-            ->andFilterWhere(['like', 'notes', $this->notes]);
+            ->andFilterWhere(['like', 'message', $this->message]);
 
         return $dataProvider;
     }

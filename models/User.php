@@ -333,7 +333,7 @@ class User extends Data
 				\Yii::$app->user->getIdentity()->changeDb(static::dbName());
 				break;
 			}
-			$user = is_null($user) ? \Yii::$app->user->getIdentity() : User::find($user);
+			$user = is_null($user) ? \Yii::$app->user->getIdentity() : User::findOne($user);
 			switch(parent::$old['db']['name'] == static::dbName())
 			{
 				case false:

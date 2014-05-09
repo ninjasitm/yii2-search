@@ -6,8 +6,12 @@ use Yii;
 use yii\web\Controller;
 use yii\web\BadRequestHttpException;
 use yii\helpers\Security;
-use nitm\models\Helper;
+use yii\helpers\Html;
+use nitm\helpers\Helper;
+use nitm\helpers\Response;
 use nitm\models\Replies;
+use nitm\widgets\replies\Replies as RepliesWidget;
+use nitm\widgets\replies\RepliesForm;
 
 class ReplyController extends DefaultController
 {	
@@ -15,7 +19,7 @@ class ReplyController extends DefaultController
 	{
 		return [
 			'access' => [
-				'class' => \yii\web\AccessControl::className(),
+				'class' => \yii\filters\AccessControl::className(),
 				'only' => ['hide', 'new'],
 				'rules' => [
 					[
@@ -25,9 +29,6 @@ class ReplyController extends DefaultController
 					],
 				],
 			],
-			"Helper" => array(
-				"class" => \nitm\models\Helper::className(),
-			),
 		];
 	}
 
@@ -42,68 +43,88 @@ class ReplyController extends DefaultController
 	
 	public function init()
 	{
+		parent::init();
 		$this->model = new \nitm\models\Replies();
 	}
+	
+	public static function has()
+	{
+		$has = [
+			'\nitm\widgets\replies'
+		];
+		return array_merge(parent::has(), $has);
+	}
 
-	public function actionNew()
+    /**
+     * Lists all Replies models.
+	 * @param string $type The parent type of the issue
+	 * @param int $id The id of the parent
+	 * @param string $key The key of the parent
+     * @return mixed
+     */
+    public function actionIndex($type, $id, $key)
+    {
+		$this->model = new Replies(['constrain' => [$id, $type, $key]]);
+		$replies = RepliesWidget::widget([
+					"model" => $this->model, 
+				]);
+		$form = RepliesForm::widget([
+					"model" => $this->model, 
+					'useModal' => false
+				]);
+		Response::$viewOptions = [
+			'args' => [
+				"content" => Html::tag('div', $form.$replies, ['id' => 'messagesWrapper'.$id, 'class' => 'messages']),
+			],
+			'modalOptions' => [
+				'contentOnly' => true
+			]
+		];
+		$this->setResponseFormat(\Yii::$app->request->isAjax ? 'modal' : 'html');
+		return $this->renderResponse(null, null, \Yii::$app->request->isAjax);
+    }
+
+	public function actionNew($type, $id, $key)
 	{
 		$ret_val = [
 			'success' => false,
 			'message' => 'Unable to add reply',
-			'action' => 'add'
+			'action' => 'create'
 		];
 		$this->model->setScenario('create');
-		$this->model->load($_POST);
-		$namespace = explode('\\', $this->model->constrain['for']); 
-		$namespace[sizeof($namespace)-1] = ucfirst($namespace[sizeof($namespace)-1]);
-		//need to set the proper constraint value here
-		$this->model->constrain['for'] = $namespace[0];
-		$class = implode('\\', $namespace);
-		switch(class_exists($class))
+		$this->model->load(\Yii::$app->request->post());
+		$constrain = [$id, $type, urldecode($key)];
+		$this->model->setConstraints($constrain);
+		switch($this->model->load($this->model->constraints, false))
 		{
 			case true:
-			$reply_for = $class::find($this->model->constrain['unique']);
-			switch($reply_for instanceof $class)
+			switch(\Yii::$app->request->isAjax && (@Helper::boolval($_REQUEST['do']) !== true))
 			{
 				case true:
-				$constrain = [
-					'one' => $this->model->constrain['unique'],
-					'two' => $reply_for->added,
-					'three' => $this->model->constrain['for']
-				];
-				$this->model->setConstraints($constrain);
-				$this->model->load($this->model->constraints, false);
-				switch(\Yii::$app->request->isAjax && (@Helper::boolval($_REQUEST['do']) !== true))
-				{
-					case true:
-					$this->model->setScenario('validateNew');
-					return $this->model->validate();
-					break;
-				}
+				$this->model->setScenario('validateNew');
+				return $this->model->validate();
+				break;
+			}
+			
+			switch($this->model->reply())
+			{
+				case true:
+				$ret_val['data'] = $this->renderPartial('@nitm/views/replies/view', ['model' => $this->model, 'isNew' => true]);
+				$ret_val['success'] = true;
+				$ret_val['message'] = "Reply saved";
+				$ret_val['id'] = 'message'.$this->model->id;
+				$this->setResponseFormat(\Yii::$app->request->isAjax ? 'json' : 'html');
+				Response::$viewOptions['args']['content'] = $ret_val['data'];
+				break;
 				
-				switch($this->model->reply())
-				{
-					case true:
-					$reply = new \nitm\widgets\replies\widget\Replies([
-						'reply' => $this->model,
-						'constrain' => $constrain
-					]);
-					$reply->userExists($this->model);
-					$ret_val['data'] = $reply->getReply();
-					$ret_val['success'] = true;
-					$ret_val['message'] = "Reply saved";
-					$ret_val['unique_id'] = 'message'.$this->model->replyid;
-					$this->_view['content'] = $ret_val['data'];
-					break;
-					
-					case false:
-					break;
-				}
+				case false:
+				$this->setResponseFormat('json');
+				Response::$viewOptions['args']['content'] = $ret_val;
 				break;
 			}
 			break;
 		}
-		echo $this->renderResponse($ret_val, $this->_view);	
+		return $this->renderResponse($ret_val, Response::$viewOptions);	
 	}
 	
 	public function actionHide($id)
@@ -112,26 +133,22 @@ class ReplyController extends DefaultController
 			'id' => $id,
 			'success' => false,
 			'message' => 'Unable to hide reply',
-			'action' => 'unhide'
+			'action' => 'hide'
 		];
-		$this->model = $this->model->find($id);
+		$this->model = $this->model->findOne($id);
 		$this->model->setScenario('hide');
 		$this->model->hidden = !$this->model->hidden;
 		switch($this->model->save())
 		{
 			case true:
+			$ret_val['action'] = $this->model->hidden ? 'unhide' : 'hide';
+			$ret_val['value'] = $this->model->hidden;
 			$ret_val['success'] = true;
 			$ret_val['message'] = "Successfully hid reply";
-			//Determine if the model is hidden or not
-			switch($this->model->hidden)
-			{
-				case 0:
-				$ret_val['action'] = 'hide';
-				break;
-			}
 			break;
 		}
-		echo $this->renderResponse($ret_val, $this->_view);	
+		$this->setResponseFormat('json');
+		return $this->renderResponse($ret_val, Response::$viewOptions);	
 	}
 	
 	public function actionTo()

@@ -27,7 +27,7 @@ class DateFormatter extends \yii\db\ActiveRecord
 	 * @param string $format
 	 * @param int | string $date
 	 */
-	public static function formatDate($format=null, $date=null)
+	public static function formatDate($date=null, $format=null)
 	{
 		$format = is_null($format) ? static::$_formats['default'] : static::getFormat($format);
 		return date($format, strtotime(is_null($date) ? 'now' : $date));

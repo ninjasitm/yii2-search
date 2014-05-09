@@ -134,7 +134,7 @@ class TokenController extends DefaultController implements DefaultControllerInte
 	 */
 	public function actionUpdate($id)
 	{
-		$model = $this->findModel($id);
+		$model = $this->findModel(Token::className(), $id);
 		$model->setScenario('update');
 		if ($model->load($_POST) && $model->save()) {
 			return $this->redirect(['view', 'id' => $model->tokenid]);
@@ -153,7 +153,7 @@ class TokenController extends DefaultController implements DefaultControllerInte
 	 */
 	public function actionDelete($id)
 	{
-		$this->findModel($id)->delete();
+		$this->findModel(Token::className(), $id)->delete();
 		return $this->redirect(['index']);
 	}
 	
@@ -166,53 +166,5 @@ class TokenController extends DefaultController implements DefaultControllerInte
 	{
 		$token = new Token();
 		return $token->getUniqueToken((int) $id);
-	}
-
-	/**
-	 * Finds the Token model based on its primary key value.
-	 * If the model is not found, a 404 HTTP exception will be thrown.
-	 * @param integer $id
-	 * @return Token the loaded model
-	 * @throws NotFoundHttpException if the model cannot be found
-	 */
-	protected function findModel($id)
-	{
-		if (($model = Token::find($id)) !== null) {
-			return $model;
-		} else {
-			throw new NotFoundHttpException('The requested page does not exist.');
-		}
-	}
-	
-	/**
-	 * Get the class indicator value for the users status
-	 * @param Token $token
-	 * @return string $css class
-	 */
-	public function getStatusIndicator($token=null)
-	{
-		$token = is_null($token) ? $this : $token;
-		$ret_val = 'default';
-		switch($token instanceof Token)
-		{
-			case true:
-			switch(Token::getStatus($token))
-			{
-				case 'Active':
-				$ret_val = 'success';
-				break;
-				
-				case 'Inactive':
-				$ret_val = 'default';
-				break;
-				
-				case 'Revoked':
-				$ret_val = 'error';
-				break;
-			}
-			break;
-		}
-		$indicator = $this->statusIndicators[$ret_val];
-		return $indicator;
 	}
 }

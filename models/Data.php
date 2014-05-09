@@ -36,6 +36,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	public $edited_hr;
 	public $data;
 	public $queryFilters = [];
+	public $withThese = [];
 	public $filter;
 	public $requestModel;
 	public static $settings;
@@ -105,13 +106,14 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 				switch($name)
 				{
 					case 'updates':
-					$behaviors['updates'] = [
+					case 'edits':
+					$behaviors[$name] = [
 						'class' => \yii\behaviors\AttributeBehavior::className(),
 						'attributes' => [
-							ActiveRecord::EVENT_BEFORE_UPDATE => ['updates'],
+							ActiveRecord::EVENT_BEFORE_UPDATE => [$name],
 						],
 						'value' => function ($event) {
-							switch($event->sender->HasProperty('updates'))
+							switch($event->sender->hasProperty($name))
 							{
 								case true:
 								return $event->sender->edits++;
@@ -128,9 +130,14 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 					'class' => \yii\behaviors\BlameableBehavior::className(),
 						'attributes' => [
 							ActiveRecord::EVENT_BEFORE_INSERT => 'author',
-							ActiveRecord::EVENT_BEFORE_UPDATE => 'editor',
 						],
 					];
+					switch($this->hasProperty('editor') || $this->hasAttribute('editor'))
+					{
+						case true:
+						$behaviors['timestamp']['attributes'][ActiveRecord::EVENT_BEFORE_UPDATE] = 'editor';
+						break;
+					}
 					break;
 					
 					case 'updated_at':
@@ -140,10 +147,15 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 						'class' => \yii\behaviors\TimestampBehavior::className(),
 						'attributes' => [
 							ActiveRecord::EVENT_BEFORE_INSERT => 'created_at',
-							ActiveRecord::EVENT_BEFORE_UPDATE => 'updated_at',
 						],
 						'value' => new \yii\db\Expression('NOW()')
 					];
+					switch($this->hasProperty('updated_at') || $this->hasAttribute('updated_at'))
+					{
+						case true:
+						$behaviors['timestamp']['attributes'][ActiveRecord::EVENT_BEFORE_UPDATE] = 'updated_at';
+						break;
+					}
 					break;
 					
 					default:
@@ -460,6 +472,12 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 			break;
 		}
 		$query = $this->find();
+		switch(empty($this->withThese))
+		{
+			case false:
+			$query->with($this->withThese);
+			break;
+		}
 		static::aliasColumns($query);
 		static::applyFilters($query, $this->queryFilters);
 		$ret_val = $query->all();

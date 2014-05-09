@@ -15,7 +15,7 @@ use nitm\models\User;
  * @property boolean $revoked Has the token been revoked? Thhis is bad since it means it was forcefully disabled
  * @property Timestamp $revoked_on The date the token was revoked on
  */
-class Token extends \nitm\models\Data
+class Token extends \nitm\models\BaseWidget
 {
 	public $message;
 	public $name;
@@ -115,19 +115,19 @@ class Token extends \nitm\models\Data
 	 * @param Token $token object
 	 * @return string status
      */
-	public static function getStatus(Token $token=null)
+	public function getStatus(Token $token=null)
 	{
 		$status = 'Inactive';
-		switch($token->active)
+		switch($this->active)
 		{
 			case 1:
-			$status = 'Active';
+			$status = 'success';
 			break;
 		}
-		switch($token->revoked)
+		switch($this->revoked)
 		{
 			case 1:
-			$status = 'Revoked';
+			$status = 'error';
 			break;
 		}
 		return $status;

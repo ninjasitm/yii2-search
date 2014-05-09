@@ -186,56 +186,6 @@ class DefaultController extends Controller
 		}
 	}
 	
-	/**
-	 * Initialze the assets supported by this controller. Taken from static::has();
-	 */
-	public function initAssets()
-	{
-		//don't init on ajax requests so that we don't send duplicate files
-		if(\Yii::$app->request->isAjax)
-			return;
-		$has = static::has();
-		switch(is_array($has))
-		{
-			case true:
-			foreach($has as $asset)
-			{
-				//This may be an absolute namespace to an asset
-				switch(class_exists($asset))
-				{
-					case true:
-					$asset::register($this->getView());
-					break;
-					
-					default:
-					//It isn't then it may be an asset we have in nitm/assets or nitm/widgets
-					$class = $asset.'\assets\Asset';
-					switch(class_exists($class))
-					{
-						case true:
-						$class::register($this->getView());
-						//\Yii::$app->assetManager->bundles[] = $class;
-						//\Yii::$app->assetManager->getBundle($class)->registerAssetFiles($this->getView());
-						break;
-						
-						default:
-						//This is probably not a widget asset but a module asset
-						$class = '\nitm\assets\\'.static::properName($asset).'Asset';
-						switch(class_exists($class))
-						{
-							case true:
-							$class::register($this->getView());
-							break;
-						}
-						break;
-					}
-					break;
-				}
-			}
-			break;
-		}
-	}
-	
 	/*
 	 * Initialize any meta tags needed for this controller
 	 * @param mixed $metaTags
@@ -375,7 +325,7 @@ class DefaultController extends Controller
 			}
 			break;
 		}
-		$indicator = static::$statusIndicators[$ret_val];
+		$indicator = \nitm\helpers\Statuses::getIndicator($ret_val);
 		return $indicator;
 	}
 	
@@ -461,6 +411,34 @@ class DefaultController extends Controller
 		}
 		echo $this->renderResponse($ret_val, Response::$viewOptions, $partial);
 	}
+	
+	/**
+     * Finds the Category model based on its primary key value.
+     * If the model is not found, a 404 HTTP exception will be thrown.
+     * @param string $className
+     * @param integer $id
+     * @param array $with Load with what
+     * @return the loaded model
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    protected function findModel($className, $id, $with=null)
+    {
+        if ($id !== null && ($model = $className::find()->where(['id' => $id])) !== null) {
+			$with = is_array($with) ? $with : (is_null($with) ? null : [$with]);
+			switch(is_array($with))
+			{
+				case true:
+				foreach($with as $w)
+				{
+						$model->with($w);
+				}
+				break;
+			}
+            return $model->one();
+        } else {
+            throw new NotFoundHttpException('The requested page does not exist.');
+        }
+    }
 }
 
 ?>

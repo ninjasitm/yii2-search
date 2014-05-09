@@ -21,7 +21,8 @@ class Form extends Behavior
 			case true:
 			$attributes = [];
 			$model->unique = @$options['id'];
-			$model->requestModel = new $options['modelClass'];
+			$options['modelOptions'] = is_array($options['modelOptions']) ? $options['modelOptions'] : null;
+			$model->requestModel = new $options['modelClass']($options['modelOptions']);
 			$model->requestModel->unique = @$options['id'];
 			switch($model->validate())
 			{
@@ -30,7 +31,6 @@ class Form extends Behavior
 				//this means we found our object
 				switch($options['modelClass'])
 				{
-					//if we're dealing with a Request object then simply find the right Request info
 					case $model->className():
 					switch($model->unique)
 					{
@@ -39,9 +39,15 @@ class Form extends Behavior
 						break;
 						
 						default:
-						$found = $model->findOne($model->unique);
-						$model = is_null($found) ? $model : $found;
-						$model = $model;
+						$find = $model->find($model->unique);
+						switch(1)
+						{
+							case isset($options['modelOptions']['withThese']):
+							$find->with($options['modelOptions']['withThese']);
+							break;
+						}
+						$found = $find->one();
+						$model = ($found instanceof $options['modelClass']) ? $found : $model;
 						break;
 					}
 					switch(!is_null($options['provider']) && $model->hasMethod($options['provider']))
@@ -54,8 +60,7 @@ class Form extends Behavior
 					break;
 					
 					default:
-					//Does Request have this function?
-					//Get the data accoriding to Request get$options['param'] functions
+					//Get the data accoriding to get$options['param'] functions
 					$model->requestModel->queryFilters['limit'] = 1;
 					$model->requestModel->queryFilters['unique'] = $model->requestModel->unique;
 					$model = $model->requestModel->getArrays()[0];
@@ -71,7 +76,7 @@ class Form extends Behavior
 					}
 					break;
 				}
-				switch((sizeof($model) >= 1) || $force)
+				switch(!is_null($model) || $force)
 				{
 					case true:
 					$options['viewArgs'] = (isset($options['viewArgs']) && is_array($options['viewArgs'])) ? $options['viewArgs'] : (isset($options['viewArgs']) ? [$options['viewArgs']] : []);

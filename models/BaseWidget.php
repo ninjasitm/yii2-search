@@ -85,9 +85,6 @@ class BaseWidget extends Data implements DataInterface
 			$this->constraints['parent_type'] = strtolower(array_pop(explode('\\', $using[1])));
 			$this->parent_type = $this->constraints['parent_type'];
 		}
-		$trace=debug_backtrace();
-$caller=$trace[1];
-print_r($caller['function'].' '.@$caller['class'].' '.$caller['line'].' '.$caller['file'].'<br>');
 		$this->queryFilters = array_replace($this->queryFilters, $this->constraints);
 	}
 	
@@ -210,13 +207,22 @@ print_r($caller['function'].' '.@$caller['class'].' '.$caller['line'].' '.$calle
 	public function hasNew()
 	{
 		$queryFilters = is_array($this->queryFilters) ? $this->queryFilters : null;
-		$andWhere = ['and', 'TIMESTAMP(FROM_UNIXTIME(created_at))>='.\Yii::$app->userMeta->lastActive()];
+		$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.\Yii::$app->userMeta->lastActive()];
 		$ret_val = $this->find()
 			->where($queryFilters)
 			->orderBy([array_shift($this->primaryKey()) => SORT_DESC])
 			->andWhere($andWhere)
 			->count();
 		return $ret_val;
+	}
+	
+	/*
+	 * Get the author for this object
+	 * @return mixed user array
+	 */
+	public function isNew()
+	{
+		return strtotime($this->created_at) > \Yii::$app->userMeta->lastActive();
 	}
 	
 	/*

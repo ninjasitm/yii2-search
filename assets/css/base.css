@@ -87,7 +87,7 @@ a.desc:after { content: /*"\e114"*/"\e152"; }
 .sort-ordinal a.asc:after { content: "\e155"; }
 .sort-ordinal a.desc:after { content: "\e156"; }
 
-.modal.modal-xlg .modal-dialog {
+.modal-dialog.modal-xlg {
   	width: 95%;
 	position: fixed;
 	top: 0; bottom: 0; left: 0; right: 0;
