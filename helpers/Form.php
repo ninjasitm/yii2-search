@@ -21,7 +21,7 @@ class Form extends Behavior
 			case true:
 			$attributes = [];
 			$model->unique = @$options['id'];
-			$options['modelOptions'] = is_array($options['modelOptions']) ? $options['modelOptions'] : null;
+			$options['modelOptions'] = (isset($options['modelOptions']) && is_array($options['modelOptions'])) ? $options['modelOptions'] : null;
 			$model->requestModel = new $options['modelClass']($options['modelOptions']);
 			$model->requestModel->unique = @$options['id'];
 			switch($model->validate())
@@ -39,7 +39,8 @@ class Form extends Behavior
 						break;
 						
 						default:
-						$find = $model->find($model->unique);
+						$pk = $model->primaryKey();
+						$find = $model->find()->where([$pk[0] => $model->unique]);
 						switch(1)
 						{
 							case isset($options['modelOptions']['withThese']):
@@ -50,7 +51,7 @@ class Form extends Behavior
 						$model = ($found instanceof $options['modelClass']) ? $found : $model;
 						break;
 					}
-					switch(!is_null($options['provider']) && $model->hasMethod($options['provider']))
+					switch(isset($options['provider']) && !is_null($options['provider']) && $model->hasMethod($options['provider']))
 					{
 						case true:
 						$model = call_user_func_array([$model, $options['provider']], $args);
@@ -80,7 +81,7 @@ class Form extends Behavior
 				{
 					case true:
 					$options['viewArgs'] = (isset($options['viewArgs']) && is_array($options['viewArgs'])) ? $options['viewArgs'] : (isset($options['viewArgs']) ? [$options['viewArgs']] : []);
-					$data = (!is_null($options['dataProvider']) && $model->hasProperty($options['dataProvider'])) ? $data->$dataProvider : $model;
+					$data = (isset($options['dataProvider']) && !is_null($options['dataProvider']) && $model->hasProperty($options['dataProvider'])) ? $data->$dataProvider : $model;
 					Response::$viewOptions = [
 						"view" => $options['view'],
 						'modalOptions' => $modalOptions,
@@ -107,6 +108,25 @@ class Form extends Behavior
 				break;
 			}
 			break;
+		}
+		return $ret_val;
+	}
+	
+	public static function getHtmlOptions($items=[], $idKey='id', $valueKey = 'name')
+	{
+		$ret_val = [];
+		foreach($items as $idx=>$item)
+		{
+			switch(is_array($item->$valueKey))
+			{
+				case true:
+				$ret_val[$idx] = static::getHtmlOptions($item->$valueKey);
+				break;
+				
+				default:
+				$ret_val[$item->$idKey] = $item->$valueKey;
+				break;
+			}
 		}
 		return $ret_val;
 	}
