@@ -17,7 +17,7 @@ function Nitm ()
 		information: 'alert alert-info',
 		error: 'alert alert-info',
 	};
-
+	
 	/* gap is in millisecs */
 	this.delay = function(gap) { 
 		var then,now; 
@@ -48,23 +48,23 @@ function Nitm ()
 		switch(true)
 		{
 			case (element.position().top > container.height()) && (element.position().top < 0):
-			var scrollToPos = container.scrollTop + element.position().top;
-			break;
-			
+				var scrollToPos = container.scrollTop + element.position().top;
+				break;
+				
 			default:
-			var scrollToPos = element.position().top;
-			break;
+				var scrollToPos = element.position().top;
+				break;
 		}
 		container.animate({scrollTop: scrollToPos}, 150, function () {
-		try
-		{
-			switch(highlight)
+			try
 			{
-				case true:
-				element.effect("pulsate", {times: 3}, 150, 'ease');
-				break;
-			}
-		} catch(error) {};
+				switch(highlight)
+				{
+					case true:
+						element.effect("pulsate", {times: 3}, 150, 'ease');
+						break;
+				}
+			} catch(error) {};
 		});
 	}
 	
@@ -74,44 +74,44 @@ function Nitm ()
 		switch(1)
 		{
 			case _form.find("input[type='submit']").get(0) !== undefined:
-			var button = _form.find("input[type='submit']");
-			break;
-			
+				var button = _form.find("input[type='submit']");
+				break;
+				
 			case _form.find("button[type='submit']").get(0) !== undefined:
-			var button = _form.find("button[type='submit']");
-			break;
-			
+				var button = _form.find("button[type='submit']");
+				break;
+				
 			default:
-			var button = _form.find("input[type='image']");
-			break;
+				var button = _form.find("input[type='image']");
+				break;
 		}
 		switch(before)
 		{
 			case true:
-			try
-			{
-				button.attr('oldtype', button.attr('type'));
-				button.attr('type', 'image');
-				button.attr('oldsrc', button.attr('src'));
-				button.attr('src', globals.loading_src);
-				button.prop('disabled', true);
-				button.attr('oldonclick', button.attr('onclick'));
-				button.click(void(0));
-			} catch(error) {};
-			break;
-			
+				try
+				{
+					button.attr('oldtype', button.attr('type'));
+					button.attr('type', 'image');
+					button.attr('oldsrc', button.attr('src'));
+					button.attr('src', globals.loading_src);
+					button.prop('disabled', true);
+					button.attr('oldonclick', button.attr('onclick'));
+					button.click(void(0));
+				} catch(error) {};
+				break;
+				
 			default:
-			try
-			{
-				button.attr('src', button.attr('oldsrc'));
-				button.attr('onclick', button.attr('oldonclick'));
-				button.attr('type', button.attr('oldtype'));
-				button.removeAttr('oldonclick');
-				button.removeAttr('oldsrc');
-				button.removeAttr('oldtype');
-				button.removeProp('disabled');
-			} catch(error) {};
-			break;
+				try
+				{
+					button.attr('src', button.attr('oldsrc'));
+					button.attr('onclick', button.attr('oldonclick'));
+					button.attr('type', button.attr('oldtype'));
+					button.removeAttr('oldonclick');
+					button.removeAttr('oldsrc');
+					button.removeAttr('oldtype');
+					button.removeProp('disabled');
+				} catch(error) {};
+				break;
 		}
 	}
 	
@@ -147,24 +147,24 @@ function Nitm ()
 		}
 		return dumped_text;
 	} 
-		
+	
 	this.objectLength = function (obj)
 	{
 		switch(obj.length != undefined)
 		{
 			case true:
-			count = obj.length;
-			break;
-			
+				count = obj.length;
+				break;
+				
 			default:
-			count = 0;
-			break;
+				count = 0;
+				break;
 		}
 		switch(count)
 		{
 			case 0:
-			for (k in obj) if (obj.hasOwnProperty(k)) count++;
-			break;
+				for (k in obj) if (obj.hasOwnProperty(k)) count++;
+				break;
 		}
 		return count;
 	}
@@ -189,12 +189,12 @@ function Nitm ()
 		switch(uApp)
 		{
 			case true:
-			this.getObj(uID).append("<span class='"+uClass+"'>"+uMessage+"</span>");
-			break;
-			
+				this.getObj(uID).append("<span class='"+uClass+"'>"+uMessage+"</span>");
+				break;
+				
 			default:
-			this.getObj(uID).html("<span class='"+uClass+"'>"+uMessage+"</span>");
-			break;
+				this.getObj(uID).html("<span class='"+uClass+"'>"+uMessage+"</span>");
+				break;
 		}
 	}
 	
@@ -218,31 +218,31 @@ function Nitm ()
 		{
 			case 'string':
 			case 'number':
-			break;
-			
+				break;
+				
 			case 'object':
-			selector = (selector.id == undefined) ? selector.name : selector.id;
-			break;
-			
+				selector = (selector.id == undefined) ? selector.name : selector.id;
+				break;
+				
 			default:
-			return false;
-			break;
+				return false;
+				break;
 		}
 		selector = this.this.jqEscape(selector);
 		switch(by)
 		{
 			case 'name':
-			selector = selector+' [name="'+by_val+'"]';
-			break;
-			
+				selector = selector+' [name="'+by_val+'"]';
+				break;
+				
 			case 'class':
-			var obj = (selector[0] != '.') ? '.'+selector : selector;
-			obj = '\\'+obj;
-			break;
-			
+				var obj = (selector[0] != '.') ? '.'+selector : selector;
+				obj = '\\'+obj;
+				break;
+				
 			default:
-			selector = (selector[0] != '#') ? '#'+selector : selector;
-			break
+				selector = (selector[0] != '#') ? '#'+selector : selector;
+				break
 		}
 		try {this.getObj(selector, '', false, false).each(function() {this.disabled = !this.disabled;})} catch(error) {};
 	}
@@ -252,30 +252,30 @@ function Nitm ()
 		switch(document.readyState)
 		{
 			case 'complete':
-			func();
-			break;
-			
+				func();
+				break;
+				
 			default:
-			$(window).load(func);
-			break;
+				$(window).load(func);
+				break;
 		}
 	}
 	
 	
 	//function to add elements to a parent element
 	/*
-		par = the parent element
-		cData = the type of data to append. Can be an array or single element
-			'events' = the events to be added to this element. Can be an array or single event
-				'function' = the function to be handled by the event'
-				'type' = the type of the event
-			'listeners' = the listeners to be added to this element. Can be an array or single listener
-				'function' = the function to be handled by this listener
-				'type' = the type of the listener
-			'type' = the type of the element
-			'...' = any attribute which can be handled by this element
-				'
-	*/
+	 p ar = the parent *element
+	 cData = the type of data to append. Can be an array or single element
+	 'events' = the events to be added to this element. Can be an array or single event
+	 'function' = the function to be handled by the event'
+	 'type' = the type of the event
+	 'listeners' = the listeners to be added to this element. Can be an array or single listener
+	 'function' = the function to be handled by this listener
+	 'type' = the type of the listener
+	 'type' = the type of the element
+	 '...' = any attribute which can be handled by this element
+	 '
+	 */
 	this.addChildrenTo = function (_parent, cData)
 	{
 		var par = this.getObj(_parent);
@@ -289,34 +289,34 @@ function Nitm ()
 					switch(attr)
 					{
 						case 'events':
-						for(event in cData[attr])
-						{
-							cData[attr][event] = (typeof(cData[attr][event]) == 'object') ? cData[attr][event] : new Object(cData[attr][event]);
-							for(subEvent in cData[attr][event])
+							for(event in cData[attr])
 							{
-								$(childElem).on(cData[attr][event][subEvent]['type'], function(){
-									cData[attr][event][subEvent]['function']
-								});
+								cData[attr][event] = (typeof(cData[attr][event]) == 'object') ? cData[attr][event] : new Object(cData[attr][event]);
+								for(subEvent in cData[attr][event])
+								{
+									$(childElem).on(cData[attr][event][subEvent]['type'], function(){
+										cData[attr][event][subEvent]['function']
+									});
+								}
 							}
-						}
-						break;
-						
+							break;
+							
 						case 'type':
-						break;
-						
+							break;
+							
 						default:
-						switch(typeof(cData[attr]))
-						{
-							
-							case 'object':
-							this.addChildrenTo(par, cData[attr]);
+							switch(typeof(cData[attr]))
+							{
+								
+								case 'object':
+									this.addChildrenTo(par, cData[attr]);
+									break;
+									
+								default:
+									childElem.setAttribute(attr, cData[attr]);
+									break;
+							}
 							break;
-							
-							default:
-							childElem.setAttribute(attr, cData[attr]);
-							break;
-						}
-						break;
 					}
 				}
 				par.appendChild(childElem);
@@ -352,9 +352,9 @@ function Nitm ()
 				switch(!selector.attr('id'))
 				{
 					case true:
-					uniqueId = new Date().getTime();
-					$(selector).attr('id', 'object'+uniqueId);
-					break;
+						uniqueId = new Date().getTime();
+						$(selector).attr('id', 'object'+uniqueId);
+						break;
 				}
 			} catch (error) {};
 			selector = selector.attr('id');
@@ -367,73 +367,75 @@ function Nitm ()
 				switch(!selector.id)
 				{
 					case true:
-					uniqueId = new Date().getTime();
-					selector.setAttribute('id', 'object'+uniqueId);
-					break;
+						uniqueId = new Date().getTime();
+						selector.setAttribute('id', 'object'+uniqueId);
+						break;
 				}
 			} catch (error) {};
 			selector = selector.id;
-		} else {
-			switch(typeof selector)
-			{
-				case 'string':
-				case 'number':
-				break;
-				
-				default:
-				return false;
-				break;
-			}
-		}
-		switch(selector)
-		{
-			case 'body':
-			case 'document':
-			case 'window':
-			var obj = selector;
-			break;
-			
-			default:
-			selector = (esc === true) ? this.jqEscape(selector) : selector;
-			switch(by)
-			{
-				case 'name':
-				var obj = '[name="'+selector+'"]';
-				break;
-				
-				case 'class':
-				var obj = (selector[0] != '.') ? '.'+selector : selector;
-				obj = '\\'+obj;
-				break;
-				
-				default:
-				switch(["["].indexOf(selector[0]) != -1)
+			} else {
+				switch(typeof selector)
 				{
-					case true:
+					case 'string':
+					case 'number':
+						break;
+						
+					default:
+						return false;
+						break;
+				}
+			}
+			switch(selector)
+			{
+				case 'body':
+				case 'document':
+				case 'window':
+				case document:
+				case window:
 					var obj = selector;
 					break;
 					
-					default:
-					var obj = (selector[0] != '#') ? '#'+selector : selector;
+				default:
+					selector = (esc === true) ? this.jqEscape(selector) : selector;
+					switch(by)
+					{
+						case 'name':
+							var obj = '[name="'+selector+'"]';
+							break;
+							
+						case 'class':
+							var obj = (selector[0] != '.') ? '.'+selector : selector;
+							obj = '\\'+obj;
+							break;
+							
+						default:
+							switch(["["].indexOf(selector[0]) != -1)
+							{
+								case true:
+									var obj = selector;
+									break;
+									
+								default:
+									var obj = (selector[0] != '#') ? '#'+selector : selector;
+									break;
+							}
+							break
+					}
+					switch(alert_obj)
+					{
+						case true:
+							alert(selector+" -> "+obj);
+							break;
+					}
 					break;
-				}
-				break
 			}
-			switch(alert_obj)
-			{
-				case true:
-				alert(selector+" -> "+obj);
-				break;
-			}
-			break;
-		}
-		return $(obj);
-		
+			return $(obj);
+			
 	}
 	
 	this.jqEscape = function (val) 
 	{
-	   // return new String(val).replace(/[-[\]{}()*+?.,\\^$|]/g, '\\$&');
+		// return new String(val).replace(/[-[\]{}()*+?.,\\^$|]/g, '\\$&');
 		return new String(val).replace(/[-{}()*+?.,\\^$|]/g, '\\$&');
 	}
 	
@@ -444,14 +446,14 @@ function Nitm ()
 		switch(field.value.length >= maxlimit+1)
 		{
 			case true:
-			field.value = field.value.substring(0, maxlimit);
-			cntfield.innerHTML = maxlimit - field.value.length;
-			alert("You've maxed out the "+maxlimit+" character limit\n\nPlease shorten your message. :-).");
-			break;
-			
+				field.value = field.value.substring(0, maxlimit);
+				cntfield.innerHTML = maxlimit - field.value.length;
+				alert("You've maxed out the "+maxlimit+" character limit\n\nPlease shorten your message. :-).");
+				break;
+				
 			default:
-			cntfield.innerHTML = maxlimit - field.value.length;
-			break;
+				cntfield.innerHTML = maxlimit - field.value.length;
+				break;
 		}
 	}
 	
@@ -460,8 +462,8 @@ function Nitm ()
 		switch(this.r.hasOwnProperty('token'))
 		{
 			case true:
-			this.r.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Basic "+this.r.token);};
-			break;
+				this.r.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Basic "+this.r.token);};
+				break;
 		}
 		if (rUrl != undefined) {
 			//code
@@ -491,7 +493,7 @@ function Nitm ()
 		
 		// match anything not a [ or ]
 		regexp = /^[^[\]]+/;
-	
+		
 		//Deliver files with ajax submission
 		var data = (data == undefined) ? new FormData() : data;
 		this.$form.find(":file").each(function (i, file) {
@@ -549,9 +551,9 @@ function Nitm ()
 		switch(parentElem.tagName)
 		{
 			case 'TABLE':
-			//we need to start at tbody for tables....retarded yes
-			parentElem = $(parentElem).find('tbody').get(0);
-			break;
+				//we need to start at tbody for tables....retarded yes
+				parentElem = $(parentElem).find('tbody').get(0);
+				break;
 		}
 		hierarchy = new Array();
 		ins_pt = new Array();
@@ -560,16 +562,16 @@ function Nitm ()
 		switch(typeof hierarchy)
 		{
 			case 'string':
-			hierarchy = new Array(hierarchy);
-			break;
-			
+				hierarchy = new Array(hierarchy);
+				break;
+				
 			case 'object':
-			break;
-			
+				break;
+				
 			default:
-			alert("I need a string to create an element createElementHierarchy default:");
-			return false;
-			break;
+				alert("I need a string to create an element createElementHierarchy default:");
+				return false;
+				break;
 		}
 		for(i = 0; i < hierarchy.length; i++)
 		{
@@ -581,18 +583,18 @@ function Nitm ()
 				switch(parentElem != undefined)
 				{
 					case false:
-					parentElem = document.createElement(freq[0]);
-					break;
-					
+						parentElem = document.createElement(freq[0]);
+						break;
+						
 					default:
-					lastElem = document.createElement(freq[0]);
-					parentElem.appendChild(lastElem);
-					parentElem = lastElem;
-					if(!topElem)
-					{
-						topElem = lastElem;
-					}
-					break;
+						lastElem = document.createElement(freq[0]);
+						parentElem.appendChild(lastElem);
+						parentElem = lastElem;
+						if(!topElem)
+						{
+							topElem = lastElem;
+						}
+						break;
 				}
 			}
 		}
@@ -615,53 +617,53 @@ function Nitm ()
 		switch(data != undefined)
 		{
 			case true:
-			data.getHtml = true;
-			var request = this.doRequest($form.attr('action'), data);
-			request.done(function(result)
-			{
-				switch(result.success && (result.data != ''))
+				data.getHtml = true;
+				var request = this.doRequest($form.attr('action'), data);
+				request.done(function(result)
 				{
-					case true:
-					try {
-						getObj('notify').html(result.message).removeClass('alert alert-failure');
-					} catch (error) {}
-					if(removeSubmit) {var submitButton = $form.parent().detach();}
-					ret_val = false;
-					result.domContainer= new String(result.domContainer);
-					var newElem = {'insert':true, 'append':(($form.data('prepend') === true) ? false : true), 'id':result.domContainer};
-					switch(result.format)
+					switch(result.success && (result.data != ''))
 					{
-						case 'text':
-						result.data = result.data[result.domContainer][result.domContainer];
-						break;
+						case true:
+							try {
+								getObj('notify').html(result.message).removeClass('alert alert-failure');
+							} catch (error) {}
+							if(removeSubmit) {var submitButton = $form.parent().detach();}
+							ret_val = false;
+							result.domContainer= new String(result.domContainer);
+							var newElem = {'insert':true, 'append':(($form.data('prepend') === true) ? false : true), 'id':result.domContainer};
+							switch(result.format)
+							{
+								case 'text':
+									result.data = result.data[result.domContainer][result.domContainer];
+									break;
+							}
+							var addTo = (!addTo) ? result.domContainer: addTo;
+							try {
+								place(newElem, result.data, $form.data('add-to'), result.format, clearParent);
+							} catch (error) {}
+							if(!removeSubmit) {animateSubmit(_form, false);}
+							break;
+							
+								case false:
+									var addTo = (!$form.data('add-to')) ? result.domContainer: $form.data('add-to');
+									try {
+										notify(result.message, 'bg-danger');
+									} catch (error) {}
+									switch(removeSubmit) 
+									{
+										case false:
+											getObj(addTo).append(submitButton);
+											break;
+									}
+									animateSubmit(_form, false);
+									break;
 					}
-					var addTo = (!addTo) ? result.domContainer: addTo;
-					try {
-						place(newElem, result.data, $form.data('add-to'), result.format, clearParent);
-					} catch (error) {}
-					if(!removeSubmit) {animateSubmit(_form, false);}
-					break;
-					
-					case false:
-					var addTo = (!$form.data('add-to')) ? result.domContainer: $form.data('add-to');
-					try {
-						notify(result.message, 'bg-danger');
-					} catch (error) {}
-					switch(removeSubmit) 
-					{
-						case false:
-						getObj(addTo).append(submitButton);
-						break;
-					}
-					animateSubmit(_form, false);
-					break;
-				}
-			});
-			break;
-			
-			default:
-			animateSubmit(_form, false);
-			break;
+				});
+				break;
+				
+										default:
+											animateSubmit(_form, false);
+											break;
 		}
 	}
 	
@@ -682,12 +684,12 @@ function Nitm ()
 				switch(Number(result.data.hidden))
 				{
 					case 0:
-					$(caller).parents("div[id='note_content"+id+"']").removeClass('hidden_displayed');
-					break;
-					
+						$(caller).parents("div[id='note_content"+id+"']").removeClass('hidden_displayed');
+						break;
+						
 					default:
-					$(caller).parents("div[id='note_content"+id+"']").addClass('hidden_displayed');
-					break;
+						$(caller).parents("div[id='note_content"+id+"']").addClass('hidden_displayed');
+						break;
 				}
 			}
 		});
@@ -698,92 +700,104 @@ function Nitm ()
 		switch(typeof(newElem))
 		{
 			case 'object':
-			var addTo = self.getObj(addToElem);
-			var scrollToPos = 0;
-			switch(format)
-			{
-				case 'text':
-				var newElement = $('<div style="width:100%; padding:10px;" id="text_result"><br>'+data+'</div>');
-				scrollToPos = newElement.get(0).id;
-				break;
-				
-				default:
-				var newElement = $(data);
-				scrollToPos = newElement.get(0).id;
-				break;
-			}
-			switch(typeof clear)
-			{
-				case 'string':
-				addTo.find(clear).html('');
-				break;
-				
-				case 'boolean':
-				if(clear === true) {addTo.html('')};
-				break;
-			}
-			if(newElem.prepend === true) {
-				try 
+				var addTo = self.getObj(addToElem);
+				var scrollToPos = 0;
+				switch(format)
 				{
-					switch(1)
-					{
-						case 1:
-						switch(addTo.find(':first-child').attr('id'))
-						{
-							case 'noreplies':
-							addTo.find(':first-child').remove();
-							break;
-						}
-						newElement.appendTo(addTo);
-						addTo.hide().slideDown('fast').effect('pulsate', {times:1}, 150);
-						break;
-					}
-					self.animateScroll(scrollToPos, addTo);
-				}catch(error){}
-			} else if(newElem.replace === true) {
-				try 
-				{
-					addTo.replaceWith(data).effect('pulsate', {times:1}, 150);
-					//self.animateScroll(scrollToPos, addTo);
-				}catch(error){}
-			} else {
-				try 
-				{
-					switch(addTo.children().length)
-					{
-						case 0:
-						addTo.append(newElement).next().hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+					case 'text':
+						var newElement = $('<div style="width:100%; padding:10px;" id="text_result"><br>'+data+'</div>');
+						scrollToPos = newElement.get(0).id;
 						break;
 						
-						default:
-						switch(addTo.find(':first-child').attr('id'))
+					default:
+						var newElement = $(data);
+						scrollToPos = newElement.get(0).id;
+						break;
+				}
+				switch(typeof clear)
+				{
+					case 'string':
+						addTo.find(clear).html('');
+						break;
+						
+					case 'boolean':
+						if(clear === true) {addTo.html('')};
+						break;
+				}
+				if(newElem.prepend === true) {
+					try 
+					{
+						switch(1)
 						{
-							case 'noreplies':
-							addTo.find(':first-child').hide();
-							newElement.prependTo('#'+addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
-							break;
-							
-							default:
-							switch(newElem.index)
-							{
-								case -1:
-								newElement.prependTo(addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+							case 1:
+								switch(addTo.find(':first-child').attr('id'))
+								{
+									case 'noreplies':
+										addTo.find(':first-child').remove();
+										break;
+								}
+								newElement.appendTo(addTo);
+								addTo.hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+								break;
+						}
+						self.animateScroll(scrollToPos, addTo);
+					}catch(error){}
+				} else if(newElem.replace === true) {
+					try 
+					{
+						addTo.replaceWith(data).effect('pulsate', {times:1}, 150);
+						//self.animateScroll(scrollToPos, addTo);
+					}catch(error){}
+				} else {
+					try 
+					{
+						switch(addTo.children().length)
+						{
+							case 0:
+								addTo.append(newElement).next().hide().slideDown('fast').effect('pulsate', {times:1}, 150);
 								break;
 								
-								default:
-								addTo.children().eq(newElem.index).after(newElement).next().hide().slideDown('fast').effect('pulsate', {times:2}, 150);
+							default:
+								switch(addTo.find(':first-child').attr('id'))
+								{
+									case 'noreplies':
+										addTo.find(':first-child').hide();
+										newElement.prependTo('#'+addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+										break;
+										
+									default:
+										switch(newElem.index)
+										{
+											case -1:
+												newElement.prependTo(addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+												break;
+												
+											default:
+												addTo.children().eq(newElem.index).after(newElement).next().hide().slideDown('fast').effect('pulsate', {times:2}, 150);
+												break;
+										}
+										break;
+								}
 								break;
-							}
-							break;
 						}
-						break;
-					}
-					self.animateScroll(scrollToPos, addTo);
-				} catch(error){}
-			}
-			break;
+						self.animateScroll(scrollToPos, addTo);
+					} catch(error){}
+				}
+				break;
 		}
 	}
+	
+	this.safeFunctionName = function (input) {
+		var array = new String(input).split('-');
+		var string = $.map(array, function (value, index) {
+			return value.ucfirst();
+		});
+		return string.join('');
+	}
+}
+
+String.prototype.ucfirst = function() {
+	return this.charAt(0).toUpperCase() + this.slice(1);
 }
 
 $nitm = new Nitm();

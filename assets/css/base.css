@@ -133,3 +133,9 @@ a.bg-duplicate:hover {
 .hidden {
 	opacity: 0.3;
 }
+
+.btn-transparent {
+  color: #333;
+  background-color: transparent;
+  border-color: transparent;
+}

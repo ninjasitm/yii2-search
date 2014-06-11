@@ -34,7 +34,7 @@ class Replies extends RepliesModel
             'query' => $query,
         ]);
 		$params = isset($params[$this->formName()]) ? $params : [$this->formName() => $params];
-        if (!($this->load($params) && $this->validate())) {
+	if (!($this->load($params) && $this->validate())) {
             return $dataProvider;
         }
 

@@ -62,6 +62,8 @@ class Replies extends BaseWidget
 			'updates' => null,
 			'hidden' => null,
 			'deleted' => null,
+			'author' => null,
+			'editor' => null,
 		];
 		return array_merge(parent::has(), $has);
 	}
@@ -117,7 +119,8 @@ class Replies extends BaseWidget
 				'ip_host',
 				'cookie_hash',
 				'reply_to', 
-				'reply_to_author', 
+				'reply_to_author',
+				'title',
 			],
 			'update' => [
 				'parent_id', 
@@ -147,11 +150,14 @@ class Replies extends BaseWidget
 	public function setConstraints($using)
 	{
 		parent::setConstraints($using);
-		if(!empty($using[2]))
+		switch(1)
 		{
-			$this->constraints['parent_key'] = date($this->_dateFormat, strtotime($using[2]));
+			case !empty($using[2]):
+			case !empty($using['key']):
+			$this->constraints['parent_key'] = date($this->_dateFormat, strtotime(isset($using['key']) ? $using['key'] : $using[2]));
 			$this->queryFilters['parent_key'] = $this->constraints['parent_key'];
 			$this->parent_key = $this->constraints['parent_key'];
+			break;
 		}
 		//constrain for admin user
 		switch(\Yii::$app->userMeta->isAdmin())

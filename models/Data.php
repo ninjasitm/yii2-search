@@ -70,7 +70,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	public function init()
 	{
 		parent::init();
-		$this->initConfig(static::isWhat());
+		//$this->initConfig(static::isWhat());
 	}
 	
 	public function rules()

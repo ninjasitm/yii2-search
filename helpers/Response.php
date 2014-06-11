@@ -28,19 +28,19 @@ class Response extends Behavior
 	
 	public static function getFormat()
 	{
-		switch(empty(self::$format))
+		switch(empty(Response::$format))
 		{
 			case true:
-			self::setFormat();
+			Response::setFormat();
 			break;
 		}
-		return self::$format;
+		return Response::$format;
 	}
 	
 	public static function initContext($controller=null, $view=null)
 	{
-		self::$controller = !($controller) ? \Yii::$app->controller : $controller;
-		self::$view = !($view) ? \Yii::$app->controller->getView() : $view;
+		Response::$controller = !($controller) ? \Yii::$app->controller : $controller;
+		Response::$view = !($view) ? \Yii::$app->controller->getView() : $view;
 	}
 	
 	/*
@@ -50,9 +50,23 @@ class Response extends Behavior
 	public static function render($result=null, $params=null, $partial=true)
 	{
 		$contentType = "text/html";
-		$render = (($partial === true) || (self::$forceAjax === true)) ? 'renderAjax' : 'render';
-		$params = is_null($params) ? self::$viewOptions : $params;
-		switch(self::getFormat())
+		switch(1)
+		{
+			case \Yii::$app->request->isAjax:
+			case Response::$forceAjax === true:
+			$render = 'renderAjax';
+			break;
+			
+			case $partial == true:
+			$render = 'renderPartial';
+			break;
+			
+			default:
+			$render = 'render';
+			break;
+		}
+		$params = is_null($params) ? Response::$viewOptions : $params;
+		switch(Response::getFormat())
 		{
 			case 'xml':
 			//implement handling of XML responses
@@ -61,19 +75,19 @@ class Response extends Behavior
 			break;
 			
 			case 'html':
-			$params['view'] =  empty($params['view']) ? self::$viewPath :  $params['view'];
-			$params['options'] = isset(self::$viewOptions['options']) ? self::$viewOptions['options'] : [];
+			$params['view'] =  empty($params['view']) ? Response::$viewPath :  $params['view'];
+			$params['options'] = isset(Response::$viewOptions['options']) ? Response::$viewOptions['options'] : [];
 			switch(\Yii::$app->request->isAjax)
 			{
 				case false:
 				switch($params['view'])
 				{
-					case self::$viewPath:
+					case Response::$viewPath:
 					$ret_val = \Yii::$app->controller->getView()->$render($params['view'], $params['args'], static::$controller);
 					break;
 					
 					default:
-					$ret_val = static::$controller->getView()->$render(self::getLayoutPath(@$params['layout']), 
+					$ret_val = static::$controller->getView()->$render(Response::getLayoutPath(@$params['layout']), 
 						[
 							'content' => static::$view->$render($params['view'], $params['args'], static::$controller),
 							'title' => @$params['title'],
@@ -92,9 +106,9 @@ class Response extends Behavior
 			break;
 			
 			case 'modal':
-			$params['view'] =  empty($params['view']) ? self::$viewPath :  $params['view'];
-			$params['args']['options'] = isset(self::$viewOptions['options']) ? self::$viewOptions['options'] : [];
-			$ret_val = static::$controller->getView()->$render(self::$viewModal, 
+			$params['view'] =  empty($params['view']) ? Response::$viewPath :  $params['view'];
+			$params['args']['options'] = isset(Response::$viewOptions['options']) ? Response::$viewOptions['options'] : [];
+			$ret_val = static::$controller->getView()->$render(Response::$viewModal, 
 				[
 					'content' => static::$view->$render($params['view'], $params['args'], static::$controller),
 					'title' => @$params['title'],
@@ -159,7 +173,7 @@ class Response extends Behavior
 			\Yii::$app->response->format = \yii\web\Response::FORMAT_HTML;
 			break;
 		}
-		self::$format = $ret_val;
+		Response::$format = $ret_val;
 		return $ret_val;
 	}
 	

@@ -75,15 +75,17 @@ class BaseWidget extends Data implements DataInterface
 	public function setConstraints($using)
 	{
 		$this->queryFilters = [];
-		if(!empty($using[0]))
+		switch(1)
 		{
-			$this->constraints['parent_id'] = $using[0];
+			case isset($using[0]):
+			case isset($using['id']):
+			$this->constraints['parent_id'] = isset($using['id']) ? $using['id'] : $using[0];
 			$this->parent_id = $this->constraints['parent_id'];
-		}
-		if(!empty($using[1]))
-		{
-			$this->constraints['parent_type'] = strtolower(array_pop(explode('\\', $using[1])));
+			case isset($using[1]):
+			case isset($using['type']):
+			$this->constraints['parent_type'] = strtolower(array_pop(explode('\\', isset($using['type']) ? $using['type'] : $using[1])));
 			$this->parent_type = $this->constraints['parent_type'];
+			break;
 		}
 		$this->queryFilters = array_replace($this->queryFilters, $this->constraints);
 	}
@@ -124,7 +126,7 @@ class BaseWidget extends Data implements DataInterface
 			 break;
 			 
 			 default:
-			 throw new Exception("Error validating for count.".var_export($this->getErrors(), true));
+			 throw new Exception("Error validating for count.\n".var_export($this->getErrors(), true));
 			 break;
 		 }
 		 return $ret_val;

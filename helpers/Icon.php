@@ -13,9 +13,10 @@ class Icon
 	 * @param Object $model
 	 * @param mixed $options
 	 */
-	public static function forAction($action, $attribute, $model, $options=[])
+	public static function forAction($action, $attribute=null, $model=null, $options=[])
 	{
-		switch($model->hasAttribute($attribute))
+		$icon = '';
+		switch(is_object($model) && $model->hasAttribute($attribute))
 		{
 			case true:
 			switch($action)
@@ -37,23 +38,22 @@ class Icon
 				$icon = ($model->$attribute == 1) ?  'circle-o' : 'circle';
 				break;
 			}
-			$ret_val = BaseIcon::show($icon, $options);
 			break;
 			
 			case false:
 			switch($action)
 			{
 				case 'update':
-				$ret_val = BaseIcon::show('pencil');
+				$icon = (is_object($model) && $model->hasAttribute($attribute) && $model->$attribute == 1) ?  'pencil' : 'pencil';
 				break;
 				
 				case 'delete':
-				$ret_val = BaseIcon::show('remove');
+				$icon = (is_object($model) && $model->hasAttribute($attribute) && $model->$attribute == 1) ?  'plus' : 'trash-o';
 				break;
 			}
 			break;
 		}
-		return $ret_val;
+		return BaseIcon::show($icon, $options);
 	}
 }
 ?>
