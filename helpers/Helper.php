@@ -127,7 +127,7 @@ class Helper extends Model
 					break;
 					
 					case is_string($value) && $quote_data:
-					$quoter = ($quote_data === false) ? '' : ($this->quote_data === true) ? '"' : '';
+					$quoter = ($quote_data === false) ? '' : ($quote_data === true) ? '"' : '';
 					$ret_val .= $field.$match."$quoter".$value."$quoter";
 					break;
 					

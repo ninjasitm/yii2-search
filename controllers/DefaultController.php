@@ -428,10 +428,7 @@ class DefaultController extends Controller
 			switch(is_array($with))
 			{
 				case true:
-				foreach($with as $w)
-				{
-						$model->with($w);
-				}
+				$model->with($with);
 				break;
 			}
             return $model->one();
