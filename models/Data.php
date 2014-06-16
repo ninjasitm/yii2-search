@@ -517,7 +517,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	 * @param string $name
 	 * @return string
 	 */
-	public function properName($value)
+	public static function properName($value)
 	{
 		$ret_val = empty($value) ?  [] : array_map('ucfirst', explode('_', $value));
 		return implode(' ', $ret_val);
