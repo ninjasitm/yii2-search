@@ -46,7 +46,7 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 					'data-pjax' => '0',
 				]);
 			}
-			echo Html::a('reply', \Yii::$app->urlManager->createUrl(['/reply/to/'.$model->reply_to]), [
+			echo Html::a('reply', \Yii::$app->urlManager->createUrl(['/reply/to/'.$model->id]), [
 				'id' => "replyToMessage".$model->id,
 				'title' => Yii::t('yii', "Reply to this message"),
 				'class' => 'fa-2x',
@@ -54,7 +54,7 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 				'data-parent' => $model->parent_id,
 				'data-reply-to' => $model->id,
 			]);
-			echo Html::a('quote', \Yii::$app->urlManager->createUrl(['/reply/quote/'.$model->reply_to]), [
+			echo Html::a('quote', \Yii::$app->urlManager->createUrl(['/reply/quote/'.$model->id]), [
 				'id' => "quoteMessage".$model->id,
 				'title' => Yii::t('yii', "Quote this message"),
 				'class' => 'fa-2x',

@@ -4,7 +4,7 @@ use yii\helpers\Html;
 use kartik\widgets\ActiveForm;
 use kartik\widgets\Select2;
 use nitm\models\Issues;
-use yii\redactor\widgets\Redactor;
+use yii\imperavi\Widget as Redactor;
 
 /**
  * @var yii\web\View $this
@@ -12,7 +12,25 @@ use yii\redactor\widgets\Redactor;
  * @var yii\widgets\ActiveForm $form
  */
 
-$action = ($model->getIsNewRecord()) ? "create" : "update"; 
+$action = ($model->getIsNewRecord()) ? "create" : "update";
+$options =  [
+	'air'=> true,
+	'airButtons' => [
+		'bold', 'italic', 'deleted', 'link'
+	],
+	'height' => 'auto',
+	'buttonOptions' => [
+		'class' => 'btn btn-sm chat-form-btn'
+	]
+];
+
+$htmlOptions = [
+	'style' => 'z-index: 99999',
+	'class' => 'form-control',
+	'rows' => 3,
+	'required' => true,
+	"role" => "message"
+]; 
 ?>
 
 <div class="message-form" id='messagesForm<?= $parentId ?>'>
@@ -23,6 +41,7 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 			'id' => 'reply_form'.$parentId,
 			"action" => "/reply/new/".$parentType."/".$parentId."/".urlencode($parentKey),
 			"options" => [
+				'data-editor' => 'redactor',
 				'data-parent' => 'messages'.$parentId,
 				"class" => "form-inline",
 				"role" => "replyForm",
@@ -50,23 +69,20 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 			break;
 			
 			default:
-			$id = 'replies-message'.$parentId;
+			$id = 'message'.$parentId;
 			$ta = @Redactor::begin([
-				'options' => [
-					'id' => $id,
-				],
+				'options' => $options,
+				'htmlOptions' => $htmlOptions,
 				'model' => $model,
-				'attribute' => 'message',
-				'clientOptions' => [
-					'autoresize' => true,
-				]
+				'attribute' => 'message'
 			]);
+			Redactor::end();
 			Redactor::end();
 			break;
 		}
 	?>
 	<?= $widget->getActions($useModal || !$inline); ?>
-	<?= Html::activeHiddenInput($model, "reply_to", ['value' =>  null]); ?>
+	<?= Html::activeHiddenInput($model, "reply_to", ['value' =>  null, 'role' => 'replyTo']); ?>
     <?php ActiveForm::end(); ?>
 
 </div>

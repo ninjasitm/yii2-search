@@ -24,6 +24,7 @@ class BaseWidget extends Data implements DataInterface
 	public $hasNew;
 	public $constrain;
 	public $constraints = [];
+	public $queryOptions = [];
 	
 	public static $statuses = [
 		'normal' => 'default',
@@ -269,6 +270,12 @@ class BaseWidget extends Data implements DataInterface
 	public function getEditorUser()
 	{
 		return $this->hasOne(User::className(), ['id' => $this->editorIdKey]);
+	}
+	
+	public function getStatus()
+	{
+		$ret_val = '';
+		return $ret_val;
 	}
 }
 ?>

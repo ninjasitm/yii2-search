@@ -290,6 +290,11 @@ class Helper extends Model
 		return preg_replace($s, $r, $subject);
 	}
 	
+	public static function parseLinks($str)
+	{
+		return ereg_replace("[[:alpha:]]+://[^<>[:space:]]+[[:alnum:]/]","<a href=\"\\0\">\\0</a>", $str); 
+	}
+	
 	/*---------------------
 		Protected Functions
 	---------------------*/

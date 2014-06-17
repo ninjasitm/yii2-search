@@ -10,8 +10,26 @@ use nitm\models\Replies as RepliesModel;
 /**
  * Replies represents the model behind the search form about `app\models\Replies`.
  */
-class Replies extends RepliesModel
-{
+class Replies extends BaseSearch
+{	
+    public $id;
+    public $author;
+    public $editor;
+    public $created_at;
+	public $updated_at;
+	public $email;
+    public $message;
+    public $parent_type;
+    public $parent_id;
+    public $parent_key;
+    public $hidden;
+    public $disabled;
+    public $public;
+    public $ip_host;
+    public $ip_addr;
+    public $reply_to;
+    public $reply_to_author;
+	
     public function rules()
     {
         return [
@@ -26,31 +44,31 @@ class Replies extends RepliesModel
         return Model::scenarios();
     }
 
-    public function search($params)
+    public function search($params, $with=[])
     {
-        $query = RepliesModel::find();
+		return parent::search(RepliesModel::className(), $params, $with);
+    }
 
-        $dataProvider = new ActiveDataProvider([
-            'query' => $query,
-        ]);
-		$params = isset($params[$this->formName()]) ? $params : [$this->formName() => $params];
-	if (!($this->load($params) && $this->validate())) {
-            return $dataProvider;
-        }
-
-        $query->andFilterWhere([
-            'id' => $this->id,
-            'parent_id' => $this->parent_id,
-            'parent_key' => $this->parent_key,
-            'created_at' => $this->created_at,
-            'reply_to' => $this->reply_to,
-            'reply_to_author' => $this->reply_to_author,
-            'author' => $this->author,
-        ]);
-
-        $query->andFilterWhere(['like', 'parent_type', $this->parent_type])
-            ->andFilterWhere(['like', 'message', $this->message]);
-
-        return $dataProvider;
+    protected function getConditions()
+    {
+       return [
+			['id'],
+			['parent_id'],
+			['parent_type', true],
+			['parent_key', true],
+			['created_at', true],
+			['updated_at', true],
+			['email', true],
+			['reply_to', true],
+			['reply_to_author', true],
+			['author'],
+			['editor'],
+			['message', true],
+			['ip_addr', true],
+			['ip_host', true],
+			['hidden'],
+			['disabled'],
+			['public'],
+        ];
     }
 }

@@ -11,7 +11,7 @@ use nitm\widgets\replies\ChatModal;
  * @var app\models\search\Chat $searchModel
  */
 
-$title = Yii::t('app', 'Chat: '.ucfirst($parentType).": ".$parentId);
+$title = Yii::t('app', 'Chat');
 switch(\Yii::$app->request->isAjax)
 {
 	case true:
@@ -30,23 +30,22 @@ if($useModal == true) {
 }
 ?>
 <?php
-	$options = is_array($options) ? $options : [
-		'class' => 'chat',
-		'role' => 'entityChat',
-		'id' => 'chat'.$parentId,
-		'data-parent' => 'chatFormParent'
+	$listOptions = is_array($listOptions) ? $listOptions : [
+		'class' => 'chat-messages',
+		'role' => 'chatMessages',
 	];
-	echo ListView::widget([
-		'layout' => "{items}\n{pager}\n{summary}",
-		'summary' => isset($withForm) ? \nitm\widgets\replies\RepliesChatForm::widget(['model' => $chatModel]) : false,
-		'options' => $options,
+	$messages = ListView::widget([
+		'layout' => "{items}\n{pager}",
+		'options' => $listOptions,
 		'dataProvider' => $dataProvider,
 		'itemOptions' => ['class' => 'item'],
-		'itemView' => function ($model, $key, $index, $widget) {
-				return $widget->render('@nitm/views/chat/view',['model' => $model]);
+		'itemView' => function ($model, $key, $index, $widget) use ($primaryModel) {
+				return $widget->render('@nitm/views/chat/view',['model' => $model, 'primaryModel' => $primaryModel]);
 		},
 	
 	]);
+	$form = (isset($withForm)&& $withForm == true) ? \nitm\widgets\replies\RepliesChatForm::widget(['model' => $primaryModel]) : '';
+	echo Html::tag('div', $messages.$form, $options);
 ?>
 <?php
 	if(isset($modal))
@@ -56,7 +55,10 @@ if($useModal == true) {
 ?>
 <script type="text/javascript">
 $nitm.addOnLoadEvent(function () {
-	$nitm.replies.init("chat<?=$parentId?>");
+	$nitm.replies.init("chat");
 	$nitm.replies.initChatTabs("chat-navigation");
+	<?php if($updateOptions['enabled']): ?>
+	$nitm.replies.initChatActivity("chat-navigation", "<?= $updateOptions['url'] ?>", <?= $updateOptions['interval']; ?>);
+	<?php endif; ?>
 });
 </script>

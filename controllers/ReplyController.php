@@ -54,6 +54,17 @@ class ReplyController extends DefaultController
 		];
 		return array_merge(parent::has(), $has);
 	}
+	
+	public function beforeAction($action)
+	{
+		switch($action->id)
+		{
+			case 'hide':
+			$this->enableCsrfValidation = false;
+			break;
+		}
+		return true;
+	}
 
     /**
      * Lists all Replies models.
@@ -93,6 +104,13 @@ class ReplyController extends DefaultController
 		];
 		$this->model->setScenario('create');
 		$this->model->load(\Yii::$app->request->post());
+		switch($type)
+		{
+			case 'chat':
+			$id = 0;
+			$key = new \yii\db\Expression('NOW()');
+			break;
+		}
 		$constrain = [$id, $type, urldecode($key)];
 		$this->model->setConstraints($constrain);
 		switch($this->model->load($this->model->constraints, false))
@@ -102,6 +120,7 @@ class ReplyController extends DefaultController
 			{
 				case true:
 				$this->model->setScenario('validateNew');
+				$this->setResponseFormat('json');
 				return $this->model->validate();
 				break;
 			}
@@ -150,6 +169,60 @@ class ReplyController extends DefaultController
 		$this->setResponseFormat('json');
 		return $this->renderResponse($ret_val, Response::$viewOptions);	
 	}
+
+    /**
+     * Lists all new Replies models according to user activity.
+	 * @param string $type The parent type of the issue
+	 * @param int $id The id of the parent
+	 * @param string $key The key of the parent
+     * @return mixed
+     */
+    public function actionGetNew($type, $id, $key=null)
+    {
+		$this->model = new Replies(['constrain' => [$id, $type, $key]]);
+		$ret_val = false;
+		$new = $this->model->hasNew();
+		switch($new >= 1)
+		{
+			case true:
+			$ret_val = [
+				'count' => $new,
+				'success' => true
+			];
+			$ret_val['message'] = $ret_val['count']." new messages";
+			$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.\Yii::$app->userMeta->lastActive()];
+			$this->model->queryOptions = [
+				'where' => $andWhere,
+				'orderBy' => [array_shift($this->model->primaryKey()) => SORT_DESC]
+			];
+			switch($type)
+			{
+				case 'chat':
+				$ret_val['data'] = \nitm\widgets\replies\RepliesChat::widget([
+					'model' => $this->model,
+					'withForm' => false
+				]);
+				break;
+				
+				default:
+				$ret_val['data'] = \nitm\widgets\replies\Replies::widget([
+					'model' => $this->model
+				]);
+				break;
+			}
+			Response::$viewOptions = [
+				'args' => [
+					"content" => $ret_val['data'],
+				],
+				'modalOptions' => [
+					'contentOnly' => true
+				]
+			];
+			break;
+		}
+		$this->setResponseFormat(\Yii::$app->request->isAjax ? 'json' : 'html');
+		return $this->renderResponse($ret_val, null, \Yii::$app->request->isAjax);
+    }
 	
 	public function actionTo()
 	{

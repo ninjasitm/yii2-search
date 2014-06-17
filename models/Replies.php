@@ -20,6 +20,11 @@ class Replies extends BaseWidget
 {
 	public $constrain;
 	public $constraints = [];
+	public static $statuses = [
+		'normal' => 'default',
+		'important' => 'info',
+		'critical' => 'error'
+	];
 	
 	protected $authorIdKey = 'author';
 	protected static $is = 'replies';
@@ -86,7 +91,8 @@ class Replies extends BaseWidget
 			],
 			[
 				[
-					'message'
+					'message',
+					'parent_type'
 				],
 				'required',
 				'on' => [
@@ -114,7 +120,7 @@ class Replies extends BaseWidget
 				'parent_key', 
 				'parent_type',
 				'message',
-				'constrain',
+				'priorty',
 				'ip_addr',
 				'ip_host',
 				'cookie_hash',
@@ -126,10 +132,12 @@ class Replies extends BaseWidget
 				'parent_id', 
 				'parent_key', 
 				'parent_type', 
-				'message',  
+				'message', 
+				'priority',
 				'public', 
 				'disabled', 
-				'hidden'
+				'hidden',
+				'title'
 			],
 			'hide' => [
 				'hidden'
@@ -208,22 +216,15 @@ class Replies extends BaseWidget
 	 * Return the reply author information
 	 * @param string $what The property to return
 	 */
-	public function getReplyToAuthor()
+	public function getReplyTo()
 	{
-		return $this->hasOne(User::className(), ['id' => 'reply_to_author']);; 
+		return $this->hasOne(Replies::className(), ['id' => 'reply_to'])->with(['authorUser']);
 	}
 	
-	/**
-	 * Get the userID for the reply_to author
-	 */
-	public function getReplyToAuthorId()
+	public function getStatus()
 	{
-		switch(empty($this->reply_to))
-		{
-			case false:
-			$this->reply_to_author = Replies::find()->select(['author'])->where([static::primaryKey()[0] => $this->reply_to])->one()->author;
-			break;
-		}
+		$ret_val = isset(self::$statuses[$this->priority]) ? self::$statuses[$this->priority] : 'default';
+		return $ret_val;
 	}
 }
 ?>

@@ -172,15 +172,19 @@ function Nitm ()
 	this.notify = function (nMsg, nClass, nObj)
 	{
 		var nMessage = new String(nMsg);
+		var obj = $(null);
 		if(nMessage.length <= 5)
 		{
 			return false;
 		}
 		else
 		{
-			this.getObj((!nObj) ? this.responseSection : nObj).removeClass().addClass(nClass);
-			this.getObj((!nObj) ? this.responseSection : nObj).html(nMessage);
+			var obj = this.getObj((!nObj) ? this.responseSection : nObj);
+			obj.fadeIn();
+			obj.removeClass().addClass(nClass);
+			obj.html(nMessage);
 		}
+		return obj;
 	}
 	
 	this.updateSingle = function (uMsg, uClass, uApp, uID)
@@ -397,19 +401,22 @@ function Nitm ()
 					
 				default:
 					selector = (esc === true) ? this.jqEscape(selector) : selector;
+					if(selector[0] == '.') {
+						by = 'class';
+					}
 					switch(by)
 					{
 						case 'name':
 							var obj = '[name="'+selector+'"]';
 							break;
-							
+						
 						case 'class':
 							var obj = (selector[0] != '.') ? '.'+selector : selector;
 							obj = '\\'+obj;
 							break;
 							
 						default:
-							switch(["["].indexOf(selector[0]) != -1)
+							switch(["[", ','].indexOf(selector) != -1)
 							{
 								case true:
 									var obj = selector;

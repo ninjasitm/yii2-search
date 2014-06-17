@@ -8,14 +8,14 @@ class Statuses
 	 * Indicator types supports
 	 */
 	protected static $indicators = [
-		'error' => 'content bg-danger',
-		'resolved' => 'content bg-resolved',
-		'duplicate' => 'content bg-duplicate',
-		'default' => 'content',
-		'success' => 'content bg-success',
-		'info' => 'content bg-info',
-		'disabled' => 'content bg-disabled',
-		'warning' => 'content bg-warning'
+		'error' => 'bg-danger',
+		'resolved' => 'bg-resolved',
+		'duplicate' => 'bg-duplicate',
+		'default' => '',
+		'success' => 'bg-success',
+		'info' => 'bg-info',
+		'disabled' => 'bg-disabled',
+		'warning' => 'bg-warning'
 	];
 	
 	/**

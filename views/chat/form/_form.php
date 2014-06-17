@@ -3,9 +3,8 @@
 use yii\helpers\Html;
 use kartik\widgets\ActiveForm;
 use kartik\widgets\Select2;
-use kartik\markdown\MarkdownEditor;
 use nitm\models\Issues;
-use yii\redactor\widgets\Redactor;
+use yii\imperavi\Widget as Redactor;
 
 /**
  * @var yii\web\View $this
@@ -14,76 +13,34 @@ use yii\redactor\widgets\Redactor;
  */
 
 $action = ($model->getIsNewRecord()) ? "create" : "update";
+$model->setScenario($action);
 
-$customToolbar = [
-	[
-		'buttons' => [
-		MarkdownEditor::BTN_BOLD => ['icon'=>'bold', 'title' => 'Bold'],
-		MarkdownEditor::BTN_ITALIC => ['icon'=>'italic', 'title' => 'Italic'],
-		]
-	],
-	[
-		'buttons' => [
-			MarkdownEditor::BTN_LINK => [
-				'icon' => 'link',
-				'encodeLabel'=>false,
-				'title' => 'URL/Link'
-			],
-			MarkdownEditor::BTN_PREVIEW => [
-				'icon' => 'eye-open',
-				'encodeLabel'=>false,
-				'title' => 'Preview'
-			]
-		],
-	],
-	[
-		'buttons' => [
-			MarkdownEditor::BTN_LINK => [
-				'icon' => 'save',
-				'encodeLabel'=>false,
-				'title' => 'URL/Link'
-			],
-			MarkdownEditor::BTN_PREVIEW => [
-				'icon' => 'eye-open',
-				'encodeLabel'=>false,
-				'title' => 'Preview'
-			]
-		],
-	],
-];
 $options =  [
-	'attribute' => 'message',
-	'model' => $model,
-	'footer' => $widget->getActions($useModal || !$inline),
-	'toolbar' => $customToolbar,
-	'showPreview' => false,
-	'showExport' => false,
-	'height' => 16,
-	'encodeLabels' => true,
+	'air'=> true,
+	'airButtons' => [
+		'bold', 'italic', 'deleted', 'link'
+	],
+	'height' => 'auto',
 	'buttonOptions' => [
 		'class' => 'btn btn-sm chat-form-btn'
-	],
-	'options' => [
-		'class' => 'form-control'
-	],
-	'footerOptions' => [
-		'class' => 'chat-form-footer'
-	],
-	'editorOptions' => [
-		'class' => 'chat-form-body'
-	],
-	'headerOptions' => [
-		'class' => 'chat-form-header'
 	]
-]
+];
+
+$htmlOptions = [
+	'style' => 'z-index: 99999',
+	'class' => 'form-control',
+	'rows' => 3,
+	'required' => true,
+	"role" => "message"
+];
 ?>
 
-<div class="chat-form chat-form-container" id='chatForm<?= $parentId ?>'>
+<div class="chat-form chat-form-container" id='chat-form<?= $parentId ?>'>
 	<?= \nitm\widgets\alert\Alert::widget(); ?>
 	<div id="alert"></div>
 
 	<?php $form = ActiveForm::begin([
-			'id' => 'chat_form'.$parentId,
+			'id' => 'reply_form0',
 			"action" => "/reply/new/".$parentType."/0/".urlencode($parentKey),
 			"options" => [
 				'data-parent' => 'chat'.$parentId,
@@ -93,7 +50,8 @@ $options =  [
 				"inputOptions" => ["class" => "form-control"]
 			],
 			"enableAjaxValidation" => true
-		]); ?>
+		]); 
+	?>
 	<?php
 		echo $form->field($model, 'title', [
 				'addon' => [
@@ -112,7 +70,7 @@ $options =  [
 					]
 				],
 				'options' => [
-					'class' => ''
+					'class' => 'chat-message-title',
 				]
 			])->textInput([
 			'placeholder' => "Optional title",
@@ -130,23 +88,38 @@ $options =  [
 				'autoOpen' => false,
 				],
 			]);
-			echo MarkdownEditor::widget($options);
+			$id = 'message'.$parentId;
+			$ta = @Redactor::begin([
+				'options' => $options,
+				'htmlOptions' => $htmlOptions,
+				'model' => $model,
+				'attribute' => 'message'
+			]);
+			Redactor::end();
 			Modal::end();
 			break;
 			
 			default:
 			// usage with model and a custom toolbar
-			echo MarkdownEditor::widget($options);
+			$id = 'message'.$parentId;
+			$ta = @Redactor::begin([
+				'options' => $options,
+				'htmlOptions' => $htmlOptions,
+				'model' => $model,
+				'attribute' => 'message',
+			]);
+			Redactor::end();
 			break;
 		}
+		echo $widget->getActions($useModal || !$inline);
 	?>
-	<?= Html::activeHiddenInput($model, "reply_to", ['value' =>  null]); ?>
+	<?= Html::activeHiddenInput($model, "reply_to", ['value' =>  null, "role" => "replyFo"]); ?>
+	<div id="alert"></div>
     <?php ActiveForm::end(); ?>
-
-</div>
 
 <script type='text/javascript'>
 $nitm.addOnLoadEvent(function () {
 	$nitm.replies.initCreating('chatForm<?= $parentId ?>');
 });
 </script>
+</div>

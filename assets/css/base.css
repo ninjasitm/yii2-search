@@ -38,7 +38,7 @@ body {
 }
 
 .absolute {
-	position: absolute;
+	position: absolute !important;
 }
 
 .fixed {
@@ -93,9 +93,14 @@ a.desc:after { content: /*"\e114"*/"\e152"; }
 	top: 0; bottom: 0; left: 0; right: 0;
 }
 
-.modal-xlg .modal-body {
-  overflow-y: auto;
+.modal {
+    overflow: hidden;
 }
+
+.modal-body {
+    overflow: auto;
+}
+
 
 .modal-auto {
 	width: auto;

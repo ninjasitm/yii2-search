@@ -112,7 +112,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 						'attributes' => [
 							ActiveRecord::EVENT_BEFORE_UPDATE => [$name],
 						],
-						'value' => function ($event) {
+						'value' => function ($event) use($name) {
 							switch($event->sender->hasProperty($name))
 							{
 								case true:
