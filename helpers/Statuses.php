@@ -21,7 +21,7 @@ class Statuses
 	/**
 	 * Indicator types supports
 	 */
-	protected static $listIindicators = [
+	protected static $listIndicators = [
 		'error' => 'list-group-item list-group-item-danger',
 		'default' => 'list-group-item',
 		'success' => 'list-group-item  list-group-item-success',

@@ -4,7 +4,7 @@ use yii\helpers\Html;
 use kartik\widgets\ActiveForm;
 use kartik\widgets\Select2;
 use nitm\models\Issues;
-use yii\imperavi\Widget as Redactor;
+use nitm\widgets\editor\Editor;
 
 /**
  * @var yii\web\View $this
@@ -13,24 +13,6 @@ use yii\imperavi\Widget as Redactor;
  */
 
 $action = ($model->getIsNewRecord()) ? "create" : "update";
-$options =  [
-	'air'=> true,
-	'airButtons' => [
-		'bold', 'italic', 'deleted', 'link'
-	],
-	'height' => 'auto',
-	'buttonOptions' => [
-		'class' => 'btn btn-sm chat-form-btn'
-	]
-];
-
-$htmlOptions = [
-	'style' => 'z-index: 99999',
-	'class' => 'form-control',
-	'rows' => 3,
-	'required' => true,
-	"role" => "message"
-]; 
 ?>
 
 <div class="message-form" id='messagesForm<?= $parentId ?>'>
@@ -41,7 +23,7 @@ $htmlOptions = [
 			'id' => 'reply_form'.$parentId,
 			"action" => "/reply/new/".$parentType."/".$parentId."/".urlencode($parentKey),
 			"options" => [
-				'data-editor' => 'redactor',
+				'data-editor' => $editor,
 				'data-parent' => 'messages'.$parentId,
 				"class" => "form-inline",
 				"role" => "replyForm",
@@ -49,6 +31,7 @@ $htmlOptions = [
 			"fieldConfig" => [
 				"inputOptions" => ["class" => "form-control"]
 			],
+			"validateOnSubmit" => true,
 			"enableAjaxValidation" => true
 		]); ?>
 	<?php 
@@ -60,7 +43,7 @@ $htmlOptions = [
 				[
 					'role' => "startEditor",
 					'data-container' => 'messagesForm'.$parentId,
-					'data-editor' => 'redactor',
+					'data-editor' => $editor,
 					'data-id' => $parentId,
 					'data-use-modal' => @$useModal ? 'true' : 'false',
 					'class' => 'btn btn-default center-block'
@@ -69,15 +52,11 @@ $htmlOptions = [
 			break;
 			
 			default:
-			$id = 'message'.$parentId;
-			$ta = @Redactor::begin([
-				'options' => $options,
-				'htmlOptions' => $htmlOptions,
-				'model' => $model,
-				'attribute' => 'message'
-			]);
-			Redactor::end();
-			Redactor::end();
+			$editorOptions['id'] = 'message'.$parentId;
+			$editorOptions['model'] = $model;
+			$editorOptions['attribute'] = 'message';
+			$editorOptions['role'] = 'message';
+			echo Editor::widget($editorOptions);
 			break;
 		}
 	?>

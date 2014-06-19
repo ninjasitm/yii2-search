@@ -20,12 +20,16 @@ class ReplyController extends DefaultController
 		return [
 			'access' => [
 				'class' => \yii\filters\AccessControl::className(),
-				'only' => ['hide', 'new'],
 				'rules' => [
 					[
 						'actions' => ['new', 'hide'],
 						'allow' => true,
 						'roles' => ['@'],
+					],
+					[
+						'actions' => ['get-new'],
+						'allow' => true,
+						'roles' => ['?'],
 					],
 				],
 			],
@@ -128,7 +132,16 @@ class ReplyController extends DefaultController
 			switch($this->model->reply())
 			{
 				case true:
-				$ret_val['data'] = $this->renderPartial('@nitm/views/replies/view', ['model' => $this->model, 'isNew' => true]);
+				switch($type)
+				{
+					case 'chat':
+					$ret_val['data'] = $this->renderAjax('@nitm/views/chat/view', ['model' => $this->model, 'isNew' => true]);
+					break;
+					
+					default:
+					$ret_val['data'] = $this->renderAjax('@nitm/views/replies/view', ['model' => $this->model, 'isNew' => true]);
+					break;
+				}
 				$ret_val['success'] = true;
 				$ret_val['message'] = "Reply saved";
 				$ret_val['id'] = 'message'.$this->model->id;
@@ -186,29 +199,36 @@ class ReplyController extends DefaultController
 		{
 			case true:
 			$ret_val = [
+				'data' => '',
 				'count' => $new,
 				'success' => true
 			];
 			$ret_val['message'] = $ret_val['count']." new messages";
-			$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.\Yii::$app->userMeta->lastActive()];
-			$this->model->queryOptions = [
-				'where' => $andWhere,
-				'orderBy' => [array_shift($this->model->primaryKey()) => SORT_DESC]
-			];
-			switch($type)
+			$searchModel = new \nitm\models\search\Replies([
+				'withThese' => ['replyToAuthor', 'authorUser'],
+				'queryOptions' => [
+					'andWhere' => new \yii\db\Expression('UNIX_TIMESTAMP(created_at)>='.\Yii::$app->userMeta->lastActive())
+				]
+			]);
+			$dataProvider = $searchModel->search($this->model->constraints);
+			$dataProvider->setSort([
+				'defaultOrder' => [
+					'id' => SORT_DESC,
+				]
+			]);
+			$newReplies = $dataProvider->getModels();
+			foreach($newReplies as $newReply)
 			{
-				case 'chat':
-				$ret_val['data'] = \nitm\widgets\replies\RepliesChat::widget([
-					'model' => $this->model,
-					'withForm' => false
-				]);
-				break;
-				
-				default:
-				$ret_val['data'] = \nitm\widgets\replies\Replies::widget([
-					'model' => $this->model
-				]);
-				break;
+				switch($type)
+				{
+					case 'chat':
+					$ret_val['data'] .= $this->renderAjax('@nitm/views/chat/view', ['model' => $newReply, 'isNew' => true]);
+					break;
+					
+					default:
+					$ret_val['data'] .= $this->renderAjax('@nitm/views/replies/view', ['model' => $newReply, 'isNew' => true]);
+					break;
+				}
 			}
 			Response::$viewOptions = [
 				'args' => [

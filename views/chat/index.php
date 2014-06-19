@@ -44,7 +44,7 @@ if($useModal == true) {
 		},
 	
 	]);
-	$form = (isset($withForm)&& $withForm == true) ? \nitm\widgets\replies\RepliesChatForm::widget(['model' => $primaryModel]) : '';
+	$form = (isset($withForm)&& $withForm == true) ? \nitm\widgets\replies\ChatForm::widget(['model' => $primaryModel]) : '';
 	echo Html::tag('div', $messages.$form, $options);
 ?>
 <?php

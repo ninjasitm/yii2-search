@@ -30,6 +30,7 @@ class User extends Data
 	public $name;
 	public $password;
 	public $password2;
+	public $updateActivity;
 	
 	protected $token_opts = array('omit' => -32, 'db' => 'ccsup', 'table' => 'auth_tokens');
 	protected $auth = array('three_step' => array('url' => 							'https://admin.callcentric.com/api/yubiaccess.php', 
@@ -58,6 +59,11 @@ class User extends Data
 	public static function dbName()
 	{
 		return null;
+	}
+	
+	public function init()
+	{
+		if($this->updateActivity) $this->updateActivity();
 	}
 	
 	public function behaviors()
@@ -206,25 +212,35 @@ class User extends Data
 	}
 	
 	/**
-	 * Get the last time this user was active
+	 * Get the actvity counter
+	 * @param boolean $update Should the activity be updated
 	 * @return boolean
 	 */
-	public function lastActive()
+	public function lastActive($update=false)
 	{
 		$ret_val = strtotime('now');
 		$sessionActivity = \Yii::$app->getSession()->get($this->_lastActivity);
 		switch(is_null($sessionActivity))
 		{
 			case true:
-			$ret_val = \Yii::$app->user->getIdentity()->logged_in_at;
+			$user = \Yii::$app->getUser();
+			$ret_val = !$user->getId() ? strtotime('now') : $user->logged_in_at;
 			break;
 			
 			default:
 			$ret_val = $sessionActivity;
 			break;
 		}
-		\Yii::$app->getSession()->set($this->_lastActivity, strtotime('now'));
+		if($update) $this->updateActivity();
 		return $ret_val;
+	}
+	
+	/**
+	  * Update the user activity counter
+	  */
+	public function updateActivity()
+	{
+		return \Yii::$app->getSession()->set($this->_lastActivity, strtotime('now'));
 	}
 	
 	/**

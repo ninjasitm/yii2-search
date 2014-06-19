@@ -18,6 +18,7 @@ use nitm\interfaces\DataInterface;
 
 class Replies extends BaseWidget
 {
+	public $maxLength;
 	public $constrain;
 	public $constraints = [];
 	public static $statuses = [
@@ -47,7 +48,7 @@ class Replies extends BaseWidget
 					\yii\db\ActiveRecord::EVENT_BEFORE_INSERT => ['reply_to'],
 				],
 				'value' => function ($event) {
-					return $event->sender->getReplyToAuthorId();
+					return $event->sender->replyToAuthorId();
 				},
 			],
 		];
@@ -76,39 +77,9 @@ class Replies extends BaseWidget
 	public function rules()
 	{
 		return [
-			[
-				[
-					'parent_id', 
-					'parent_key', 
-					'parent_type', 
-					'author', 
-					'message',
-				], 
-				'required', 
-				'on' => [
-					'create'
-				]
-			],
-			[
-				[
-					'message',
-					'parent_type'
-				],
-				'required',
-				'on' => [
-					'validateNew'
-				]
-			],
-			[
-				[
-					'ip_addr',
-					'cookie_hash'
-				],
-				'required', 
-				'on' => [
-					'create',
-				]
-			],
+			[['parent_id', 'parent_key', 'parent_type', 'author', 'message', 'ip_addr', 'cookie_hash'], 'required', 'on' => ['create']],
+			[['message','parent_type'],'required','on' => ['validateNew']],
+			['message', 'isTooLong', 'message' => 'This message is too long'],
 		];
 	}
 	
@@ -120,7 +91,7 @@ class Replies extends BaseWidget
 				'parent_key', 
 				'parent_type',
 				'message',
-				'priorty',
+				'priority',
 				'ip_addr',
 				'ip_host',
 				'cookie_hash',
@@ -220,10 +191,40 @@ class Replies extends BaseWidget
 	{
 		return $this->hasOne(Replies::className(), ['id' => 'reply_to'])->with(['authorUser']);
 	}
+
+	/**
+	* Get the userID for the reply_to author
+	*/
+	public function replyToAuthorId()
+	{
+		switch(empty($this->reply_to))
+		{
+			case false:
+			$this->reply_to_author = Replies::find()->select([$this->authorIdKey])->where([static::primaryKey()[0] => $this->reply_to])->one()->author;
+			break;
+		}
+	}
 	
 	public function getStatus()
 	{
 		$ret_val = isset(self::$statuses[$this->priority]) ? self::$statuses[$this->priority] : 'default';
+		return $ret_val;
+	}
+	
+	public function isTooLong()
+	{
+		switch($this->maxLength)
+		{
+			case 0;
+			case null:
+			case false:
+			$ret_val = false;
+			break;
+			
+			default:
+			$ret_val = strlen(strip_tags($this->message)) > $this->maxLength;
+			break;
+		}
 		return $ret_val;
 	}
 }

@@ -32,6 +32,7 @@ class BaseWidget extends Data implements DataInterface
 		'critical' => 'error'
 	];
 	
+	protected $userLastActive;
 	protected $authorIdKey = 'author';
 	protected $editorIdKey = 'editor';
 	
@@ -204,7 +205,7 @@ class BaseWidget extends Data implements DataInterface
 	 }
 	
 	/*
-	 * Get the author for this object
+	 * Check for new data by last activity of logged in user
 	 * @return mixed user array
 	 */
 	public function hasNew()
@@ -216,6 +217,7 @@ class BaseWidget extends Data implements DataInterface
 			->orderBy([array_shift($this->primaryKey()) => SORT_DESC])
 			->andWhere($andWhere)
 			->count();
+		\Yii::$app->userMeta->updateActivity();
 		return $ret_val;
 	}
 	
@@ -225,7 +227,8 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function isNew()
 	{
-		return strtotime($this->created_at) > \Yii::$app->userMeta->lastActive();
+		$this->userLastActive = is_null($this->userLastActive) ? \Yii::$app->userMeta->lastActive() : $this->userLastActive;
+		return strtotime($this->created_at) > $this->userLastActive;
 	}
 	
 	/*

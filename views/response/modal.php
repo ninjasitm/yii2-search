@@ -45,15 +45,15 @@
 	
 	//Body content
 	$body = Html::tag('div', $content, $options['body']);
-	$footer = '';
+	$footer = isset($footer) ? $footer : '';
 	//Footer content
-	$footer = Html::tag('div', Html::button('Close', [
+	$footer = \Yii::$app->request->isAjax ? Html::tag('div',  $footer.Html::button('Close', [
 		'class' => 'btn btn-default',
 		'data-dismiss' => 'modal'
-	]), $options['footer']);
+	]), $options['footer']) : '';
 	
 	//Now create the content
-	$content = $header.$body;
+	$content = $header.$body.$footer;
 	
 	//And determine how we're rending it
 	switch(isset($modalOptions['contentOnly']) && ($modalOptions['contentOnly'] === true))

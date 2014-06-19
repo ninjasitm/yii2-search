@@ -4,6 +4,7 @@ namespace nitm\helpers;
 
 use yii\base\Behavior;
 use nitm\helpers\Response;
+use yii\helpers\Html;
 
 /**
  * Form trait which supports teh retrieval of form variables
@@ -82,10 +83,22 @@ class Form extends Behavior
 					case true:
 					$options['viewArgs'] = (isset($options['viewArgs']) && is_array($options['viewArgs'])) ? $options['viewArgs'] : (isset($options['viewArgs']) ? [$options['viewArgs']] : []);
 					$data = (isset($options['dataProvider']) && !is_null($options['dataProvider']) && $model->hasProperty($options['dataProvider'])) ? $data->$dataProvider : $model;
+					switch(1)
+					{
+						case ($model->hasProperty(@$options['title'][0]) || $model->hasAttribute(@$options['title'][0])) && !empty($model->getAttribute($options['title'][0])):
+						$title = $model->getAttribute($options['title'][0]);
+						break;
+						
+						default:
+						$title = ($model->getIsNewRecord() ? "Create" : "Update")." ".ucfirst($model->isWhat());
+						break;
+					}
+					$footer = isset($options['footer']) ? $options['footer'] : Html::submitButton($model->isNewRecord ? \Yii::t('app', 'Create') :\ Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']);
 					Response::$viewOptions = [
 						"view" => $options['view'],
 						'modalOptions' => $modalOptions,
-						'title' => (($model->hasProperty(@$options['title'][0]) || $model->hasAttribute(@$options['title'][0])) ? @$model->$options['title'][0] : ($model->getIsNewRecord() ? "Create" : "Update")." ".ucfirst($model->isWhat()))
+						'title' => $title,
+						'footer' => $footer
 					];
 					Response::$viewOptions["args"] = array_merge([
 							"action" => $options['param'],

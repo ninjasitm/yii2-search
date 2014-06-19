@@ -66,7 +66,8 @@ class Response extends Behavior
 			break;
 		}
 		$params = is_null($params) ? Response::$viewOptions : $params;
-		switch(Response::getFormat())
+		$format = (!\Yii::$app->request->isAjax && (Response::getFormat() == 'modal')) ? 'html' : Response::getFormat();
+		switch($format)
 		{
 			case 'xml':
 			//implement handling of XML responses
@@ -91,6 +92,7 @@ class Response extends Behavior
 						[
 							'content' => static::$view->$render($params['view'], $params['args'], static::$controller),
 							'title' => @$params['title'],
+							'footer' => @$params['footer'],
 							'options' => @$params['options'],
 						],
 						static::$controller
@@ -111,7 +113,8 @@ class Response extends Behavior
 			$ret_val = static::$controller->getView()->$render(Response::$viewModal, 
 				[
 					'content' => static::$view->$render($params['view'], $params['args'], static::$controller),
-					'title' => @$params['title'],
+					'footer' => @$params['footer'],
+					'title' => \Yii::$app->request->isAjax ? @$params['title'] : '',
 					'modalOptions' => @$params['modalOptions'],
 				],
 				static::$controller
