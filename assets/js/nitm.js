@@ -416,7 +416,9 @@ function Nitm ()
 							break;
 							
 						default:
-							switch(["[", ','].indexOf(selector) != -1)
+							switch((selector[0] == '[')
+							|| (selector.indexOf(',') != -1)
+							)
 							{
 								case true:
 									var obj = selector;
