@@ -31,6 +31,7 @@ class User extends Data
 	public $password;
 	public $password2;
 	public $updateActivity;
+	public $profile;
 	
 	protected $token_opts = array('omit' => -32, 'db' => 'ccsup', 'table' => 'auth_tokens');
 	protected $auth = array('three_step' => array('url' => 							'https://admin.callcentric.com/api/yubiaccess.php', 
@@ -259,47 +260,41 @@ class User extends Data
 	 */
 	public function getAvatar($options=[]) 
 	{
-		$user = $this ? $this : \Yii::$app->getUser();
-		switch($user != null)
+		$id = empty($this->id) ? \Yii::$app->user->identity->id : $this->id;
+		switch($this->hasProperty('avatar') && !empty($this->avatar) && $id)
 		{
 			case true:
-			$id = $user->id;
-			switch($this->hasProperty('avatar') && !empty($this->avatar))
+			//Support for old NITM avatar/local avatar
+			$url = $this->avatar;
+			break;
+			
+			//Fallback to dektriuk\User gravatar info
+			default:
+			$this->profile = $this->profile instanceof Profile ? $this->profile : \dektrium\user\models\Profile::find()->where(['user_id' => $id])->one();
+			switch(!is_null($this->profile))
 			{
 				case true:
-				//Support for old NITM avatar/local avatar
-				$url = $this->avatar;
-				break;
-				
-				//Fallback to dektriuk\User gravatar info
-				default:
-				$profile = \dektrium\user\models\Profile::find()->where(['user_id' => $id])->one();
-				switch($profile instanceof Profile)
+				switch(1)
 				{
-					case true:
-					switch(1)
-					{
-						case !empty($profile->gravatar_id):
-						$key = $profile->gravatar_id;
-						break;
-						
-						case !empty($profile->gravatar_email):
-						$key = $profile->gravatar_email;
-						break;
-						
-						default:
-						$key = $profile->public_email;
-						break;
-					}
+					case !empty($this->profile->gravatar_id):
+					$key = $this->profile->gravatar_id;
+					break;
+					
+					case !empty($this->profile->gravatar_email):
+					$key = $this->profile->gravatar_email;
 					break;
 					
 					default:
-					$key = $user->email;
+					$key = $this->profile->public_email;
 					break;
 				}
-				$url = "http://gravatar.com/avatar/$key";
+				break;
+				
+				default:
+				$key = \Yii::$app->user->identity->email;
 				break;
 			}
+			$url = "http://gravatar.com/avatar/$key";
 			break;
 		}
 		return $url;
