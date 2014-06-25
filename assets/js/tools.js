@@ -467,16 +467,28 @@ function Tools ()
 			$(this).on('autocompleteselect', function (e, ui) {
 				e.preventDefault();
 				var element = $(this).data('real-input');
-				switch(container != undefined)
+				var appendTo = $(this).data('append-html');
+				switch(appendTo != undefined)
 				{
 					case true:
-						$nitm.getObj(element).val(ui.item.value);
-						$(this).val(ui.item.label);
+					switch(ui.item.html != undefined)
+					{
+						case true:
+						$nitm.getObj(appendTo).append($(ui.item.html));
 						break;
+					}
+					break;
+				}
+				switch(element != undefined)
+				{
+					case true:
+					$nitm.getObj(element).val(ui.item.value);
+					$(this).val(ui.item.text);
+					break;
 						
 					default:
-						$(this).val(ui.item.value);
-						break;
+					$(this).val(ui.item.value);
+					break;
 				}
 			});
 		});
