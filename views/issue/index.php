@@ -26,10 +26,34 @@ $this->params['breadcrumbs'][] = $title;
 	
 <?php
 	$issuesTabs = Html::tag('ul', 
-		Html::tag('li', Html::a('Open '.Html::tag('span', $dataProviderOpen->getCount(), ['class' => 'badge']), '#open-issues', ['data-toggle' => 'tab']), ['class' => 'tab-pane active']). 
-		Html::tag('li', Html::a('Closed '.Html::tag('span', $dataProviderClosed->getCount(), ['class' => 'badge']), '#closed-issues', ['data-toggle' => 'tab']), ['class' => 'tab-pane']). 
-		Html::tag('li', Html::a('Create Issue ', '#issues-form', ['data-toggle' => 'tab', 'class' => 'btn btn-success']), ['class' => 'tab-pane']). 
-		Html::tag('li', Html::a('Update Issue ', '#issues-update-form', ['data-toggle' => 'tab', 'id' => 'issues-update-form-tab', 'class' => 'hidden']), ['class' => 'tab-pane']),
+		Html::tag('li', 
+			Html::a('Open '.Html::tag('span', $dataProviderOpen->getCount(), ['class' => 'badge']), '#open-issues', ['data-toggle' => 'tab']), [
+				'class' => 'tab-pane active', 
+				'id' => 'open-issues-tab'
+			]). 
+		Html::tag('li', 
+			Html::a('Closed '.Html::tag('span', $dataProviderClosed->getCount(), ['class' => 'badge']), '#closed-issues', ['data-toggle' => 'tab']), [
+				'class' => 'tab-pane', 
+				'id' => 'closed-issues-tab'
+			]). 
+		Html::tag('li', 
+			Html::a('Create Issue ', '#issues-form', [
+				'data-toggle' => 'tab', 
+				'class' => 'btn btn-success'
+			]), ['class' => 'tab-pane']). 
+		Html::tag('li', 
+			Html::a('Update Issue ', '#issues-update-form', [
+				'data-toggle' => 'tab', 
+				'id' => 'issues-update-form-tab', 
+				'class' => 'hidden'
+			]), ['class' => 'tab-pane']). 
+		Html::tag('li', 
+			Html::a('', '#', [
+				'data-toggle' => 'tab',
+				'id' => 'issues-alerts'
+			]), [
+				'class' => 'tab-pane'
+			]),
 		[
 			'class' => 'nav nav-tabs'
 		]
@@ -37,12 +61,13 @@ $this->params['breadcrumbs'][] = $title;
 	$viewOptions = [
 		'enableComments' => $enableComments
 	];
-	$issuesOpen = getIssues($dataProviderOpen, $viewOptions);
-	$issuesClosed = getIssues($dataProviderClosed, $viewOptions);
+	$issuesOpen = Html::tag('div', '', ['id' => 'alert']).getIssues($dataProviderOpen, $viewOptions);
+	$issuesClosed = Html::tag('div', '', ['id' => 'alert']).getIssues($dataProviderClosed, $viewOptions);
 	$issuesForm =  $this->render('create', [
 		'model' => new Issues,
 		'parentId' => $parentId,
-		'parentType' => $parentType
+		'parentType' => $parentType,
+		'enableComments' => $enableComments
 	]);
 	$issues = Html::tag('div',
 		Html::tag('div', $issuesOpen, ['class' => 'tab-pane fade in active', 'id' => 'open-issues']).
@@ -78,6 +103,7 @@ $nitm.addOnLoadEvent(function () {
 				$viewOptions = array_merge(['model' => $model], $options);
 				return $widget->render('@nitm/views/issue/view', $viewOptions);
 			},
+			'pager' => ['class' => \kop\y2sp\ScrollPager::className()]
 		
 		]);
 	}

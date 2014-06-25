@@ -81,11 +81,41 @@ class BaseWidget extends Data implements DataInterface
 		{
 			case isset($using[0]):
 			case isset($using['id']):
-			$this->constraints['parent_id'] = isset($using['id']) ? $using['id'] : $using[0];
+			case isset($using['parent_id']):
+			switch(1)
+			{
+				case isset($using[0]):
+				$id = $using[0];
+				break;
+				
+				case isset($using['id']):
+				$id = $using['id'];
+				break;
+				
+				case isset($using['parent_id']):
+				$id = $using['parent_id'];
+				break;
+			}
+			$this->constraints['parent_id'] = $id;
 			$this->parent_id = $this->constraints['parent_id'];
 			case isset($using[1]):
 			case isset($using['type']):
-			$this->constraints['parent_type'] = strtolower(array_pop(explode('\\', isset($using['type']) ? $using['type'] : $using[1])));
+			case isset($using['parent_type']):
+			switch(1)
+			{
+				case isset($using[1]):
+				$type = $using[1];
+				break;
+				
+				case isset($using['type']):
+				$type = $using['type'];
+				break;
+				
+				case isset($using['parent_type']):
+				$type = $using['parent_type'];
+				break;
+			}
+			$this->constraints['parent_type'] = strtolower(array_pop(explode('\\', $type)));
 			$this->parent_type = $this->constraints['parent_type'];
 			break;
 		}
@@ -195,6 +225,7 @@ class BaseWidget extends Data implements DataInterface
 			$ret_val->count = $model->getCount();
 			$ret_val->hasNew = $model->hasNew();
 			$ret_val->hasAny = $model->hasAny();
+			$ret_val->constraints = $model->constraints;
 			break;
 			
 			default:

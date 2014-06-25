@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 use nitm\helpers\Icon;
+use nitm\widgets\activityIndicator\ActivityIndicator;
 
 /**
  * @var yii\web\View $this
@@ -12,16 +13,17 @@ use nitm\helpers\Icon;
 //$this->title = $model->title;
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
-if(isset($enableComments) && ($enableComments == true)) $repliesModel = new \nitm\models\Replies([
-	"constrain" => [$model->getId(), $model->isWhat(), $model->created_at]
+$enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get($model->commentParam);
+if($enableComments == true) $repliesModel = new \nitm\models\Replies([
+	"constrain" => [$model->getId(), $model->isWhat()]
 ]);
 ?>
-<div id="issue<?= $model->id ?>" class="issues-view <?= \nitm\helpers\Statuses::getIndicator($model->getStatus())?> wrapper">
+<div id="issue<?= $model->getId() ?>" class="issues-view <?= \nitm\helpers\Statuses::getIndicator($model->getStatus())?> wrapper">
 	<div class="row">
 		<div class="col-md-9 col-lg-9">
 			<div class="row">
 				<h4 class="col-md-7 col-lg-7 text-left">
-					<?php if(isset($isNew) && ($isNew === true) || $model->isNew()) echo \nitm\widgets\activityIndicator\ActivityIndicator::widget();?>
+					<?php if(isset($isNew) && ($isNew === true) || $model->isNew()) echo ActivityIndicator::widget();?>
 					<?= $model->title; ?>&nbsp;<span class="badge"><?= $model->status ?></span>
 				</h4>
 				<h4 class="col-md-5 col-lg-5 text-right"><small>by <b><?= $model->authorUser->fullName(true) ?></b> on <?= $model->created_at ?></small></h4>
@@ -41,11 +43,6 @@ if(isset($enableComments) && ($enableComments == true)) $repliesModel = new \nit
 		</div>
 		<div class="col-md-3 col-lg-3 pull-right">
 			<?php
-				echo Html::a(Icon::forAction('update', null, $model), \Yii::$app->urlManager->createUrl(['/issue/form/update/'.$model->id, '__format' => 'html']), [
-					'title' => Yii::t('yii', 'Edit '),
-					'class' => 'fa-2x'.($model->closed ? ' hidden' : ''),
-					'role' => 'updateIssueTrigger',
-				]);
 				echo Html::a(Icon::forAction('close', 'closed', $model), \Yii::$app->urlManager->createUrl(['/issue/close/'.$model->id]), [
 					'title' => Yii::t('yii', ($model->closed ? 'Open' : 'Close').' '),
 					'class' => 'fa-2x',
@@ -53,10 +50,15 @@ if(isset($enableComments) && ($enableComments == true)) $repliesModel = new \nit
 					'data-parent' => 'tr',
 					'data-pjax' => '0',
 				]);
+				echo Html::a(Icon::forAction('update', null, $model), \Yii::$app->urlManager->createUrl(['/issue/form/update/'.$model->id, $model->commentParam => $enableComments, '__format' => 'html']), [
+					'title' => Yii::t('yii', 'Edit '),
+					'class' => 'fa-2x'.($model->closed ? ' hidden' : ''),
+					'role' => 'updateIssueTrigger disabledOnClose',
+				]);
 				echo Html::a(Icon::forAction('resolve', 'resolved', $model), \Yii::$app->urlManager->createUrl(['/issue/resolve/'.$model->id]), [
 					'title' => Yii::t('yii', ($model->resolved ? 'Unresolve' : 'Resolve').' '),
-					'class' => 'fa-2x',
-					'role' => 'resolveIssue',
+					'class' => 'fa-2x'.($model->closed ? ' hidden' : ''),
+					'role' => 'resolveIssue disabledOnClose',
 					'data-parent' => 'tr',
 					'data-pjax' => '0',
 				]);
@@ -65,32 +67,31 @@ if(isset($enableComments) && ($enableComments == true)) $repliesModel = new \nit
 					'class' => 'fa-2x',
 					'role' => 'duplicateIssue',
 				]);
-				if(isset($enableComments) && ($enableComments==true))
+				if($enableComments==true)
 				{
-					echo Html::a(Icon::forAction('comment'), \Yii::$app->urlManager->createUrl(['#']), [
+					echo Html::a(Icon::forAction('comment', null, null, ['size' => '2x']).ActivityIndicator::widget(['position' => 'top right', 'size' => 'small', 'text' => $repliesModel->getCount(), 'type' => ($repliesModel->hasAny() ? 'success' : 'info')]), \Yii::$app->urlManager->createUrl(['#']), [
 						'title' => 'See comments for this issue',
-						'class' => 'fa-2x',
 						'role' => 'visibility',
-						'data-id' => 'issue-comments'.$model->getId()
+						'data-id' => 'issue-comments'.$model->getId(),
+						'data-url' => \Yii::$app->urlManager->createUrl(['/reply/index/'.$model->isWhat().'/'.$model->getId(), '__format' => 'html'])
 					]);
 				}
 			?>
 		</div>
-		<?php if(isset($enableComments) && ($enableComments==true)): ?>
+		<?php if($enableComments==true): ?>
 		<div class="col-lg-12 col-md-12">
 			<div class="clear" style="display:none;" id="issue-comments<?=$model->getId();?>">
-				<?= \nitm\widgets\replies\Replies::widget([
-					"model" => $repliesModel,
-				]); ?>
-				<?= \nitm\widgets\replies\RepliesForm::widget([
-					"model" => $repliesModel,
-					'useModal' => false,
-					'hidden' => $model->closed,
-					'inline' => true,
-				]); ?>
 			</div>
 		</div>
 		<?php endif; ?>
 		<br>
 	</div>
 </div>
+
+<?php if(\Yii::$app->request->isAjax): ?>
+<script type="text/javascript">
+$nitm.addOnLoadEvent(function () {
+	$nitm.tools.initVisibility("issue<?= $model->getId() ?>");
+});
+</script>
+<?php endif ?>

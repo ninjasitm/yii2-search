@@ -2,6 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\ListView;
+use yii\widgets\Pjax;
 use kartik\icons\Icon;
 use nitm\widgets\replies\RepliesModal;
 
@@ -29,6 +30,7 @@ if($useModal == true) {
 	$modalOptions = ['class' => 'btn btn-success'];
 }
 ?>
+<h3>Comments</h3>
 <?php
 	$options = is_array($options) ? $options : [
 		'role' => 'entityMessages',
@@ -37,12 +39,15 @@ if($useModal == true) {
 	];
 	echo ListView::widget([
 		'summary' => false,
+		'layout' => '{items}',
+		'emptyText' => '',
 		'options' => $options,
 		'dataProvider' => $dataProvider,
 		'itemOptions' => ['class' => 'item'],
 		'itemView' => function ($model, $key, $index, $widget) {
 				return $widget->render('@nitm/views/replies/view',['model' => $model]);
 		},
+		'pager' => ['class' => \kop\y2sp\ScrollPager::className()]
 	
 	]);
 ?>

@@ -12,6 +12,7 @@ $this->title = Yii::t('app', 'Create {modelClass}', [
 ]);
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+$enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get($model->commentParam);
 ?>
 <div class="issues-create">
 
@@ -20,7 +21,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= $this->render('form/_form', [
         'model' => $model,
 		'parentId' => $parentId,
-		'parentType' => $parentType
+		'parentType' => $parentType,
+		'enableComments' => $enableComments
     ]) ?>
 
 </div>

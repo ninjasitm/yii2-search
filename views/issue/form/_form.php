@@ -12,6 +12,7 @@ use nitm\models\Issues;
  */
 
 $action = ($model->getIsNewRecord()) ? "create" : "update";
+$enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get($model->commentParam);
 ?>
 
 <div class="issues-form" id='issues-form'>
@@ -20,7 +21,7 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 
 	<?php $form = ActiveForm::begin([
 		"type" => ActiveForm::TYPE_VERTICAL,
-		'action' => '/issue/'.$action.($model->getIsNewRecord() ? '' : "/".$model->id),
+		'action' => \Yii::$app->urlManager->createUrl(['/issue/'.$action.($model->getIsNewRecord() ? "" : "/".$model->getId()), $model->commentParam => $enableComments]),
 		'options' => [
 			"role" => "updateIssue"
 		],

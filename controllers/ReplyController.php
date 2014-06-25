@@ -77,7 +77,7 @@ class ReplyController extends DefaultController
 	 * @param string $key The key of the parent
      * @return mixed
      */
-    public function actionIndex($type, $id, $key)
+    public function actionIndex($type, $id, $key=null)
     {
 		$this->model = new Replies(['constrain' => [$id, $type, $key]]);
 		$replies = RepliesWidget::widget([
@@ -89,13 +89,12 @@ class ReplyController extends DefaultController
 				]);
 		Response::$viewOptions = [
 			'args' => [
-				"content" => Html::tag('div', $form.$replies, ['id' => 'messagesWrapper'.$id, 'class' => 'messages']),
+				"content" => Html::tag('div', $replies.$form, ['id' => 'messagesWrapper'.$id, 'class' => 'messages']),
 			],
 			'modalOptions' => [
 				'contentOnly' => true
 			]
 		];
-		$this->setResponseFormat(\Yii::$app->request->isAjax ? 'modal' : 'html');
 		return $this->renderResponse(null, null, \Yii::$app->request->isAjax);
     }
 

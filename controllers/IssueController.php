@@ -25,11 +25,13 @@ class IssueController extends WidgetController
 	];
 	
 	protected $result;
+	protected $enableComments;
 	
 	public function init()
 	{
 		parent::init();
 		$this->model = new Issues(['scenario' => 'default']);
+		$this->enableComments = (\Yii::$app->request->get($this->model->commentParam) == true) ? true : false;
 	}
 	
     public function behaviors()
@@ -164,7 +166,7 @@ class IssueController extends WidgetController
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
      */
-    public function actionCreate()
+    public function actionCreate($type, $id)
     {
 		$post = \Yii::$app->request->post();
 		$this->model->setScenario('create');
@@ -348,15 +350,15 @@ class IssueController extends WidgetController
 						case 'json':
 						$ret_val = [
 							'data' => $this->renderAjax('view', ["model" => $this->model]),
-							"enableComments" => true,
+							"enableComments" => $this->enableComments,
 							'success' => true
 						];
 						break;
 						
 						default:
-						Response::$viewOptions['content'] = $this->renderAjax('view', [
+						Response::$viewOptions['content'] = $this->renderPartial('view', [
 							"model" => $this->model,
-							"enableComments" => true,
+							"enableComments" => $this->enableComments,
 						]);
 						break;
 					}

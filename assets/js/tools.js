@@ -54,13 +54,14 @@ function Tools ()
 						var id = $(this).data('id');
 						var element = $('#'+id);
 						var url = $(this).data('url');
+						url = !url ? $(this).attr('href') : url;
 						switch(url != undefined)
 						{
 							case true:
-								$.get(url, function (result) {
-									element.html(result);
-								});
-								break;
+							$.get(url, function (result) {
+								element.html(result);
+							});
+							break;
 						}
 						var success = ($(this).data('success') != undefined) ? $(this).data('success') : null;
 						eval(success);
