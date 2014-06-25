@@ -14,7 +14,7 @@ $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => [
 $this->params['breadcrumbs'][] = ['label' => $model->id, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = Yii::t('app', 'Update');
 ?>
-<div class="issues-update <?= $this->context->getStatusIndicator($model)?>">
+<div class="issues-update <?= \nitm\helpers\Statuses::getIndicator($model->getStatus())?> wrapper">
 
     <h1><?= Html::encode($this->title) ?></h1>
 

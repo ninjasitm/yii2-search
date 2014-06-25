@@ -19,22 +19,44 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 	<div id="alert"></div>
 
 	<?php $form = ActiveForm::begin([
-		"type" => ActiveForm::TYPE_HORIZONTAL,
+		"type" => ActiveForm::TYPE_VERTICAL,
 		'action' => '/issue/'.$action.($model->getIsNewRecord() ? '' : "/".$model->id),
 		'options' => [
 			"role" => "updateIssue"
 		],
 		'fieldConfig' => [
 			'inputOptions' => ['class' => 'form-control'],
-			'template' => "{label}\n<div class=\"col-lg-10\">{input}</div>\n<div class=\"col-lg-12\">{error}</div>",
-			'labelOptions' => ['class' => 'col-lg-2 control-label'],
+			'template' => "{label}\n<div class=\"col-lg-12 col-md-12\">{input}</div>\n<div class=\"col-lg-12\">{error}</div>",
+			'labelOptions' => ['class' => 'control-label'],
 		],
 		'enableAjaxValidation' => true
 	]); ?>
 
-    <?= $form->field($model, 'title') ?>
-    <?= $form->field($model, 'notes')->textarea()->label("Issue") ?>
-	<?=	$form->field($model, 'status')->radioList(Issues::getStatusLabels(), ['inline' => true])->label("Urgency"); ?>
+    <?= $form->field($model, 'title', [
+				'addon' => [
+					'prepend' => [
+						'content' => \nitm\widgets\priority\Priority::widget([
+							'type' => 'addon',
+							'inputsInline' => true,
+							'addonType' => 'radiolist',
+							'fieldName' => 'status',
+							'model' => $model,
+							'form' => $form
+						]),
+						'asButton' => true
+					],
+					'groupOptions' => [
+					]
+				],
+				'options' => [
+					'class' => 'chat-message-title',
+				]
+			])->textInput([
+			'placeholder' => "Title for this issue",
+			'tag' => 'span'
+		])->label("Title", ['class' => 'sr-only']); ?>
+    <?= $form->field($model, 'notes')->textarea()->label("Issue", ['class' => 'sr-only']) ?>
+	<?php //$form->field($model, 'status')->radioList(Issues::getStatusLabels(), ['inline' => true])->label("Urgency"); ?>
 	<?php
 		switch($model->getIsNewRecord())
 		{
@@ -44,10 +66,10 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 			break;
 		}
 	?>
-
-    <div class="fixed-actions text-right">
-        <?= Html::submitButton($model->isNewRecord ? Yii::t('app', 'Create') : Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
-    </div>
+		
+	<div class="fixed-actions text-right">
+		<?= Html::submitButton(ucfirst($action), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
+	</div>
 
     <?php ActiveForm::end(); ?>
 

@@ -67,6 +67,8 @@ class Configer extends Model
 	public $get_values;	//Should we try to get values as well?
 	
 	//protected data
+	protected $containerId;
+	protected $sectionId;
 	protected $contents = null;
 	protected $sections = [];
 	protected $containers = [];
@@ -154,7 +156,7 @@ class Configer extends Model
 			'deleteContainer' => ['cfg_v', 'cfg_w', 'cfg_id'],
 			'getSection' => ['cfg_w', 'cfg_c', 'cfg_s', 'get_values'],
 			'convert' => ['cfg_convert', 'cfg_e']
-		    ];
+		 ];
 	}
 	
 	public function attributeLabels()
@@ -430,10 +432,6 @@ class Configer extends Model
 				case false;
 				array_unshift($key, self::dm, $this->location, 'config');
 				break;
-				
-				default:
-				array_unshift($key, self::dm, $this->location);
-				break;
 			}
 			break;
 			
@@ -448,7 +446,7 @@ class Configer extends Model
 				switch($key[0] == $this->container)
 				{
 					case false;
-					array_unshift($key, self::dm, $this->location, 'config', $this->container);
+					array_unshift($key, self::dm, $this->location, 'config');
 					break;
 				}
 				break;
@@ -1012,21 +1010,15 @@ class Configer extends Model
 			case 'db':
 			$ret_val = array_merge($ret_val, $this->_create($container, $key, $value));
 			$ret_val['data'] = [$key, $value];
-			$ret_val['class'] = $this->classes['failure'];
-			switch($ret_val['success'])
-			{
-				case true:
-				$ret_val['class'] = $this->classes['success'];
-				$e = new Event;
-				$this->event['data'] = array_merge($ret_val, [
-					'table' => 'config',
-					'db' => $this->configDb,
-					'action' => 'Create Config',
-					'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username') ." created new key->value ($key -> ".var_export($value, true).") to config ".$container
-				]);
-				$this->trigger('afterCreate');
-				break;
-			}
+			$ret_val['class'] = !$ret_val['success'] ? $this->classes['failure'] : $this->classes['success'];
+			$e = new Event;
+			$this->event['data'] = array_merge($ret_val, [
+				'table' => 'config',
+				'db' => $this->configDb,
+				'action' => 'Create Config',
+				'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username') ." created new key->value ($key -> ".var_export($value, true).") to config ".$container
+			]);
+			$this->trigger('afterCreate');
 			break;
 			
 			case 'xml':
@@ -1433,8 +1425,8 @@ class Configer extends Model
 	{
 		$correctKey = $this->correctKey($key);
 		$hierarchy = explode('.', $correctKey);
-		$name = isset($hierarchy[5]) ? $hierarchy[5] : (sizeof($hierarchy) == 3) ? $hierarchy[2] : null;
-		$sectionName = isset($hierarchy[4]) ? $hierarchy[4] : $hierarchy[1];
+		$name = isset($hierarchy[4]) ? $hierarchy[4] : (sizeof($hierarchy) == 3 ? $hierarchy[2] : null);
+		$sectionName = isset($hierarchy[3]) ? $hierarchy[3] : $hierarchy[1];
 		$ret_val = [
 			'success' => false,
 			'key' => $correctKey,
@@ -1442,6 +1434,7 @@ class Configer extends Model
 			'container' => $container,
 			'message' => "Unable to create value ".$value
 		];
+		
 		$container = $this->getContainerId($container);
 		switch($this->location)
 		{
@@ -1449,7 +1442,7 @@ class Configer extends Model
 			switch(sizeof($hierarchy))
 			{
 				//We're createing a section
-				case 5:
+				case 4:
 				case 2:
 				$section = [
 					'author' => \Yii::$app->user->getId(), 
@@ -1466,14 +1459,14 @@ class Configer extends Model
 						case true:
 						$ret_val['value'] = [];
 						$ret_val['success'] = true;
-						$ret_val['message'] = "Created section ".$sectionName;
+						$ret_val['message'] = "Added section ".$sectionName;
 						break;
 					}
 					break;
 				}
 				break;
 				
-				case 6:
+				case 5:
 				case 3:
 				$val = [];
 				$val['author'] = \Yii::$app->user->getId();
@@ -1483,8 +1476,8 @@ class Configer extends Model
 				$val['sectionid'] = $this->getSectionId($container, $sectionName);
 				//write the values
 				$this->setTable($this->configTables['values']);
-				$check = ['containerid', 'sectionid', 'name'];
-				switch($this->check($check, array_intersect_key($val, array_flip($check))))
+				$check = array_intersect_key($val, array_flip(['containerid', 'sectionid', 'name']));
+				switch($this->check(array_keys($check), array_values($check)))
 				{
 					case false:
 					switch($this->insert(array_keys($val), array_values($val)))
@@ -1497,7 +1490,7 @@ class Configer extends Model
 						$ret_val['section_name'] = $sectionName;
 						$ret_val = array_merge($ret_val, $val);
 						$ret_val['success'] = true;
-						$ret_val['message'] = "Created $name to section $sectionName";
+						$ret_val['message'] = "Added $name to section $sectionName";
 						break;
 					}
 					break;
@@ -1515,7 +1508,7 @@ class Configer extends Model
 				case 2:
 				$args['command'] = "sed -i '\$a\\\n\\n[%s]' ";
 				$args['args'] = [$name];
-				$message = "Created new section [".$sectionName."] to ".$container;
+				$message = "Added new section [".$sectionName."] to ".$container;
 				break;
 				
 	
@@ -1524,7 +1517,7 @@ class Configer extends Model
 				case 3:
 				$args['command'] = "sed -i '/\[%s\]/a %s = %s' ";
 				$args['args'] = [$sectionName, $name, $value];
-				$message = "Created new config option [".$name."] to ".$sectionName;
+				$message = "Added new config option [".$name."] to ".$sectionName;
 				break;
 			}
 			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).' "'.$container.'.'.$this->types[$this->location].'"';
@@ -1559,12 +1552,11 @@ class Configer extends Model
 		$correctKey = $this->correctKey($key);
 		$hierarchy = explode('.', $correctKey);
 		$old_value = Session::getVal($correctKey);
-		$old_value = sizeof($hierarchy == 3) ? json_encode($old_value) : $old_value['value'];
-		$name = isset($hierarchy[5]) ? $hierarchy[5] : (sizeof($hierarchy) == 3) ? $hierarchy[2] : null;
-		$sectionName = isset($hierarchy[4]) ? $hierarchy[4] : $hierarchy[1];
+		$name = isset($hierarchy[4]) ? $hierarchy[4] : (sizeof($hierarchy) == 3 ? $hierarchy[2] : null);
+		$sectionName = isset($hierarchy[4]) ? $hierarchy[3] : $hierarchy[1];
 		$ret_val = [
 			'success' => false,
-			'old_value' => $old_value,
+			'old_value' => json_encode($old_value),
 			'value' => rawurlencode($value),
 			'section' => $sectionName,
 			'container' => $key,
@@ -1577,7 +1569,7 @@ class Configer extends Model
 			switch(sizeof($hierarchy))
 			{
 				//we're updateing a section
-				case 5:
+				case 4:
 				case 2:
 				$update['editor'] = \Yii::$app->user->getId();
 				$update['updated_at'] = time();
@@ -1593,14 +1585,14 @@ class Configer extends Model
 				break;
 			
 				//we're updateing a value
-				case 6:
+				case 5:
 				case 3:
 				$update['editor'] = \Yii::$app->user->getId();
 				$update['updated_at'] = time();
 				$update['table'] = $this->configTables['values'];
 				$update['keys'] = ['value'];
 				$update['values'] = [$value];
-				$message = "Updated the value [$key] from ".$old_value." to $value";
+				$message = "Updated the value [$key] from ".$old_value['value']." to ".$value;
 				$update['condition'] = [
 					'key' => ['id'], 
 					'data' => [$this->cfg_id]
@@ -1630,7 +1622,7 @@ class Configer extends Model
 			switch(sizeof($hierarchy))
 			{
 				//we're updateing a section
-				case 5:
+				case 4:
 				case 2:
 				$args['command'] = 'sed -i -e "s/^\[%s\]/%s/" ';	
 				$args['args'] = [$sectionName, $value];
@@ -1638,7 +1630,7 @@ class Configer extends Model
 				break;
 			
 				//no support for updateing section names as of yet
-				case 6: 
+				case 5: 
 				case 3:    
 				$args['command'] = 'sed -i -e "/^\[%s\]/,/^$/{s/%s =.*/%s = %s/}" ';
 				$args['args'] = [$sectionName, $name, $name, $value];
@@ -1671,39 +1663,40 @@ class Configer extends Model
 	{
 		$correctKey = $this->correctKey($key);
 		$hierarchy = explode('.', $correctKey);
-		$name = isset($hierarchy[5]) ? $hierarchy[5] : (sizeof($hierarchy) == 3) ? $hierarchy[2] : null;
-		$sectionName = isset($hierarchy[4]) ? $hierarchy[4] : $hierarchy[1];
+		$name = isset($hierarchy[4]) ? $hierarchy[4] : (sizeof($hierarchy) == 3 ? $hierarchy[2] : null);
+		$sectionName = isset($hierarchy[4]) ? $hierarchy[3] : $hierarchy[1];
 		$ret_val = [
 			'success' => false,
-			'value' => Session::getVal($correctKey),
 			'container' => $key,
+			'value' => Session::getVal($correctKey),
 			'key' => $correctKey,
 			'message' => "Unable to delete ".$key,
 			'section' => $sectionName
 		];
+		
 		switch($this->location)
 		{
 			case 'db':
 			switch(sizeof($hierarchy))
 			{
 				//we're deleting a section
-				case 5:
+				case 4:
 				case 2:
 				$delete['table'] = $this->configTables['sections'];
 				$delete['keys'] = ['id'];
 				$delete['values'] = [$this->getSectionId($this->getContainerId($container), $sectionName)];
-				$message = "Deleted the $key";
+				$message = "Deleted the section: $key";
 				$delete['process'] = true;
 				break;
 			
 				//we're deleting a value
-				case 6:
+				case 5:
 				case 3:
 				$ret_val['name'] = $name;
 				$delete['table'] = $this->configTables['values'];
 				$delete['keys'] = ['id'];
 				$delete['values'] = [$this->cfg_id];
-				$message = "Deleted the value $key";
+				$message = "Deleted the value: $key";
 				$delete['process'] = true;
 				break;
 			}
@@ -1793,7 +1786,7 @@ class Configer extends Model
 	 * @param boolean $containers_only
 	 * @return mixed
 	 */
-protected function getContainers($in=null, $multi=false, $containers_only=false)
+	protected function getContainers($in=null, $multi=false, $containers_only=false)
 	{
 		$in = ($in == null) ? $this->dir['config'] : $in;
 		$ret_val = [];
@@ -2063,8 +2056,9 @@ protected function getContainers($in=null, $multi=false, $containers_only=false)
 			];
 			$containerid = $this->check($cond['key'], $cond['data'], null, null, '=', $cond['xor'], [$pri]);
 			break;
-		 }
-		return is_array($containerid) ? $containerid[0] : null;
+		}
+		$this->containerId = is_array($containerid) ? $containerid[0] : null;
+		return $this->containerId;
 	 }
 	 
 	 /*
@@ -2089,7 +2083,8 @@ protected function getContainers($in=null, $multi=false, $containers_only=false)
 			]
 		];
 		$sectionid = $this->check($cond['key'], $cond['data'], null, null, '=', $cond['xor'], [$pri]);
-		return is_array($sectionid) ? $sectionid[0] : null;
+		$this->sectionId = is_array($sectionid) ? $sectionid[0] : null;
+		return $this->sectionId;
 	 }
 }
 ?>

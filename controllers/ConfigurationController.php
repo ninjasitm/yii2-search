@@ -125,7 +125,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			$this->model->convert($this->model->cfg_convert['container'], $this->model->cfg_convert['from'], $this->model->cfg_convert['to']);
 			break;
 		}
-		$this->finalAction();
+		return $this->finalAction();
 	}
 	
 	public function actionUndelete()
@@ -135,7 +135,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		$_REQUEST[$this->model->formName()]['cfg_s'] = array_shift($section);
 		$_REQUEST[$this->model->formName()]['cfg_n'] = array_pop($name);
 		$this->action->id = 'create';
-		$this->actionCreate();
+		return $this->actionCreate();
 	}
 	
 	public function actionCreate()
@@ -148,7 +148,8 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			switch(\Yii::$app->request->isAjax && (@Helper::boolval($_REQUEST['do']) !== true))
 			{
 				case true:
-				return $this->model->validate();
+				$this->setResponseFormat('json');
+				return \yii\widgets\ActiveForm::validate($this->model);
 				break;
 			}
 			switch($this->model->validate())
@@ -168,13 +169,13 @@ class ConfigurationController extends DefaultController implements DefaultContro
 							$this->model->cfg_e);
 					$this->model->config['current']['config'] = Session::getVal($this->model->correctKey($this->model->config['current']['action']['key']));
 					$view = [
-								'view' => 'values/value',
-								'data' => [
-									"model" => $this->model,
-									"data" => $this->model->config['current']['action'],
-									"parent" => $this->model->cfg_s
-								]
-							];
+						'view' => 'values/value',
+						'data' => [
+							"model" => $this->model,
+							"data" => $this->model->config['current']['action'],
+							"parent" => $this->model->cfg_s
+						]
+					];
 					break;
 					
 					case 'createSection':
@@ -184,31 +185,31 @@ class ConfigurationController extends DefaultController implements DefaultContro
 							null,
 							$this->model->cfg_e);
 					$view = [
-								'view' => 'values/index',
-								'data' => [
-									"model" => $this->model,
-									"data" => $this->model->config['current']['config']
-								]
-							];
+						'view' => 'values/index',
+						'data' => [
+							"model" => $this->model,
+							"data" => $this->model->config['current']['config']
+						]
+					];
 					break;
 				}
 				break;
 			}
 			break;
 		}
-		switch(\Yii::$app->request->isAjax && (Helper::boolval(@$_REQUEST['getHtml']) === true))
+		switch($this->model->config['current']['action']['success'] && \Yii::$app->request->isAjax && (Helper::boolval(@$_REQUEST['getHtml']) === true))
 		{
 			case true:
 			$this->model->config['current']['action']['data'] = $this->renderAjax($view['view'], $view['data']);
 			break;
 		}
-		$this->finalAction();
+		return $this->finalAction();
 	}
 	
 	public function actionGet()
 	{
 		$ret_val = [
-			'succes' => false,
+			'success' => false,
 			'action' => 'get',
 			'message' => 'Get configuration',
 			'class' => ''
@@ -254,7 +255,6 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		];
 		$this->model->config['current']['action'] = $ret_val;
 		return $this->finalAction();
-		//return $this->renderResponse($ret_val, Response::$viewOptions, true);
 	}
 	
 	public function actionDelete()

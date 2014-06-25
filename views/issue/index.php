@@ -3,7 +3,8 @@
 use yii\helpers\Html;
 use yii\widgets\ListView;
 use kartik\icons\Icon;
-use nitm\widgets\issueTracker\IssueTrackerModal;
+use yii\bootstrap\Modal;
+use nitm\models\Issues;
 
 /**
  * @var yii\web\View $this
@@ -19,73 +20,63 @@ switch(\Yii::$app->request->isAjax)
 	break;
 }
 $this->params['breadcrumbs'][] = $title;
-if($useModal == true) {
-	$modalOptions =[
-		'class' => 'btn btn-success',
-		'data-toggle' => 'modal',
-		'data-target' => '#issue-tracker-modal-form'
-	];
-} else {
-	$modalOptions = ['class' => 'btn btn-success'];
-}
 ?>
-<div class="issues-index" id="issue-tracker<?=$parentId?>">
-
-    <h1><?= Html::encode($title) ?></h1>
-
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
-
-    <p>
-	<?= Html::a(Yii::t('app', 'Create {modelClass}', [
-			'modelClass' => 'Issue',
-		]), 
-		['/issue/form/'.$parentType."/".$parentId, '__format' => 'modal'],
-		$modalOptions 
-	) ?>
-    </p>
+<div class="issues-index" id="wrapper issue-tracker<?=$parentId?>">
+	<h3><?= Html::encode($title) ?></h3>
+	
 <?php
 	$issuesTabs = Html::tag('ul', 
 		Html::tag('li', Html::a('Open '.Html::tag('span', $dataProviderOpen->getCount(), ['class' => 'badge']), '#open-issues', ['data-toggle' => 'tab']), ['class' => 'tab-pane active']). 
-		Html::tag('li', Html::a('Closed '.Html::tag('span', $dataProviderClosed->getCount(), ['class' => 'badge']), '#closed-issues', ['data-toggle' => 'tab']), ['class' => 'tab-pane']),
+		Html::tag('li', Html::a('Closed '.Html::tag('span', $dataProviderClosed->getCount(), ['class' => 'badge']), '#closed-issues', ['data-toggle' => 'tab']), ['class' => 'tab-pane']). 
+		Html::tag('li', Html::a('Create Issue ', '#issues-form', ['data-toggle' => 'tab', 'class' => 'btn btn-success']), ['class' => 'tab-pane']). 
+		Html::tag('li', Html::a('Update Issue ', '#issues-update-form', ['data-toggle' => 'tab', 'id' => 'issues-update-form-tab', 'class' => 'hidden']), ['class' => 'tab-pane']),
 		[
 			'class' => 'nav nav-tabs'
 		]
 	);
-	$issuesOpen = getIssues($dataProviderOpen);
-	$issuesClosed = getIssues($dataProviderClosed);
+	$viewOptions = [
+		'enableComments' => $enableComments
+	];
+	$issuesOpen = getIssues($dataProviderOpen, $viewOptions);
+	$issuesClosed = getIssues($dataProviderClosed, $viewOptions);
+	$issuesForm =  $this->render('create', [
+		'model' => new Issues,
+		'parentId' => $parentId,
+		'parentType' => $parentType
+	]);
 	$issues = Html::tag('div',
 		Html::tag('div', $issuesOpen, ['class' => 'tab-pane fade in active', 'id' => 'open-issues']).
-		Html::tag('div', $issuesClosed, ['class' => 'tab-pane fade in', 'id' => 'closed-issues']),
+		Html::tag('div', $issuesClosed, ['class' => 'tab-pane fade in', 'id' => 'closed-issues']).
+		Html::tag('div', $issuesForm, ['class' => 'tab-pane fade in', 'id' => 'issues-form']).
+		Html::tag('div', '', ['class' => 'tab-pane fade in', 'id' => 'issues-update-form']),
 		['class' => 'tab-content']
 	);
 	echo $issuesTabs.$issues;
 ?>
-	<?php
-		if(isset($modal))
-		{
-			echo $modal;
-		}
-	?>
-
 </div>
 
 <script type="text/javascript">
 $nitm.addOnLoadEvent(function () {
 	$nitm.issueTracker.init("issue-tracker<?=$parentId?>");
+	<?php if(\Yii::$app->request->isAjax): ?>
+	$nitm.tools.initVisibility("issue-tracker<?=$parentId?>");
+	<?php endif ?>
 });
 </script>
 
 <?php 
-	function getIssues($dataProvider)
+	function getIssues($dataProvider, $options=[])
 	{
+		global $enableComments, $repliesModel;
 		return ListView::widget([
 			'options' => [
 				'id' => 'issues'
 			],
 			'dataProvider' => $dataProvider,
 			'itemOptions' => ['class' => 'item'],
-			'itemView' => function ($model, $key, $index, $widget) {
-					return $widget->render('@nitm/views/issue/view',['model' => $model]);
+			'itemView' => function ($model, $key, $index, $widget) use($options){
+				$viewOptions = array_merge(['model' => $model], $options);
+				return $widget->render('@nitm/views/issue/view', $viewOptions);
 			},
 		
 		]);

@@ -65,41 +65,45 @@ function Configuration(items)
 		});
 	}
 	
-	this.prepareDeleting = function (container, result) {
-		var container = (container == undefined) ? 'body' : container;
+	this.prepareDeleting = function (containerId, result) {
+		var containerId = (containerId == undefined) ? 'body' : containerId;
+		var container = $nitm.getObj(containerId);
 		this.forms.confirmThese.map(function (v) {
-			var form = $nitm.getObj(container+" "+"form[role='"+v+"']");
+			var form = container.find("form[role='"+v+"']");
 			form.off('submit');
+			switch(v)
+			{
+				case 'deleteSection':
+				switch(result != undefined)
+				{
+					case true:
+					form.find("input[id='configer\-cfg_s']").val(result.section);
+					break;
+				break;
+				}
+			}
 			form.on('submit', function (e) {
 				e.preventDefault();
 				switch(v)
 				{
-					case 'delete_section':
-					switch(result != undefined)
-					{
-						case true:
-						try {
-							var value = result.section;
-							form.find("input[id='configer-cfg_s']").val(result.section);
-						} catch (error) {
-							var value = form.find("input[id='configer-cfg_s']").val();
-						};
-						break;
-						
-						default:
-						var value = form.find("input[id='configer-cfg_s']").val();
-						break;
-					};
+					case 'deleteSection':
+					var value = form.find("input[id='configer\-cfg_s']").val();
 					var message = "Are you sure you want to delete section: "+value;
+					var shouldConfirm = true;
 					break;
 					
 					case 'deleteValue':
 					var message = $(this).find(':submit').attr('title');
+					var shouldConfirm = false;
 					break;
 				}
-				switch(confirm(message))
+				switch(shouldConfirm)
 				{
 					case true:
+					if(confirm(message)) self.operation(this);
+					break;
+					
+					default:
 					self.operation(this);
 					break;
 				}
@@ -108,10 +112,11 @@ function Configuration(items)
 		});
 	}
 	
-	this.prepareUpdating = function (container) {	
-		var container = (container == undefined) ? 'body' : container;
+	this.prepareUpdating = function (containerId) {
+		var containerId = (containerId == undefined) ? 'body' : containerId;
+		var container = $nitm.getObj(containerId);
 		this.buttons.allowUpdate.map(function (v) {
-			var button = $nitm.getObj(container+' '+"[role='"+v+"']");
+			var button = container.find("[role='"+v+"']");
 			button.on('click', function (e) {
 				e.preventDefault();
 				self.update(this);
@@ -119,7 +124,7 @@ function Configuration(items)
 		});
 		
 		this.blocks.allowUpdate.map(function (v) {
-			var block = $nitm.getObj(container+' '+"[role='"+v+"']");
+			var block = container.find("[role='"+v+"']");
 			var fn = function (e) {
 				self.update(this);
 			};
@@ -128,10 +133,11 @@ function Configuration(items)
 		});
 	}
 	
-	this.prepareCreateing = function (container) {
-		var container = (container == undefined) ? 'body' : container;
+	this.prepareCreating = function (containerId) {
+		var containerId = (containerId == undefined) ? 'body' : containerId;
+		var container = $nitm.getObj(containerId);
 		this.forms.allowCreate.map(function (v) {
-			var form = $nitm.getObj(container+" "+"form[role='"+v+"']");
+			var form = container.find("form[role='"+v+"']");
 			form.off('submit');
 			form.on('submit', function (e) {
 				e.preventDefault();
@@ -240,18 +246,19 @@ function Configuration(items)
 				_form.find(':submit').removeClass('').addClass('btn btn-danger').html('del');
 				_form.attr('action', self.forms.actions.del);
 				_form.attr('role', 'deleteValue');
-				_form.find(':input').attr('disabled', false);
+				_form.find(':input').removeAttr('disabled');
 				$nitm.getObj('value_'+result.container).removeClass('disabled');
 				break;
 			}
 			break;
 			
 			default:
-			$('#'+self.views.containers.createValue).before($(result.data));
+			$nitm.getObj('#'+self.views.containers.createValue).before($(result.data));
 			self.prepareDeleting('#'+'value_'+result.unique_id);
 			self.prepareUpdating('#'+'value_'+result.unique_id);
 			break;
 		}
+		form.reset();
 	}
 	
 	this.afterUpdate = function (result) {
@@ -285,7 +292,7 @@ function Configuration(items)
 			{
 				//We just deleted a section
 				case null:
-				$('#'+self.views.containers.showSection).find("select :selected").remove();
+				$nitm.getObj('#'+self.views.containers.showSection).find("select :selected").remove();
 				break;
 				
 				default:
@@ -303,6 +310,7 @@ function Configuration(items)
 						
 						default:
 						$(this).attr('disabled', true);
+						$(this).addClass('disabled');
 						break;
 					}
 				});

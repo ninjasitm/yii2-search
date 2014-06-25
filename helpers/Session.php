@@ -279,9 +279,12 @@ class Session extends Model
 
 	public static final function del($cIdx)
 	{
-// 		echo "deleting $cIdx<br>";
+ 		//echo "deleting $cIdx<br>";
 		$value = self::getVal($cIdx);
 		$ret_val = self::unregister($cIdx);
+		$debug = debug_backtrace();
+		$line = $debug[0];
+ 		//echo "\ndel: Returning ".$cIdx/*." value ".print_r($ret_val)*/." called from ".$line['line']." ".$line['file']."<br>\n";
 		return array("item"=> $cIdx , "value" => $value, "ret_val" => $ret_val);
 	}
 	
@@ -360,7 +363,7 @@ class Session extends Model
 		}
 		$debug = debug_backtrace();
 		$line = $debug[0];
- 		//echo "Returning $cIdx value $ret_val called from ".$line['line']." ".$line['file']."<br>";
+ 		//echo "\nReturning ".$cIdx/*." value ".print_r($ret_val)*/." called from ".$line['line']." ".$line['file']."<br>\n";
 		return $ret_val;
 	}
 

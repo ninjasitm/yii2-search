@@ -70,7 +70,7 @@ use yii\widgets\ActiveField;
     <div class="col-md-12 col-lg-12">
         <div class="bottom">
             <hr>
-            <h4>Create a new section to the configuration</h4>
+            <h4>Add a new section to the configuration</h4>
             <?php $form = ActiveForm::begin(['id' => 'new_section',
                             'action' => '/configuration/create',
                             'options' => ['class' => 'form-inline' ],

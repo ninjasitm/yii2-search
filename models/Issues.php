@@ -24,7 +24,7 @@ use Yii;
  */
 class Issues extends BaseWidget
 {
-	
+	public $commentParam = '__enComm';
 	public static $statuses = [
 		'normal' => 'default',
 		'important' => 'info',

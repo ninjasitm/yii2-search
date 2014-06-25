@@ -15,10 +15,12 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="issues-create">
 
-    <h1><?= Html::encode($this->title) ?></h1>
+    <h3><?= Html::encode($this->title) ?></h2>
 
-    <?= $this->render('_form', [
+    <?= $this->render('form/_form', [
         'model' => $model,
+		'parentId' => $parentId,
+		'parentType' => $parentType
     ]) ?>
 
 </div>

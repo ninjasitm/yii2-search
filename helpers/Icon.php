@@ -50,8 +50,18 @@ class Icon
 				case 'delete':
 				$icon = (is_object($model) && $model->hasAttribute($attribute) && $model->$attribute == 1) ?  'plus' : 'trash-o';
 				break;
+				
+				case 'comment':
+				$icon = 'comment';
+				break;
 			}
 			break;
+		}
+		if(isset($options['size']))
+		{
+			$options['class'] = isset($options['class']) ? $options['class'] : '';
+			$options['class'] .= \Yii::$app->params['icon-framework']."-".$options['size'];
+			unset($options['size']);
 		}
 		return BaseIcon::show($icon, $options);
 	}

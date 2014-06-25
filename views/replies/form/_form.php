@@ -21,11 +21,11 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 
 	<?php $form = ActiveForm::begin([
 			'id' => 'reply_form'.$parentId,
+			'type' => ActiveForm::TYPE_HORIZONTAL,
 			"action" => "/reply/new/".$parentType."/".$parentId."/".urlencode($parentKey),
 			"options" => [
 				'data-editor' => $editor,
 				'data-parent' => 'messages'.$parentId,
-				"class" => "form-inline",
 				"role" => "replyForm",
 			],
 			"fieldConfig" => [

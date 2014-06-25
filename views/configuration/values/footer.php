@@ -1,18 +1,25 @@
 <?php
 use yii\helpers\Html;
-use yii\widgets\ActiveForm;
+use kartik\widgets\ActiveForm;
+
+$model->setScenario('createValue');
 ?>
 <div class="well" id="create_value_container">
-        <?php $form = ActiveForm::begin(['id' => "create_new_value_$section",
-                                        'action' => '/configuration/create',
-                                        'options' => ['class' => 'form-inline',
-                                        'role' => 'create_new_value'],
-                                        'fieldConfig' => [
-                                                          'inputOptions' => ['class' => 'form-control']
-                                                        ],
-                                        'enableAjaxValidation' => true,
-                                        ]);
-        ?>
+
+		<?php $form = ActiveForm::begin([
+			'action' => '/configuration/create',
+			"type" => ActiveForm::TYPE_INLINE,
+			'options' => [
+				'id' => "create_new_value_$section",
+				"role" => "filter"
+			],
+			'fieldConfig' => [
+				'inputOptions' => ['class' => 'form-control'],
+				'template' => "{label}\n<div class=\"col-lg-10\">{input}</div>\n<div class=\"col-lg-12\">{error}</div>",
+				'labelOptions' => ['class' => 'col-lg-2 control-label'],
+			],
+			'enableAjaxValidation' => true
+		]); ?>
         <?php
                 echo $form->field($model, 'cfg_n')->textInput(array('placeholder' => 'Setting name...'))->label("Name", ['class' => 'sr-only']);
                 echo $form->field($model, 'cfg_v')->textInput(array('placeholder' => 'Setting value...'))->label("Value", ['class' => 'sr-only']);
@@ -30,3 +37,9 @@ use yii\widgets\ActiveForm;
         ?>
         <?php ActiveForm::end(); ?>
 </div>
+
+<script language='javascript' type="text/javascript">
+$nitm.addOnLoadEvent(function () {
+	$nitm.configuration.prepareCreating("create_value_container");
+});
+</script>

@@ -121,14 +121,14 @@ class Response extends Behavior
 			);
 			break;
 			
-			case 'text':
-			$contentType = "text/plain";
-			$ret_val = @strip_tags($result['data']);
+			case 'json':
+			$contentType = "application/json";
+			$ret_val = $result;
 			break;
 			
 			default:
-			$contentType = "application/json";
-			$ret_val = $result;
+			$contentType = "text/plain";
+			$ret_val = @strip_tags($result['data']);
 			break;
 		}
 		\Yii::$app->response->getHeaders()->set('Content-Type', $contentType);

@@ -81,7 +81,8 @@ class IssueController extends WidgetController
 				"content" => IssueTracker::widget([
 					"parentId" => $id, 
 					"parentType" => $type,
-					'useModal' => false
+					'useModal' => false,
+					'enableComments' => \Yii::$app->request->get($this->model->commentParam)
 				])
 			],
 			'modalOptions' => [
@@ -120,7 +121,7 @@ class IssueController extends WidgetController
 			'scenario' => 'create',
 			'provider' => null,
 			'dataProvider' => null,
-			'view' => 'form/_form',
+			'view' => !$id ? 'create' : 'update',
 			'viewArgs' => [
 				'parentId' => $id,
 				'parentType' => $type
@@ -335,11 +336,11 @@ class IssueController extends WidgetController
 					default:
 					$format = Response::formatSpecified() ? $this->getResponseFormat() : 'json';
 					$this->setResponseFormat($format);
-					$this->model->created_at = \nitm\helpers\DateFormater::formatDate($this->model->created_at);
+					$this->model->created_at = \nitm\helpers\DateFormatter::formatDate($this->model->created_at);
 					switch($this->action->id)
 					{
 						case 'update':
-						$this->model->updated_at = \nitm\helpers\DateFormater::formatDate($this->model->updated);
+						$this->model->updated_at = \nitm\helpers\DateFormatter::formatDate($this->model->updated_at);
 						break;
 					}
 					switch($this->getResponseFormat())
@@ -347,12 +348,16 @@ class IssueController extends WidgetController
 						case 'json':
 						$ret_val = [
 							'data' => $this->renderAjax('view', ["model" => $this->model]),
+							"enableComments" => true,
 							'success' => true
 						];
 						break;
 						
 						default:
-						Response::$viewOptions['content'] = $this->renderAjax('view', ["model" => $this->model]);
+						Response::$viewOptions['content'] = $this->renderAjax('view', [
+							"model" => $this->model,
+							"enableComments" => true,
+						]);
 						break;
 					}
 					break;
