@@ -1,6 +1,7 @@
 <?php
 
 use yii\helpers\Html;
+use nitm\models\Issues;
 
 /**
  * @var yii\web\View $this
@@ -13,7 +14,7 @@ $this->title = Yii::t('app', 'Update {modelClass}: ', [
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = ['label' => $model->id, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = Yii::t('app', 'Update');
-$enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get($model->commentParam);
+$enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get(Issues::COMMENT_PARAM);
 ?>
 <div class="issues-update <?= \nitm\helpers\Statuses::getIndicator($model->getStatus())?> wrapper">
 

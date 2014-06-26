@@ -81,15 +81,15 @@ class ReplyController extends DefaultController
     {
 		$this->model = new Replies(['constrain' => [$id, $type, $key]]);
 		$replies = RepliesWidget::widget([
-					"model" => $this->model, 
-				]);
+			"model" => $this->model, 
+		]);
 		$form = RepliesForm::widget([
-					"model" => $this->model, 
-					'useModal' => false
-				]);
+			"model" => $this->model, 
+			'useModal' => false
+		]);
 		Response::$viewOptions = [
 			'args' => [
-				"content" => Html::tag('div', $replies.$form, ['id' => 'messagesWrapper'.$id, 'class' => 'messages']),
+				"content" => $replies.$form,
 			],
 			'modalOptions' => [
 				'contentOnly' => true
@@ -98,7 +98,7 @@ class ReplyController extends DefaultController
 		return $this->renderResponse(null, null, \Yii::$app->request->isAjax);
     }
 
-	public function actionNew($type, $id, $key)
+	public function actionNew($type, $id, $key=null)
 	{
 		$ret_val = [
 			'success' => false,
@@ -204,7 +204,7 @@ class ReplyController extends DefaultController
 			];
 			$ret_val['message'] = $ret_val['count']." new messages";
 			$searchModel = new \nitm\models\search\Replies([
-				'withThese' => ['replyToAuthor', 'authorUser'],
+				'withThese' => ['replyTo', 'authorUser'],
 				'queryOptions' => [
 					'andWhere' => new \yii\db\Expression('UNIX_TIMESTAMP(created_at)>='.\Yii::$app->userMeta->lastActive())
 				]

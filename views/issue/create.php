@@ -1,6 +1,7 @@
 <?php
 
 use yii\helpers\Html;
+use nitme\models\Issues;
 
 /**
  * @var yii\web\View $this
@@ -12,7 +13,7 @@ $this->title = Yii::t('app', 'Create {modelClass}', [
 ]);
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
-$enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get($model->commentParam);
+$enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get(Issues::COMMENT_PARAM);
 ?>
 <div class="issues-create">
 

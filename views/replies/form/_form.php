@@ -18,11 +18,11 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 <div class="message-form" id='messagesForm<?= $parentId ?>'>
 	<?= \nitm\widgets\alert\Alert::widget(); ?>
 	<div id="alert"></div>
-
+	<h3>Reply</h3>
 	<?php $form = ActiveForm::begin([
 			'id' => 'reply_form'.$parentId,
 			'type' => ActiveForm::TYPE_HORIZONTAL,
-			"action" => "/reply/new/".$parentType."/".$parentId."/".urlencode($parentKey),
+			"action" => "/reply/new/".$parentType."/".$parentId.(isset($parentKey) ? "/".urlencode($parentKey) : ''),
 			"options" => [
 				'data-editor' => $editor,
 				'data-parent' => 'messages'.$parentId,

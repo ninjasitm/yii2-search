@@ -8,14 +8,15 @@ function Tools ()
 {
 	self = this;
 	this.defaultInit = [
-	'initVisibility',
-	'initRemoveParent',
-	'initBsMultipleModal',
-	'initDynamicDropdown',
-	'initOffCanvasMenu',
-	'initAutocompleteSelect',
-	'initSubmitSelect',
-	'initScrolledIntoView'
+		'initVisibility',
+		'initRemoveParent',
+		'initBsMultipleModal',
+		'initDynamicDropdown',
+		'initDynamicValue',
+		'initOffCanvasMenu',
+		'initAutocompleteSelect',
+		'initSubmitSelect',
+		'initScrolledIntoView'
 	];
 	
 	this.init = function () {
@@ -33,6 +34,7 @@ function Tools ()
 	this.initSubmitSelect = function (containerId) {
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);	
 		container.find("[role='changeSubmit']").map(function(e) {
+			$(this).off('change');
 			$(this).on('change', function (event) {
 				window.location.replace($(this).val());
 			});
@@ -49,25 +51,26 @@ function Tools ()
 			switch($(this).data('id') != undefined)
 			{
 				case true:
-					$(this).on('click', function (e) {
-						e.preventDefault();
-						var id = $(this).data('id');
-						var element = $('#'+id);
-						var url = $(this).data('url');
-						url = !url ? $(this).attr('href') : url;
-						switch(url != undefined)
-						{
-							case true:
-							$.get(url, function (result) {
-								element.html(result);
-							});
-							break;
-						}
-						var success = ($(this).data('success') != undefined) ? $(this).data('success') : null;
-						eval(success);
-						$nitm.handleVis(id);
-					});
-					break;
+				$(this).off('click');
+				$(this).on('click', function (e) {
+					e.preventDefault();
+					var id = $(this).data('id');
+					var element = $('#'+id);
+					var url = $(this).data('url');
+					url = !url ? $(this).attr('href') : url;
+					switch(url != undefined)
+					{
+						case true:
+						$.get(url, function (result) {
+							element.html(result);
+						});
+						break;
+					}
+					var success = ($(this).data('success') != undefined) ? $(this).data('success') : null;
+					eval(success);
+					$nitm.handleVis(id);
+				});
+				break;
 			}
 		});
 	}
@@ -211,28 +214,29 @@ function Tools ()
 			switch(id != undefined)
 			{
 				case true:
-					$(this).on('change', function (e) {
-						e.preventDefault();
-						var element = $nitm.getObj('#'+id);
-						var url = $(this).data('url');
-						switch(url != undefined)
-						{
-							case true:
-								element.removeAttr('disabled');
-								element.empty();	$.get(url+$(this).find(':selected').val()).done( function (result) {
-									var result = $.parseJSON(result);
-									element.append( $('<option></option>').val('').html('Select value...') );
-									if(typeof result == 'object')
-									{
-										$.each(result, function(val, text) {
-											element.append( $('<option></option>').val(text.value).html(text.label) );
-										});
-									}
-								}, 'json');
-								break;
-						}
-					});
-					break;
+				$(this).off('change');
+				$(this).on('change', function (e) {
+					e.preventDefault();
+					var element = $nitm.getObj('#'+id);
+					var url = $(this).data('url');
+					switch(url != undefined)
+					{
+						case true:
+							element.removeAttr('disabled');
+							element.empty();	$.get(url+$(this).find(':selected').val()).done( function (result) {
+								var result = $.parseJSON(result);
+								element.append( $('<option></option>').val('').html('Select value...') );
+								if(typeof result == 'object')
+								{
+									$.each(result, function(val, text) {
+										element.append( $('<option></option>').val(text.value).html(text.label) );
+									});
+								}
+							}, 'json');
+							break;
+					}
+				});
+				break;
 			}
 		});
 	}
@@ -243,28 +247,47 @@ function Tools ()
 	this.initDynamicValue = function (containerId) {
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
 		//enable hide/unhide functionality with optional data retrieval
-		
 		container.find("[role='dynamicValue']").map(function(e) {
 			var id = $(this).data('id');
 			switch(id != undefined)
 			{
 				case true:
-					$(this).on('click', function (e) {
-						e.preventDefault();
-						var element = $nitm.getObj('#'+id);
-						var url = $(this).data('url');
-						switch(url != undefined)
+				$(this).off('click');
+				$(this).on('click', function (e) {
+					e.preventDefault();
+					var element = $nitm.getObj(id);
+					var url = $(this).data('url');
+					switch(url != undefined)
+					{
+						case true:
+						element.removeAttr('disabled');
+						element.empty();	
+						switch($(this).data('type'))
 						{
-							case true:
-								element.removeAttr('disabled');
-								element.empty();	$.get(url+$(this).find(':selected').val()).done( function (result) {
-									var result = $.parseJSON(result);
-									element.val(result);
-								}, 'json');
-								break;
+							case 'html':
+							$.get(url+$(this).find(':selected').val()).done( function (result) {
+								element.html(result);
+							}, 'html');
+							break;
+							
+							case 'callback':
+							var callback = $(this).data('callback');
+							$.get(url+$(this).find(':selected').val()).done( function (result) {
+								callback(result);
+							}, 'json');
+							break;
+							
+							default:
+							$.get(url+$(this).find(':selected').val()).done( function (result) {
+								var result = $.parseJSON(result);
+								element.val(result);
+							}, 'json');
+							break;
 						}
-					});
-					break;
+						break;
+					}
+				});
+				break;
 			}
 		});
 	}
@@ -276,6 +299,7 @@ function Tools ()
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
 		//enable hide/unhide functionality
 		container.find("[role='removeParent']").map(function(e) {
+			$(this).off('click');
 			$(this).on('click', function (e) {
 				e.preventDefault();
 				self.removeParent(this);
@@ -305,6 +329,7 @@ function Tools ()
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
 		//enable hide/unhide functionality
 		container.find("[role='removeParent']").map(function(e) {
+			$(this).off('click');
 			$(this).on('click', function (e) {
 				self.disableParent(this);
 				return false;

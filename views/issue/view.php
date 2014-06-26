@@ -4,6 +4,7 @@ use yii\helpers\Html;
 use yii\widgets\DetailView;
 use nitm\helpers\Icon;
 use nitm\widgets\activityIndicator\ActivityIndicator;
+use nitm\models\Issues;
 
 /**
  * @var yii\web\View $this
@@ -13,7 +14,7 @@ use nitm\widgets\activityIndicator\ActivityIndicator;
 //$this->title = $model->title;
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
-$enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get($model->commentParam);
+$enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get(Issues::COMMENT_PARAM);
 if($enableComments == true) $repliesModel = new \nitm\models\Replies([
 	"constrain" => [$model->getId(), $model->isWhat()]
 ]);
@@ -50,7 +51,7 @@ if($enableComments == true) $repliesModel = new \nitm\models\Replies([
 					'data-parent' => 'tr',
 					'data-pjax' => '0',
 				]);
-				echo Html::a(Icon::forAction('update', null, $model), \Yii::$app->urlManager->createUrl(['/issue/form/update/'.$model->id, $model->commentParam => $enableComments, '__format' => 'html']), [
+				echo Html::a(Icon::forAction('update', null, $model), \Yii::$app->urlManager->createUrl(['/issue/form/update/'.$model->id, Issues::COMMENT_PARAM => $enableComments, '__format' => 'html']), [
 					'title' => Yii::t('yii', 'Edit '),
 					'class' => 'fa-2x'.($model->closed ? ' hidden' : ''),
 					'role' => 'updateIssueTrigger disabledOnClose',
@@ -69,11 +70,10 @@ if($enableComments == true) $repliesModel = new \nitm\models\Replies([
 				]);
 				if($enableComments==true)
 				{
-					echo Html::a(Icon::forAction('comment', null, null, ['size' => '2x']).ActivityIndicator::widget(['position' => 'top right', 'size' => 'small', 'text' => $repliesModel->getCount(), 'type' => ($repliesModel->hasAny() ? 'success' : 'info')]), \Yii::$app->urlManager->createUrl(['#']), [
+					echo Html::a(Icon::forAction('comment', null, null, ['size' => '2x']).ActivityIndicator::widget(['position' => 'top right', 'size' => 'small', 'text' => $repliesModel->getCount(), 'type' => 'info']), \Yii::$app->urlManager->createUrl(['/reply/index/'.$model->isWhat().'/'.$model->getId(), '__format' => 'html']), [
 						'title' => 'See comments for this issue',
 						'role' => 'visibility',
-						'data-id' => 'issue-comments'.$model->getId(),
-						'data-url' => \Yii::$app->urlManager->createUrl(['/reply/index/'.$model->isWhat().'/'.$model->getId(), '__format' => 'html'])
+						'data-id' => 'issue-comments'.$model->getId()
 					]);
 				}
 			?>

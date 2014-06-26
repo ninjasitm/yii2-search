@@ -179,7 +179,7 @@ function Nitm ()
 		}
 		else
 		{
-			var obj = this.getObj((!nObj) ? this.responseSection : nObj);
+			var obj = this.getObj((nObj == undefined ? this.responseSection : nObj), null, false, false);
 			obj.fadeIn();
 			obj.removeClass().addClass(nClass);
 			obj.html(nMessage);
@@ -377,68 +377,68 @@ function Nitm ()
 				}
 			} catch (error) {};
 			selector = selector.id;
-			} else {
-				switch(typeof selector)
-				{
-					case 'string':
-					case 'number':
-						break;
-						
-					default:
-						return false;
-						break;
-				}
-			}
-			switch(selector)
+		} else {
+			switch(typeof selector)
 			{
-				case 'body':
-				case 'document':
-				case 'window':
-				case document:
-				case window:
-					var obj = selector;
+				case 'string':
+				case 'number':
 					break;
 					
 				default:
-					selector = (esc === true) ? this.jqEscape(selector) : selector;
-					if(selector[0] == '.') {
-						by = 'class';
-					}
-					switch(by)
-					{
-						case 'name':
-							var obj = '[name="'+selector+'"]';
-							break;
-						
-						case 'class':
-							var obj = (selector[0] != '.') ? '.'+selector : selector;
-							obj = '\\'+obj;
-							break;
-							
-						default:
-							switch((selector[0] == '[')
-							|| (selector.indexOf(',') != -1)
-							)
-							{
-								case true:
-									var obj = selector;
-									break;
-									
-								default:
-									var obj = (selector[0] != '#') ? '#'+selector : selector;
-									break;
-							}
-							break
-					}
-					switch(alert_obj)
-					{
-						case true:
-							alert(selector+" -> "+obj);
-							break;
-					}
+					return false;
 					break;
 			}
-			return $(obj);
+		}
+		switch(selector)
+		{
+			case 'body':
+			case 'document':
+			case 'window':
+			case document:
+			case window:
+				var obj = selector;
+				break;
+				
+			default:
+				selector = (esc === true) ? this.jqEscape(selector) : selector;
+				if(selector[0] == '.') {
+					by = 'class';
+				}
+				switch(by)
+				{
+					case 'name':
+						var obj = '[name="'+selector+'"]';
+						break;
+					
+					case 'class':
+						var obj = (selector[0] != '.') ? '.'+selector : selector;
+						obj = '\\'+obj;
+						break;
+						
+					default:
+						switch((selector[0] == '[')
+						|| (selector.indexOf(',') != -1)
+						)
+						{
+							case true:
+								var obj = selector;
+								break;
+								
+							default:
+								var obj = (selector[0] != '#') ? '#'+selector : selector;
+								break;
+						}
+						break
+				}
+				switch(alert_obj)
+				{
+					case true:
+						alert(selector+" -> "+obj);
+						break;
+				}
+				break;
+		}
+		return $(obj);
 			
 	}
 	

@@ -30,7 +30,7 @@ class Replies extends BaseWidget
 	protected $authorIdKey = 'author';
 	protected static $is = 'replies';
 	
-	private $_lastActivity = '___lastActivity';
+	const LAST_ACTIVITY = '___lastActivity';
 	private $_dateFormat = "D M d Y g:iA";
 	
 	public function init()
@@ -77,7 +77,7 @@ class Replies extends BaseWidget
 	public function rules()
 	{
 		return [
-			[['parent_id', 'parent_key', 'parent_type', 'author', 'message', 'ip_addr', 'cookie_hash'], 'required', 'on' => ['create']],
+			[['parent_id', 'parent_type', 'author', 'message', 'ip_addr', 'cookie_hash'], 'required', 'on' => ['create']],
 			[['message','parent_type'],'required','on' => ['validateNew']],
 			['message', 'isTooLong', 'message' => 'This message is too long'],
 		];

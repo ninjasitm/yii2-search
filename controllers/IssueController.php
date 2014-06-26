@@ -31,7 +31,7 @@ class IssueController extends WidgetController
 	{
 		parent::init();
 		$this->model = new Issues(['scenario' => 'default']);
-		$this->enableComments = (\Yii::$app->request->get($this->model->commentParam) == true) ? true : false;
+		$this->enableComments = (\Yii::$app->request->get(Issues::COMMENT_PARAM) == true) ? true : false;
 	}
 	
     public function behaviors()
@@ -42,7 +42,7 @@ class IssueController extends WidgetController
 				//'only' => ['index', 'update', 'create', 'index', 'get', 'delete', 'convert', 'undelete'],
 				'rules' => [
 					[
-						'actions' => ['index',  'create',  'update',  'delete', 'resolve','close', 'duplicate', 'form'],
+						'actions' => ['index',  'create',  'update',  'delete', 'resolve','close', 'duplicate', 'form', 'issues'],
 						'allow' => true,
 						'roles' => ['@'],
 					],
@@ -84,7 +84,7 @@ class IssueController extends WidgetController
 					"parentId" => $id, 
 					"parentType" => $type,
 					'useModal' => false,
-					'enableComments' => \Yii::$app->request->get($this->model->commentParam)
+					'enableComments' => \Yii::$app->request->get(Issues::COMMENT_PARAM)
 				])
 			],
 			'modalOptions' => [
@@ -92,6 +92,42 @@ class IssueController extends WidgetController
 			]
 		];
 		$this->setResponseFormat(\Yii::$app->request->isAjax ? 'modal' : 'html');
+		return $this->renderResponse(null, null, \Yii::$app->request->isAjax);
+    }
+
+    /**
+     * Displays a single Issues model.
+     * @param integer $id
+     * @return mixed
+     */
+    public function actionIssues($type, $id, $key='open')
+    {
+		$this->model = Issues::findModel(['type' => $type, 'id' => $id]);
+		$searchModel = new IssuesSearch;
+		$searchModel->withThese = ['closeUser', 'resolveUser'];
+		$get = \Yii::$app->request->getQueryParams();
+		$params = array_merge($get, $this->model->constraints);
+		unset($params['type'], $params['id'], $params['key']);
+		
+		$options = [
+			'enableComments' => $this->enableComments
+		];
+		$params = array_merge($params, ['closed' => ($key == 'open' ? 0 : 1)]);
+		$dataProvider = $searchModel->search($params);
+		Response::$viewOptions = [
+			'args' => [
+				"content" => $this->renderAjax('issues', [
+					'dataProvider' => $dataProvider,
+					'options' => $options,
+					'parentId' => $id,
+					'parentType' => $type
+				])
+			],
+			'modalOptions' => [
+				'contentOnly' => true
+			]
+		];
+		//$this->setResponseFormat(\Yii::$app->request->isAjax ? 'modal' : 'html');
 		return $this->renderResponse(null, null, \Yii::$app->request->isAjax);
     }
 
@@ -166,7 +202,7 @@ class IssueController extends WidgetController
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
      */
-    public function actionCreate($type, $id)
+    public function actionCreate()
     {
 		$post = \Yii::$app->request->post();
 		$this->model->setScenario('create');

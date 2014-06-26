@@ -20,37 +20,58 @@ switch(\Yii::$app->request->isAjax)
 	break;
 }
 $this->params['breadcrumbs'][] = $title;
+$baseModel = new Issues;
 ?>
-<div class="issues-index" id="wrapper issue-tracker<?=$parentId?>">
+<div class="issues-index wrapper" id="issue-tracker<?=$parentId?>">
 	<h3><?= Html::encode($title) ?></h3>
 	
 <?php
 	$issuesTabs = Html::tag('ul', 
 		Html::tag('li', 
-			Html::a('Open '.Html::tag('span', $dataProviderOpen->getCount(), ['class' => 'badge']), '#open-issues', ['data-toggle' => 'tab']), [
-				'class' => 'tab-pane active', 
-				'id' => 'open-issues-tab'
-			]). 
+			Html::a(
+			'Open '.Html::tag('span', $dataProviderOpen->getCount(), ['class' => 'badge']), 
+			'#open-issues'.$parentId, 
+			[
+				'data-toggle' => 'tab',
+				'role' => 'dynamicValue',
+				'data-type' => 'html',
+				'data-id' => '#open-issues'.$parentId,
+				'data-url' => \Yii::$app->urlManager->createUrl(['/issue/issues/'.$parentType.'/'.$parentId, '__format' => 'html', Issues::COMMENT_PARAM => true]),
+				'id' => 'open-issues-link'.$parentId
+			]), [
+			'class' => 'tab-pane active', 
+			'id' => 'open-issues-tab'.$parentId
+		]). 
 		Html::tag('li', 
-			Html::a('Closed '.Html::tag('span', $dataProviderClosed->getCount(), ['class' => 'badge']), '#closed-issues', ['data-toggle' => 'tab']), [
+			Html::a(
+				'Closed '.Html::tag('span', $dataProviderClosed->getCount(), ['class' => 'badge']), 
+				'#closed-issues'.$parentId, 
+				[
+					'data-toggle' => 'tab',
+					'role' => 'dynamicValue',
+					'data-type' => 'html',
+					'data-id' => '#closed-issues'.$parentId,
+					'data-url' => \Yii::$app->urlManager->createUrl(['/issue/issues/'.$parentType.'/'.$parentId.'/closed', '__format' => 'html', Issues::COMMENT_PARAM => true]),
+					'id' => 'closed-issues-link'.$parentId
+				]), [
 				'class' => 'tab-pane', 
-				'id' => 'closed-issues-tab'
+				'id' => 'closed-issues-tab'.$parentId
 			]). 
 		Html::tag('li', 
-			Html::a('Create Issue ', '#issues-form', [
+			Html::a('Create Issue ', '#issues-form'.$parentId, [
 				'data-toggle' => 'tab', 
 				'class' => 'btn btn-success'
 			]), ['class' => 'tab-pane']). 
 		Html::tag('li', 
-			Html::a('Update Issue ', '#issues-update-form', [
+			Html::a('Update Issue ', '#issues-update-form'.$parentId, [
 				'data-toggle' => 'tab', 
-				'id' => 'issues-update-form-tab', 
+				'id' => 'issues-update-form-tab'.$parentId, 
 				'class' => 'hidden'
 			]), ['class' => 'tab-pane']). 
 		Html::tag('li', 
 			Html::a('', '#', [
 				'data-toggle' => 'tab',
-				'id' => 'issues-alerts'
+				'id' => 'issues-alerts'.$parentId
 			]), [
 				'class' => 'tab-pane'
 			]),
@@ -61,8 +82,8 @@ $this->params['breadcrumbs'][] = $title;
 	$viewOptions = [
 		'enableComments' => $enableComments
 	];
-	$issuesOpen = Html::tag('div', '', ['id' => 'alert']).getIssues($dataProviderOpen, $viewOptions);
-	$issuesClosed = Html::tag('div', '', ['id' => 'alert']).getIssues($dataProviderClosed, $viewOptions);
+	$issuesOpen = Html::tag('div', '', ['id' => 'alert'.$parentId]).getIssues($dataProviderOpen, $viewOptions);
+	$issuesClosed = Html::tag('div', '', ['id' => 'alert'.$parentId]).Html::tag('div', '', ['class' => 'issues']);
 	$issuesForm =  $this->render('create', [
 		'model' => new Issues,
 		'parentId' => $parentId,
@@ -70,10 +91,13 @@ $this->params['breadcrumbs'][] = $title;
 		'enableComments' => $enableComments
 	]);
 	$issues = Html::tag('div',
-		Html::tag('div', $issuesOpen, ['class' => 'tab-pane fade in active', 'id' => 'open-issues']).
-		Html::tag('div', $issuesClosed, ['class' => 'tab-pane fade in', 'id' => 'closed-issues']).
-		Html::tag('div', $issuesForm, ['class' => 'tab-pane fade in', 'id' => 'issues-form']).
-		Html::tag('div', '', ['class' => 'tab-pane fade in', 'id' => 'issues-update-form']),
+		Html::tag('div', $issuesOpen, ['class' => 'tab-pane fade in active', 'id' => 'open-issues'.$parentId]).
+		Html::tag('div', $issuesClosed, [
+			'class' => 'tab-pane fade in', 
+			'id' => 'closed-issues'.$parentId, 
+		]).
+		Html::tag('div', $issuesForm, ['class' => 'tab-pane fade in', 'id' => 'issues-form'.$parentId]).
+		Html::tag('div', '', ['class' => 'tab-pane fade in', 'id' => 'issues-update-form'.$parentId]),
 		['class' => 'tab-content']
 	);
 	echo $issuesTabs.$issues;
@@ -85,6 +109,7 @@ $nitm.addOnLoadEvent(function () {
 	$nitm.issueTracker.init("issue-tracker<?=$parentId?>");
 	<?php if(\Yii::$app->request->isAjax): ?>
 	$nitm.tools.initVisibility("issue-tracker<?=$parentId?>");
+	$nitm.tools.initDynamicValue("issue-tracker<?=$parentId?>");
 	<?php endif ?>
 });
 </script>
@@ -92,10 +117,10 @@ $nitm.addOnLoadEvent(function () {
 <?php 
 	function getIssues($dataProvider, $options=[])
 	{
-		global $enableComments, $repliesModel;
+		global $parentId;
 		return ListView::widget([
 			'options' => [
-				'id' => 'issues'
+				'id' => 'issues'.$parentId
 			],
 			'dataProvider' => $dataProvider,
 			'itemOptions' => ['class' => 'item'],
