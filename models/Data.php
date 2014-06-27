@@ -135,7 +135,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 					switch($this->hasProperty('editor') || $this->hasAttribute('editor'))
 					{
 						case true:
-						$behaviors['timestamp']['attributes'][ActiveRecord::EVENT_BEFORE_UPDATE] = 'editor';
+						$behaviors['blamable']['attributes'][ActiveRecord::EVENT_BEFORE_UPDATE] = 'editor';
 						break;
 					}
 					break;

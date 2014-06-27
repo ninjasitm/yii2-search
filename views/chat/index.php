@@ -35,7 +35,7 @@ if($useModal == true) {
 		'role' => 'chatMessages',
 	];
 	$messages = ListView::widget([
-		'layout' => "{items}\n{pager}",
+		'layout' => "{items}",
 		'options' => $listOptions,
 		'dataProvider' => $dataProvider,
 		'itemOptions' => ['class' => 'item'],

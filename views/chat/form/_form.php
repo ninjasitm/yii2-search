@@ -39,7 +39,7 @@ switch(1)
 	<?php 
 		$form = ActiveForm::begin([
 			'id' => 'reply_form0',
-			"action" => "/reply/new/".$parentType."/0/".urlencode($parentKey),
+			"action" => "/reply/new/chat/0",
 			"options" => [
 				'data-editor' => $editor,
 				'data-parent' => 'chat-messages',

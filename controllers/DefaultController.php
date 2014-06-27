@@ -266,6 +266,9 @@ class DefaultController extends Controller
 		$top = ($navigation === null) ? true : false;
 		foreach($navigation as $idx=>$item)
 		{
+			if(isset($item['adminOnly']) && !\Yii::$app->userMeta->isAdmin())
+			continue;
+			
 			$submenu = null;
 			switch(isset($item['sub']) && is_array($item['sub']))
 			{
