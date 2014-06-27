@@ -9,15 +9,17 @@ use yii\data\ActiveDataProvider;
 /**
  * BaseSearch represents the model behind the search form about `nitm\models\BaseSearch`.
  */
-class BaseSearch extends Model
+class BaseSearch extends \nitm\models\Data
 {
     public $id;
+	public $text;
+	public $filter = [];
 	
 	public $primaryModel;
 	
 	public $queryOptions = [];
 	
-	public $withThese = ['icon'];
+	public $withThese = [];
 	public $searchType;
 	
 	const SEARCH_PARAM = '__searchType';
@@ -30,11 +32,18 @@ class BaseSearch extends Model
 	
 	public function init()
 	{
-		$class = self::getModelClass(static::formName());
+		$class = $this->getModelClass(static::formName());
 		$this->primaryModel = new $class;
 		$this->primaryModelAttributes = $this->primaryModel->attributes();
 		$this->primaryModelFormName = $this->primaryModel->formName();
 		$this->primaryModelTableName = $this->primaryModel->tableName();
+		static::$tableName = $this->primaryModelTableName;
+		$this->primaryModelTable = \Yii::$app->db->getTableSchema($this->primaryModelTableName);
+	}
+	
+	public function scenarios()
+	{
+		return ['default' => $this->primaryModelAttributes];
 	}
 	
 	public function __set($name, $value)
@@ -69,35 +78,20 @@ class BaseSearch extends Model
 
     public function search($params=[])
     {
-		$params = isset($params[$this->primaryModelFormName]) ? $params[$this->primaryModelFormName] : (is_array($params) ? $params : []);
         $query = $this->primaryModel->find();
-		switch($this->primaryModelTableName)
-		{
-			case 'categories':
-			//$query->where(['type_id' => 1]);
-			break;
-			
-			case 'content':
-			$query->andWhere(['type_id' => $this->primaryModel->getTypeId()]);
-			break;
-		}
+		$params = $this->filterParams($params, $query);
 		$query->with($this->withThese);
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
         ]);
-		$params = array_intersect_key($params, array_flip($this->primaryModelAttributes));
-		$params = empty($params) ? array_combine($this->primaryModelAttributes, array_fill(0, sizeof($this->primaryModelAttributes), '')) : $params;
-		$this->setProperties(array_keys($params), array_values($params));
-		$params = [$this->primaryModelFormName => $params];
-        if (!($this->load($params) && $this->validate())) {
+        if (!($this->load($params[$this->primaryModelFormName], false) && $this->validate())) {
 			$this->addQueryOptions($query);
             return $dataProvider;
         }
-
-		$table = \Yii::$app->db->getTableSchema($this->primaryModel->tableName());
+		$wildCardSearch = \Yii::$app->request->get(static::SEARCH_PARAM) == static::SEARCH_FULLTEXT;
 		foreach($params[$this->primaryModelFormName] as $attr=>$value)
 		{
-			$column = $table->columns[$attr];
+			$column = $this->primaryModelTable->columns[$attr];
 			switch($column->phpType)
 			{
 				case 'integer':
@@ -107,8 +101,7 @@ class BaseSearch extends Model
 				break;
 				
 				case 'string':
-				case 'datetime':
-        		if(is_string($this->{$column->name}))$this->addCondition($query, $column->name, true);
+        		if(is_string($this->{$column->name}))$this->addCondition($query, $column->name, $wildCardSearch);
 				break;
 			}
 		}
@@ -116,7 +109,7 @@ class BaseSearch extends Model
         return $dataProvider;
     }
 
-    protected function addCondition($query, $attribute, $partialMatch = false)
+    protected function addCondition($query, $attribute, $partialMatch=false)
     {
         if (($pos = strrpos($attribute, '.')) !== false) {
             $modelAttribute = substr($attribute, $pos + 1);
@@ -128,19 +121,30 @@ class BaseSearch extends Model
         if (trim($value) === '') {
             return;
         }
-        if ($partialMatch) {
-			if(\Yii::$app->request->get(static::SEARCH_PARAM) == static::SEARCH_FULLTEXT)
-			{
-            	$query->orWhere(['like', $attribute, $value]);
-			}
-			else
-			{
-            	$query->andWhere(['like', $attribute, $value]);
-			}
-        } else {
+		switch(1)
+		{
+			case is_numeric($value) && !$partialMatch:
+			case is_bool($value) && !$partialMatch:
             $query->andWhere([$attribute => $value]);
-        }
-    }
+			break;
+			
+			default:
+			if ($partialMatch) {
+				if(\Yii::$app->request->get(static::SEARCH_PARAM) == static::SEARCH_FULLTEXT)
+				{
+					$query->orWhere(['like', "LOWER(".$attribute.")", $value]);
+				}
+				else
+				{
+					$query->andWhere(['like', "LOWER(".$attribute.")", $value]);
+				}
+			}
+			else {
+            	$query->andWhere([$attribute => $value]);
+			}
+			break;
+		}
+	}
 	
 	public function getModelClass($class)
 	{
@@ -189,5 +193,60 @@ class BaseSearch extends Model
 				break;
 			}
 		}
+	}
+	
+	/**
+	 * Filter the parameters and remove some options
+	 */
+	private function filterParams($params=[], &$query)
+	{
+		$params = isset($params[$this->primaryModelFormName]) ? $params[$this->primaryModelFormName] : (is_array($params) ? $params : []);
+		$useEmptyParams = false;
+		foreach($params as $name=>$value)
+		{
+			switch($name)
+			{
+				case 'filter':
+				foreach($value as $filterName=>$filterValue)
+				{
+					switch($filterName)
+					{
+						case '_sort':
+						$direction = isset($params['_order']) ? $params['_order'] : SORT_DESC;
+						$query->orderBy([$filterValue => $direction]);
+						$useEmptyParams = true;
+						break;
+						
+						case '_order':
+						$useEmptyParams = true;
+						break;
+					}
+				}
+				unset($params['filter']);
+				break;
+				
+				case 'text':
+				if(!empty($text)) 
+				{
+					foreach($this->primaryModelTable->columns as $column)
+					{
+						switch($column->phpType)
+						{
+							case 'string':
+							case 'datetime':
+							$params[$column->name] = isset($params[$column->name]) ? $params[$column->name] : $value;
+							break;
+						}
+					}
+				}
+				unset($params[$name]);
+				break;
+			}
+		}
+		$params = array_intersect_key($params, array_flip($this->primaryModelAttributes));
+		$params = (empty($params) && !$useEmptyParams) ? array_combine($this->primaryModelAttributes, array_fill(0, sizeof($this->primaryModelAttributes), '')) : $params;
+		if(!empty($params)) $this->setProperties(array_keys($params), array_values($params));
+		$params = [$this->primaryModelFormName => $params];
+		return $params;
 	}
 }

@@ -14,7 +14,7 @@ $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => [
 $this->params['breadcrumbs'][] = $this->title;
 $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\User;
 ?>
-<div id="message<?= $model->id ?>" class="message <?= $model->hidden ? 'message-hidden' : '';?> wrapper">
+<div id="message<?= $model->id ?>" class="message <?= $model->hidden ? 'message-hidden' : '';?>">
 	<?php
 		switch(isset($isNew) && ($isNew === true) || $model->isNew())
 		{
@@ -26,13 +26,15 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 	<div class="avatar">
 		<img id='messageAvatar<?= $model->id; ?>' class="avatar avatar-small" alt="<? $authorUser->username; ?>" src="<?= $authorUser->getAvatar(); ?>" />
 	</div>
+	<div id="messageHeader<?= $model->id ?>" class="message-header">
+		<div class="">
+			Posted on <?= $model->created_at ?> by <?= $authorUser->username ?>
+		</div>
+	</div>
 	<div id="messageBody<?= $model->id ?>" class="message-body">
 		<p role='message'> <?=$model->message ?> </p>
 	</div>
 	<div id="messageFooter<?= $model->id ?>" class="message-footer">
-		<div class="message-meta">
-			Posted on <?= $model->created_at ?> by <?= $authorUser->username ?>
-		</div>
 		<div id="messageActions<?= $model->id ?>" class="message-actions">
 		<?php
 			if(\Yii::$app->userMeta->isAdmin())
@@ -53,6 +55,8 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 				'role' => 'replyTo',
 				'data-parent' => $model->parent_id,
 				'data-reply-to' => $model->id,
+				'data-author' => $authorUser->username,
+				'data-title' => $model->title
 			]);
 			echo Html::a('quote', \Yii::$app->urlManager->createUrl(['/reply/quote/'.$model->id]), [
 				'id' => "quoteMessage".$model->id,
@@ -62,6 +66,7 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 				'data-parent' => $model->parent_id,
 				'data-reply-to' => $model->id,
 				'data-author' => $authorUser->username,
+				'data-title' => $model->title
 			]);
 		?>
 		</div>

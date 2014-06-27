@@ -60,7 +60,7 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 			break;
 		}
 	?>
-	<?= $widget->getActions($useModal || !$inline); ?>
+	<?= Html::tag("div", '', ["role" => "replyToIndicator", "class" => "message-reply-to"]).$widget->getActions($useModal || !$inline); ?>
 	<?= Html::activeHiddenInput($model, "reply_to", ['value' =>  null, 'role' => 'replyTo']); ?>
     <?php ActiveForm::end(); ?>
 

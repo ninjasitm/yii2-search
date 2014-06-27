@@ -84,11 +84,11 @@ class Response extends Behavior
 				switch($params['view'])
 				{
 					case Response::$viewPath:
-					$ret_val = \Yii::$app->controller->getView()->$render($params['view'], $params['args'], static::$controller);
+					$ret_val = static::$controller->$render($params['view'], $params['args'], static::$controller);
 					break;
 					
 					default:
-					$ret_val = static::$controller->getView()->$render(Response::getLayoutPath(@$params['layout']), 
+					$ret_val = static::$controller->$render(Response::getLayoutPath(@$params['layout']), 
 						[
 							'content' => static::$view->$render($params['view'], $params['args'], static::$controller),
 							'title' => @$params['title'],

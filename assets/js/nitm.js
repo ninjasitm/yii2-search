@@ -180,9 +180,12 @@ function Nitm ()
 		else
 		{
 			var obj = this.getObj((nObj == undefined ? this.responseSection : nObj), null, false, false);
-			obj.fadeIn();
-			obj.removeClass().addClass(nClass);
-			obj.html(nMessage);
+			if(obj instanceof jQuery)
+			{
+				obj.fadeIn();
+				obj.removeClass().addClass(nClass);
+				obj.html(nMessage);
+			}
 		}
 		return obj;
 	}
@@ -613,67 +616,6 @@ function Nitm ()
 		ret.topElem = topElem;
 		ret.lastElem = lastElem;
 		return ret;
-	}
-	
-	this.more = function (_form)
-	{
-		var $form = getObj(_form);
-		var clearParent = (($form.data('clear') != false) || ($form.data('clear') !== undefined)) ? $form.data('clear') : false;
-		var removeSubmit = ($form.data('remove') === false) ? false : true;
-		animateSubmit(_form, true);
-		var data = $form.serialize();
-		var skip = {};
-		switch(data != undefined)
-		{
-			case true:
-				data.getHtml = true;
-				var request = this.doRequest($form.attr('action'), data);
-				request.done(function(result)
-				{
-					switch(result.success && (result.data != ''))
-					{
-						case true:
-							try {
-								getObj('notify').html(result.message).removeClass('alert alert-failure');
-							} catch (error) {}
-							if(removeSubmit) {var submitButton = $form.parent().detach();}
-							ret_val = false;
-							result.domContainer= new String(result.domContainer);
-							var newElem = {'insert':true, 'append':(($form.data('prepend') === true) ? false : true), 'id':result.domContainer};
-							switch(result.format)
-							{
-								case 'text':
-									result.data = result.data[result.domContainer][result.domContainer];
-									break;
-							}
-							var addTo = (!addTo) ? result.domContainer: addTo;
-							try {
-								place(newElem, result.data, $form.data('add-to'), result.format, clearParent);
-							} catch (error) {}
-							if(!removeSubmit) {animateSubmit(_form, false);}
-							break;
-							
-								case false:
-									var addTo = (!$form.data('add-to')) ? result.domContainer: $form.data('add-to');
-									try {
-										notify(result.message, 'bg-danger');
-									} catch (error) {}
-									switch(removeSubmit) 
-									{
-										case false:
-											getObj(addTo).append(submitButton);
-											break;
-									}
-									animateSubmit(_form, false);
-									break;
-					}
-				});
-				break;
-				
-										default:
-											animateSubmit(_form, false);
-											break;
-		}
 	}
 	
 	this.visibility = function (id, pour, caller)

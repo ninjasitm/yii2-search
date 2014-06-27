@@ -80,13 +80,38 @@ class ReplyController extends DefaultController
     public function actionIndex($type, $id, $key=null)
     {
 		$this->model = new Replies(['constrain' => [$id, $type, $key]]);
-		$replies = RepliesWidget::widget([
-			"model" => $this->model, 
-		]);
-		$form = RepliesForm::widget([
-			"model" => $this->model, 
-			'useModal' => false
-		]);
+		switch($type)
+		{
+			case 'chat':
+			$chatOptions = [
+				'role' => 'chatParent',
+				'id' => 'chat',
+				'class' => 'chat col-lg-4 col-md-4',
+			];
+			$updateOptions = [
+				"interval" => 60000,
+				"enabled" => true,
+				'url' => '/reply/get-new/chat/0'
+			];
+			$replies = \nitm\widgets\replies\ChatMessages::widget([
+				'model' => $this->model, 
+				'withForm' => true,
+				'updateOptions' => $updateOptions,
+				'options' => $chatOptions
+			]);
+			$form = false;
+			break;
+			
+			default:
+			$replies = RepliesWidget::widget([
+				"model" => $this->model, 
+			]);
+			$form = RepliesForm::widget([
+				"model" => $this->model, 
+				'useModal' => false
+			]);
+			break;
+		}
 		Response::$viewOptions = [
 			'args' => [
 				"content" => $replies.$form,
@@ -116,6 +141,7 @@ class ReplyController extends DefaultController
 		}
 		$constrain = [$id, $type, urldecode($key)];
 		$this->model->setConstraints($constrain);
+		
 		switch($this->model->load($this->model->constraints, false))
 		{
 			case true:
@@ -143,7 +169,8 @@ class ReplyController extends DefaultController
 				}
 				$ret_val['success'] = true;
 				$ret_val['message'] = "Reply saved";
-				$ret_val['id'] = 'message'.$this->model->id;
+				$ret_val['id'] = $this->model->id;
+				$ret_val['unique_id'] = 'message'.$this->model->id;
 				$this->setResponseFormat(\Yii::$app->request->isAjax ? 'json' : 'html');
 				Response::$viewOptions['args']['content'] = $ret_val['data'];
 				break;

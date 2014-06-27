@@ -45,7 +45,7 @@ class Replies extends BaseWidget
 			'replyToId' => [
 				'class' => \yii\behaviors\AttributeBehavior::className(),
 				'attributes' => [
-					\yii\db\ActiveRecord::EVENT_BEFORE_INSERT => ['reply_to'],
+					\yii\db\ActiveRecord::EVENT_BEFORE_INSERT => ['reply_to_author'],
 				],
 				'value' => function ($event) {
 					return $event->sender->replyToAuthorId();

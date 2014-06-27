@@ -23,12 +23,12 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 			break;
 		}
 	?>
-	<div id="messageAvatar<?= $model->getId() ?>" class="avatar">
-		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar avatar-small" alt="<? $authorUser->username; ?>" src="<?= $authorUser->getAvatar(); ?>" />
+	<div id="messageAvatar<?= $model->getId() ?>" class="message-avatar">
+		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar-small" alt="<? $authorUser->username; ?>" src="<?= $authorUser->getAvatar(); ?>" />
 	</div>
-	<div id="messageHeader<?= $model->getId() ?>" class="header">
+	<div id="messageHeader<?= $model->getId() ?>" class="message-header">
 		<?php if($model->replyTo != null): ?>
-			<a class="reply-to-author" href="#message<?= $model->replyTo->id ?>">@<?= $model->replyTo->authorUser->username ?></a>
+			<a class="reply-to-author" href="#message<?= $model->replyTo->id ?>">@<?= $model->replyTo->authorUser->username ?></a><span class="reply-to-author"><?= $model->replyTo->title ?></span>
 		<?php endif; ?>
 		<span class="title"><?= $model->title ?><span>
 	</div>
@@ -36,7 +36,7 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 		<div role='message'> <?= \nitm\helpers\Helper::parseLinks($model->message); ?> </div>
 	</div>
 	<div id="messageFooter<?= $model->getId() ?>" class="message-footer">
-		<div class="message-meta">
+		<div id="messageMeta<?= $model->getId() ?>" class="message-meta">
 			Posted on <?= $model->created_at ?> by <a class="author" href="#" role="usernameLink"><?= $authorUser->username ?></a>
 		</div>
 		<div id="messageActions<?= $model->getId() ?>" class="message-actions">
@@ -59,6 +59,8 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 				'role' => 'replyTo',
 				'data-parent' => 0,
 				'data-reply-to' => $model->getId(),
+				'data-author' => $authorUser->username,
+				'data-title' => $model->title
 			]);
 			echo Html::a('quote', \Yii::$app->urlManager->createUrl(['/reply/quote/'.$model->getId()]), [
 				'id' => "quoteMessage".$model->getId(),
@@ -68,6 +70,7 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 				'data-parent' => 0,
 				'data-reply-to' => $model->getId(),
 				'data-author' => $authorUser->username,
+				'data-title' => $model->title
 			]);
 		?>
 		</div>

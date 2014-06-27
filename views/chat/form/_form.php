@@ -31,7 +31,7 @@ switch(1)
 	]);
 	break;
 }
-?>
+?>Html::tag("div", '', ["role" => "replyToAuthor"]
 
 <div class="chat-form chat-form-container" id='chat-form<?= $parentId ?>'>
 	<?= \nitm\widgets\alert\Alert::widget(); ?>
@@ -100,7 +100,7 @@ switch(1)
 			echo Editor::widget($editorOptions);
 			break;
 		}
-		echo $widget->getActions($useModal || !$inline);
+		echo Html::tag("div", '', ["role" => "replyToIndicator", "class" => "message-reply-to"]).$widget->getActions($useModal || !$inline);
 	?>
 	<?= Html::activeHiddenInput($model, "reply_to", ['value' =>  null, "role" => "replyTo"]); ?>
     <?php 

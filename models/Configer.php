@@ -1592,7 +1592,7 @@ class Configer extends Model
 				$update['table'] = $this->configTables['values'];
 				$update['keys'] = ['value'];
 				$update['values'] = [$value];
-				$message = "Updated the value [$key] from ".$old_value['value']." to ".$value;
+				$message = "Updated the value [$key] from ".@$old_value['value']." to ".$value;
 				$update['condition'] = [
 					'key' => ['id'], 
 					'data' => [$this->cfg_id]
