@@ -54,7 +54,7 @@ if($useModal == true) {
 	}
 ?>
 <script type="text/javascript">
-$nitm.addOnLoadEvent(function () {
+$nitm.onModuleLoad('replies', function () {
 	$nitm.replies.init("chat");
 	$nitm.replies.initChatTabs("chat-navigation");
 	<?php if($updateOptions['enabled']): ?>

@@ -461,4 +461,7 @@ String.prototype.stripslashes = function () {
 	return this.replace('/\0/g', '0').replace('/\(.)/g', '$1');
 }
 
-$nitm.configuration = new Configuration();
+$nitm.addOnLoadEvent(function () {
+	$nitm.configuration = new Configuration();
+	$nitm.moduleLoaded('configuration');
+});

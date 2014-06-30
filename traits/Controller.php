@@ -84,22 +84,7 @@ use nitm\helpers\Response;
 	{
 		Response::initContext(\Yii::$app->controller,  \Yii::$app->controller->getView());
 		$render = (($partial === true) || (Response::$forceAjax === true)) ? 'renderAjax' : 'render';
-		switch(Response::getFormat())
-		{
-			/**
-			 * Render only the raw response if we have requested any of the following formats
-			 */
-			case 'json':
-			case 'jsonp':
-			case 'xml':
-			case 'raw':
-			return Response::render($result, $params, $partial);
-			break;
-			
-			default:
-			return $this->$render(Response::$viewPath, ['content' => Response::render($result, $params, $partial)]);
-			break;
-		}	
+		return Response::render($result, $params, $partial);
 	}
 	
 	/*

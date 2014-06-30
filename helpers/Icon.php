@@ -44,15 +44,19 @@ class Icon
 			switch($action)
 			{
 				case 'update':
-				$icon = (is_object($model) && $model->hasAttribute($attribute) && $model->$attribute == 1) ?  'pencil' : 'pencil';
+				$icon = 'pencil';
 				break;
 				
 				case 'delete':
-				$icon = (is_object($model) && $model->hasAttribute($attribute) && $model->$attribute == 1) ?  'plus' : 'trash-o';
+				$icon = 'trash-o';
 				break;
 				
 				case 'comment':
 				$icon = 'comment';
+				break;
+				
+				case 'view':
+				$icon = 'eye';
 				break;
 			}
 			break;

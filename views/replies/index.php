@@ -59,7 +59,7 @@ if($useModal == true) {
 ?>
 <?php if(\Yii::$app->request->isAjax ): ?>
 <script type="text/javascript">
-$nitm.addOnLoadEvent(function () {
+$nitm.onModuleLoad('replies', function () {
 	$nitm.replies.init("messages<?=$parentId?>");
 });
 </script>

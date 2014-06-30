@@ -259,12 +259,12 @@ function Nitm ()
 		switch(document.readyState)
 		{
 			case 'complete':
-				func();
-				break;
+			func();
+			break;
 				
 			default:
-				$(window).load(func);
-				break;
+			$(document).ready(func);
+			break;
 		}
 	}
 	
@@ -744,6 +744,17 @@ function Nitm ()
 			return value.ucfirst();
 		});
 		return string.join('');
+	}
+	
+	this.onModuleLoad = function(module, callback) {
+		$(window).on(module+'Loaded', function () {
+			callback();
+		});
+	}
+	
+	this.moduleLoaded = function(module) {
+		$(window).triggerHandler(module+'Loaded');
+		$(window).off(module+'Loaded');
 	}
 }
 

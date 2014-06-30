@@ -31,8 +31,7 @@ switch(1)
 	]);
 	break;
 }
-?>Html::tag("div", '', ["role" => "replyToAuthor"]
-
+?>
 <div class="chat-form chat-form-container" id='chat-form<?= $parentId ?>'>
 	<?= \nitm\widgets\alert\Alert::widget(); ?>
 	<div id="alert"></div>
@@ -108,8 +107,8 @@ switch(1)
 	?>
 
 <script type='text/javascript'>
-$nitm.addOnLoadEvent(function () {
-	$nitm.replies.initCreating('chatForm<?= $parentId ?>');
+$nitm.onModuleLoad('replies', function () {
+	$nitm.replies.initCreating('chat-form<?= $parentId ?>');
 });
 </script>
 </div>

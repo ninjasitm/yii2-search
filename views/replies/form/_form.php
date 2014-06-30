@@ -67,7 +67,7 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 </div>
 
 <script type='text/javascript'>
-$nitm.addOnLoadEvent(function () {
+$nitm.onModuleLoad('replies', function () {
 	$nitm.replies.initCreating('messagesForm<?= $parentId ?>');
 });
 </script>

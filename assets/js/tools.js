@@ -61,8 +61,14 @@ function Tools ()
 					switch(url != undefined)
 					{
 						case true:
-						$.get(url, function (result) {
-							element.html(result);
+						$.ajax({
+							url: url, 
+							dataType: 'html',
+							complete: function (result) {
+								self.evalScripts($(result.responseText), function () {
+									element.html(result.responseText);
+								});
+							}
 						});
 						break;
 					}
@@ -262,26 +268,41 @@ function Tools ()
 						case true:
 						element.removeAttr('disabled');
 						element.empty();	
+						var selected = !$(this).find(':selected').val() ? '' : $(this).find(':selected').val();
 						switch($(this).data('type'))
 						{
 							case 'html':
-							$.get(url+$(this).find(':selected').val()).done( function (result) {
-								element.html(result);
-							}, 'html');
+							$.ajax({
+								url: url+selected, 
+								dataType: 'html',
+								complete: function (result) {
+									self.evalScripts($(result.responseText), function () {
+										element.html(result.responseText);
+									});
+								}
+							});
 							break;
 							
 							case 'callback':
 							var callback = $(this).data('callback');
-							$.get(url+$(this).find(':selected').val()).done( function (result) {
-								callback(result);
-							}, 'json');
+							$.ajax({
+								url: url+selected, 
+								dataType: 'json',
+								complete: function (result) {
+									callback(result.responseText);
+								}
+							});
 							break;
 							
 							default:
-							$.get(url+$(this).find(':selected').val()).done( function (result) {
-								var result = $.parseJSON(result);
-								element.val(result);
-							}, 'json');
+							$.ajax({
+								url: url+selected, 
+								dataType: 'json',
+								complete: function (result) {
+									var result = $.parseJSON(result.responseText);
+									element.val(result);
+								}
+							});
 							break;
 						}
 						break;
@@ -290,6 +311,15 @@ function Tools ()
 				break;
 			}
 		});
+	}
+	
+	this.evalScripts = function (dom, callback) {
+        dom.filter('script').each(function(){
+            if(this.src) {
+				$.getScript(this.src);
+			}
+        });
+		if (typeof callback == 'function') $(document).ajaxStop(function(){callback()});
 	}
 	
 	/**
@@ -536,4 +566,5 @@ function Tools ()
 $nitm.addOnLoadEvent(function () {
 	$nitm.tools = new Tools();
 	$nitm.tools.init();
+	$nitm.moduleLoaded('tools');
 });
