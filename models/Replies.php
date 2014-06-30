@@ -31,6 +31,7 @@ class Replies extends BaseWidget
 	protected static $is = 'replies';
 	
 	const LAST_ACTIVITY = '___lastActivity';
+	const FORM_PARAM = '__withForm';
 	private $_dateFormat = "D M d Y g:iA";
 	
 	public function init()

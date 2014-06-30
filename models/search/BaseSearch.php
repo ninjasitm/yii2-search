@@ -97,11 +97,11 @@ class BaseSearch extends \nitm\models\Data
 				case 'integer':
 				case 'boolean':
 				case 'double':
-        		if(is_numeric($this->{$column->name})) $this->addCondition($query, $column->name);
+        		if(is_numeric($this->{$column->name})) $this->addCondition($query, $column->name, $value);
 				break;
 				
 				case 'string':
-        		if(is_string($this->{$column->name}))$this->addCondition($query, $column->name, $wildCardSearch);
+        		if(is_string($this->{$column->name})) $this->addCondition($query, $column->name, $value, !$wildCardSearch);
 				break;
 			}
 		}
@@ -109,15 +109,13 @@ class BaseSearch extends \nitm\models\Data
         return $dataProvider;
     }
 
-    protected function addCondition($query, $attribute, $partialMatch=false)
+    protected function addCondition($query, $attribute, $value, $partialMatch=false)
     {
         if (($pos = strrpos($attribute, '.')) !== false) {
             $modelAttribute = substr($attribute, $pos + 1);
         } else {
             $modelAttribute = $attribute;
         }
-
-        $value = $this->$modelAttribute;
         if (trim($value) === '') {
             return;
         }
@@ -226,7 +224,7 @@ class BaseSearch extends \nitm\models\Data
 				break;
 				
 				case 'text':
-				if(!empty($text)) 
+				if(!empty($value)) 
 				{
 					foreach($this->primaryModelTable->columns as $column)
 					{

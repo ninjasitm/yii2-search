@@ -4,6 +4,7 @@ use yii\helpers\Html;
 use yii\widgets\ListView;
 use kartik\icons\Icon;
 use nitm\widgets\replies\ChatModal;
+use nitm\models\Replies;
 
 /**
  * @var yii\web\View $this
@@ -28,6 +29,9 @@ if($useModal == true) {
 } else {
 	$modalOptions = ['class' => 'btn btn-success'];
 }
+
+$withForm = isset($withForm) ? $withForm : \Yii::$app->request->get(Replies::FORM_PARAM);
+
 ?>
 <?php
 	$listOptions = is_array($listOptions) ? $listOptions : [
@@ -35,17 +39,24 @@ if($useModal == true) {
 		'role' => 'chatMessages',
 	];
 	$messages = ListView::widget([
-		'layout' => "{items}",
+		'layout' => "{items}\n{pager}",
 		'options' => $listOptions,
 		'dataProvider' => $dataProvider,
 		'itemOptions' => ['class' => 'item'],
 		'itemView' => function ($model, $key, $index, $widget) use ($primaryModel) {
 				return $widget->render('@nitm/views/chat/view',['model' => $model, 'primaryModel' => $primaryModel]);
 		},
+		'pager' => [
+			'class' => \kop\y2sp\ScrollPager::className(),
+			'container' => '.chat-messages',
+			'eventOnScroll' => 'function() {alert("scrollin")}',
+			'negativeMargin' => 5,
+			'triggerText' => 'More Replies'
+		]
 	
 	]);
-	$form = (isset($withForm)&& $withForm == true) ? \nitm\widgets\replies\ChatForm::widget(['model' => $primaryModel]) : '';
-	echo Html::tag('div', $messages.$form, $options);
+	$form = ($withForm == true) ? \nitm\widgets\replies\ChatForm::widget(['model' => $primaryModel]) : '';
+	echo (\Yii::$app->request->isAjax) ? $messages.$form : Html::tag('div', $messages.$form, $options);
 ?>
 <?php
 	if(isset($modal))
@@ -55,7 +66,7 @@ if($useModal == true) {
 ?>
 <script type="text/javascript">
 $nitm.onModuleLoad('replies', function () {
-	$nitm.replies.init("chat");
+	$nitm.replies.init("chat0");
 	$nitm.replies.initChatTabs("chat-navigation");
 	<?php if($updateOptions['enabled']): ?>
 	$nitm.replies.initChatActivity("chat-navigation", "<?= $updateOptions['url'] ?>", <?= $updateOptions['interval']; ?>);

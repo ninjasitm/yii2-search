@@ -83,11 +83,6 @@ class ReplyController extends DefaultController
 		switch($type)
 		{
 			case 'chat':
-			$chatOptions = [
-				'role' => 'chatParent',
-				'id' => 'chat',
-				'class' => 'chat col-lg-4 col-md-4',
-			];
 			$updateOptions = [
 				"interval" => 60000,
 				"enabled" => true,
@@ -95,9 +90,8 @@ class ReplyController extends DefaultController
 			];
 			$replies = \nitm\widgets\replies\ChatMessages::widget([
 				'model' => $this->model, 
-				'withForm' => true,
-				'updateOptions' => $updateOptions,
-				'options' => $chatOptions
+				'withForm' => is_null(\Yii::$app->request->get(Replies::FORM_PARAM, null)) ? true : \Yii::$app->request->get(Replies::FORM_PARAM),
+				'updateOptions' => $updateOptions
 			]);
 			$form = false;
 			break;

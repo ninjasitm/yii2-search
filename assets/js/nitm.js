@@ -335,6 +335,8 @@ function Nitm ()
 	{
 		this.getObj(e).each(function () {
 			$(this).slideToggle('fast');
+			if($(this).hasClass('hidden')) 
+				$(this).removeClass('hidden');
 		});
 	}
 	//function to hcndle element visibility and hide others

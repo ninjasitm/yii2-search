@@ -73,6 +73,7 @@ switch(1)
 					'addon' => [
 						'prepend' => [
 							'content' => \nitm\widgets\priority\Priority::widget([
+								'size' => 'small',
 								'type' => 'addon',
 								'inputsInline' => true,
 								'addonType' => 'radiolist',
@@ -83,6 +84,7 @@ switch(1)
 							'asButton' => true
 						],
 						'groupOptions' => [
+							'class' => 'input-group input-group-sm'
 						]
 					],
 					'options' => [

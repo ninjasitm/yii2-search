@@ -44,46 +44,6 @@ function Tools ()
 	/**
 	 * Use data attributes to load a URL into a container/element
 	 */
-	this.initVisibility = function (containerId) {
-		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);	
-		//enable hide/unhide functionality with optional data retrieval
-		container.find("[role='visibility']").map(function(e) {
-			switch($(this).data('id') != undefined)
-			{
-				case true:
-				$(this).off('click');
-				$(this).on('click', function (e) {
-					e.preventDefault();
-					var id = $(this).data('id');
-					var element = $('#'+id);
-					var url = $(this).data('url');
-					url = !url ? $(this).attr('href') : url;
-					switch(url != undefined)
-					{
-						case true:
-						$.ajax({
-							url: url, 
-							dataType: 'html',
-							complete: function (result) {
-								self.evalScripts($(result.responseText), function () {
-									element.html(result.responseText);
-								});
-							}
-						});
-						break;
-					}
-					var success = ($(this).data('success') != undefined) ? $(this).data('success') : null;
-					eval(success);
-					$nitm.handleVis(id);
-				});
-				break;
-			}
-		});
-	}
-	
-	/**
-	 * Use data attributes to load a URL into a container/element
-	 */
 	this.initScrolledIntoView = function (containerId) {
 		_self = this;
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);	
@@ -211,6 +171,55 @@ function Tools ()
 	}
 	
 	/**
+	 * Use data attributes to load a URL into a container/element
+	 */
+	this.initVisibility = function (containerId) {
+		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);	
+		//enable hide/unhide functionality with optional data retrieval
+		container.find("[role='visibility']").map(function(e) {
+			switch($(this).data('id') != undefined)
+			{
+				case true:
+				$(this).off('click');
+				$(this).on('click', function (e) {
+					e.preventDefault();
+					var id = $(this).data('id');
+					var element = $nitm.getObj(id);
+					var url = $(this).data('url');
+					var on = $(this).data('on');
+					url = !url ? $(this).attr('href') : url;
+					var getUrl = true;
+					switch(on != undefined)
+					{
+						case true:
+						if($(on).get(0) == undefined) getUrl = false;
+						break;
+					}
+					switch(url != undefined && getUrl)
+					{
+						case true:
+						$.ajax({
+							url: url, 
+							dataType: 'html',
+							complete: function (result) {
+								self.evalScripts($(result.responseText), function () {
+									element.html(result.responseText);
+								});
+							}
+						});
+						break;
+					}
+					var success = ($(this).data('success') != undefined) ? $(this).data('success') : null;
+					eval(success);
+					$nitm.handleVis(id);
+					if($(this).data('toggle')) $nitm.handleVis($(this).data('toggle'));
+				});
+				break;
+			}
+		});
+	}
+	
+	/**
 	 * Populate another dropdown with data from the current dropdown
 	 */
 	this.initDynamicDropdown = function (containerId) {
@@ -263,12 +272,19 @@ function Tools ()
 					e.preventDefault();
 					var element = $nitm.getObj(id);
 					var url = $(this).data('url');
+					var on = $(this).data('on');
 					switch(url != undefined)
 					{
 						case true:
 						element.removeAttr('disabled');
 						element.empty();	
 						var selected = !$(this).find(':selected').val() ? '' : $(this).find(':selected').val();
+						switch(on != undefined)
+						{
+							case true:
+							if($(on).get(0) == undefined) return false;
+							break;
+						}
 						switch($(this).data('type'))
 						{
 							case 'html':
