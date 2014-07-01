@@ -305,7 +305,7 @@ function Tools ()
 								url: url+selected, 
 								dataType: 'json',
 								complete: function (result) {
-									callback(result.responseText);
+									callback(result);
 								}
 							});
 							break;
@@ -315,7 +315,7 @@ function Tools ()
 								url: url+selected, 
 								dataType: 'json',
 								complete: function (result) {
-									var result = $.parseJSON(result.responseText);
+									var result = $.parseJSON(result);
 									element.val(result);
 								}
 							});
@@ -329,6 +329,9 @@ function Tools ()
 		});
 	}
 	
+	/**
+	 * THis is used to evaluate remote js files returned in ajax calls
+	 */
 	this.evalScripts = function (dom, callback) {
         dom.filter('script').each(function(){
             if(this.src) {
@@ -337,6 +340,24 @@ function Tools ()
         });
 		if (typeof callback == 'function') $(document).ajaxStop(function(){callback()});
 	}
+	
+	/**
+	 * Fix for handling slow loading remote js with pjax.
+	 * We need to hook onto the before send function and not execute
+	 * until the scripts have been loaded.
+	 */
+	this.pjaxAjaxStop = function () {
+		$(document).on('pjax:beforeSend', function (event, xhr, options) {
+			var success = options.success;
+			options.success = function () {
+				$(document).ajaxStop(function () {
+					self.evalScripts($(xhr.responseText), function () {
+						success(xhr.responseText, status, xhr);
+					});
+				});
+			}
+		});
+	};
 	
 	/**
 	 * Remove the parent element up to a certain depth

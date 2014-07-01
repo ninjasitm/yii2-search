@@ -66,9 +66,9 @@ $withForm = isset($withForm) ? $withForm : \Yii::$app->request->get(Replies::FOR
 ?>
 <script type="text/javascript">
 $nitm.onModuleLoad('replies', function () {
-	$nitm.replies.init("chat0");
+	$nitm.replies.init("chat");
+	<?php if($updateOptions['enabled'] && !\Yii::$app->request->isAjax): ?>
 	$nitm.replies.initChatTabs("chat-navigation");
-	<?php if($updateOptions['enabled']): ?>
 	$nitm.replies.initChatActivity("chat-navigation", "<?= $updateOptions['url'] ?>", <?= $updateOptions['interval']; ?>);
 	<?php endif; ?>
 });
