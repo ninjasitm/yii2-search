@@ -91,7 +91,6 @@ class IssueController extends WidgetController
 				'contentOnly' => true
 			]
 		];
-		$this->setResponseFormat(\Yii::$app->request->isAjax ? 'modal' : 'html');
 		return $this->renderResponse(null, null, \Yii::$app->request->isAjax);
     }
 
@@ -120,7 +119,8 @@ class IssueController extends WidgetController
 					'dataProvider' => $dataProvider,
 					'options' => $options,
 					'parentId' => $id,
-					'parentType' => $type
+					'parentType' => $type,
+					'filterType' => $key
 				])
 			],
 			'modalOptions' => [

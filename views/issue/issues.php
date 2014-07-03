@@ -13,7 +13,7 @@ use nitm\models\Issues;
  */
 echo ListView::widget([
 	'options' => [
-		'id' => 'issues'.$parentId
+		'id' => 'issues-'.$filterType.'-list'.$parentId
 	],
 	'dataProvider' => $dataProvider,
 	'itemOptions' => ['class' => 'item'],
@@ -25,12 +25,11 @@ echo ListView::widget([
 
 ]);
 ?>
-
 <script type="text/javascript">
-$nitm.addOnLoadEvent(function () {
-	$nitm.issueTracker.init("issue<?=$parentId?>");
-	<?php if(\Yii::$app->request->isAjax): ?>
-	$nitm.tools.initVisibility("issue<?=$parentId?>");
-	<?php endif ?>
-});
+$nitm.onModuleLoad('issueTracker', function () {
+	$nitm.module('issueTracker').init("issues-<?=$filterType.'-list'.$parentId?>");
+	$nitm.module('tools').initVisibility("issues-<?=$filterType.'-list'.$parentId?>");
+	//$nitm.module('tools').initDynamicValue("issues-<?=$filterType.'-list'.$parentId?>");
+}, 'issueTrackerIssues');
 </script>
+<br>

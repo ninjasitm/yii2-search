@@ -20,7 +20,14 @@ class BaseSearch extends \nitm\models\Data
 	public $queryOptions = [];
 	
 	public $withThese = [];
-	public $searchType;
+	/**
+	 * Should wildcards be used for text searching?
+	 */
+	public $booleanSearch;
+	/**
+	 * Should the or clause be used?
+	 */
+	public $inclusiveSearch;
 	
 	const SEARCH_PARAM = '__searchType';
 	const SEARCH_FULLTEXT = 'text';
@@ -88,7 +95,6 @@ class BaseSearch extends \nitm\models\Data
 			$this->addQueryOptions($query);
             return $dataProvider;
         }
-		$wildCardSearch = \Yii::$app->request->get(static::SEARCH_PARAM) == static::SEARCH_FULLTEXT;
 		foreach($params[$this->primaryModelFormName] as $attr=>$value)
 		{
 			$column = $this->primaryModelTable->columns[$attr];
@@ -101,7 +107,7 @@ class BaseSearch extends \nitm\models\Data
 				break;
 				
 				case 'string':
-        		if(is_string($this->{$column->name})) $this->addCondition($query, $column->name, $value, !$wildCardSearch);
+        		if(is_string($this->{$column->name})) $this->addCondition($query, $column->name, $value, $this->booleanSearch);
 				break;
 			}
 		}
@@ -123,22 +129,37 @@ class BaseSearch extends \nitm\models\Data
 		{
 			case is_numeric($value) && !$partialMatch:
 			case is_bool($value) && !$partialMatch:
-            $query->andWhere([$attribute => $value]);
+            switch($this->inclusiveSearch)
+			{
+				case true:
+				$query->orWhere([$attribute => $value]);
+				break;
+				
+				default:
+				$query->andWhere([$attribute => $value]);
+				break;
+			}
 			break;
 			
 			default:
-			if ($partialMatch) {
-				if(\Yii::$app->request->get(static::SEARCH_PARAM) == static::SEARCH_FULLTEXT)
+			switch($partialMatch) 
+			{
+				case true:
+				switch($this->inclusiveSearch)
 				{
+					case true:
 					$query->orWhere(['like', "LOWER(".$attribute.")", $value]);
-				}
-				else
-				{
+					break;
+					
+					default:
 					$query->andWhere(['like', "LOWER(".$attribute.")", $value]);
+					break;
 				}
-			}
-			else {
+				break;
+				
+				default:
             	$query->andWhere([$attribute => $value]);
+				break;
 			}
 			break;
 		}

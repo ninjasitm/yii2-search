@@ -84,7 +84,7 @@ class Response extends Behavior
 			case 'modal':
 			$params['view'] =  empty($params['view']) ? static::$viewPath :  $params['view'];
 			$params['args']['options'] = isset(static::$viewOptions['options']) ? static::$viewOptions['options'] : [];
-			$ret_val = static::$controller->$render(static::$controllerModal, 
+			$ret_val = static::$controller->$render(static::$viewModal, 
 				[
 					'content' => static::$controller->$render($params['view'], $params['args'], static::$controller),
 					'footer' => @$params['footer'],

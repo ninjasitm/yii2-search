@@ -1,14 +1,13 @@
 <?php
 
-namespace nitm\models\security;
+namespace nitm\helpers\security;
 
-use \yii\helpers\Security;
 
 /**
  * This class helps with security and creates a unique fingerprint based on the user's browser
  */
 
-class Fingerprint extends Security
+class Fingerprint
 {
 	
 	public static $logtext = [];

@@ -21,10 +21,8 @@ function Tools ()
 	
 	this.init = function () {
 		this.defaultInit.map(function (method, key) {
-			if(typeof $nitm.tools[method] == 'function')
-			{
-				$nitm.tools[method]();
-			}
+			if(typeof self[method] == 'function')
+				self[method]();
 		});
 	}
 	
@@ -174,7 +172,7 @@ function Tools ()
 	 * Use data attributes to load a URL into a container/element
 	 */
 	this.initVisibility = function (containerId) {
-		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);	
+		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
 		//enable hide/unhide functionality with optional data retrieval
 		container.find("[role='visibility']").map(function(e) {
 			switch($(this).data('id') != undefined)
@@ -195,14 +193,14 @@ function Tools ()
 						if($(on).get(0) == undefined) getUrl = false;
 						break;
 					}
-					switch(url != undefined && getUrl)
+					switch((url.length >= 1) && getUrl)
 					{
 						case true:
 						$.ajax({
 							url: url, 
 							dataType: 'html',
 							complete: function (result) {
-								self.evalScripts($(result.responseText), function () {
+								self.evalScripts(result.responseText, function () {
 									element.html(result.responseText);
 								});
 							}
@@ -211,8 +209,13 @@ function Tools ()
 					}
 					var success = ($(this).data('success') != undefined) ? $(this).data('success') : null;
 					eval(success);
-					$nitm.handleVis(id);
+					$nitm.handleVis(id, true);
 					if($(this).data('toggle')) $nitm.handleVis($(this).data('toggle'));
+					if($(this).data("remove-event") == 1) {
+						$(this).off('click');
+						$(this).attr('href', '');
+						$(this).data('url', '');
+					}
 				});
 				break;
 			}
@@ -292,7 +295,7 @@ function Tools ()
 								url: url+selected, 
 								dataType: 'html',
 								complete: function (result) {
-									self.evalScripts($(result.responseText), function () {
+									self.evalScripts(result.responseText, function () {
 										element.html(result.responseText);
 									});
 								}
@@ -332,13 +335,23 @@ function Tools ()
 	/**
 	 * THis is used to evaluate remote js files returned in ajax calls
 	 */
-	this.evalScripts = function (dom, callback) {
+	this.evalScripts = function (text, callback) {
+		var dom = $(text);
+		//Load remote scripts before ading content to DOM
         dom.filter('script').each(function(){
             if(this.src) {
 				$.getScript(this.src);
-			}
+			} 
         });
-		if (typeof callback == 'function') $(document).ajaxStop(function(){callback()});
+		if (typeof callback == 'function') $(document).one('ajaxComplete', function () {
+			callback();
+			//Execute javasript after callback has been called
+			dom.filter('script').each(function(){
+				if($(this).text()) {
+					eval($(this).text());
+				}
+			});
+		});
 	}
 	
 	/**
@@ -601,7 +614,5 @@ function Tools ()
 }
 
 $nitm.addOnLoadEvent(function () {
-	$nitm.tools = new Tools();
-	$nitm.tools.init();
-	$nitm.moduleLoaded('tools');
+	$nitm.initModule('tools', new Tools());
 });

@@ -23,18 +23,21 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 			break;
 		}
 	?>
-	<div class="avatar">
+	<div class="message-avatar">
 		<img id='messageAvatar<?= $model->id; ?>' class="avatar avatar-small" alt="<? $authorUser->username; ?>" src="<?= $authorUser->getAvatar(); ?>" />
 	</div>
 	<div id="messageHeader<?= $model->id ?>" class="message-header">
-		<div class="">
-			Posted on <?= $model->created_at ?> by <?= $authorUser->username ?>
-		</div>
+		<?php if($model->replyTo != null): ?>
+			<a class="reply-to-author" href="#message<?= $model->replyTo->id ?>">@<?= $model->replyTo->authorUser->username ?></a><span class="reply-to-author"><?= $model->replyTo->title ?></span>
+		<?php endif; ?>
 	</div>
 	<div id="messageBody<?= $model->id ?>" class="message-body">
 		<p role='message'> <?=$model->message ?> </p>
 	</div>
 	<div id="messageFooter<?= $model->id ?>" class="message-footer">
+		<div id="messageMeta<?= $model->getId() ?>" class="message-meta">
+			Posted on <?= $model->created_at ?> by<a class="author" href="#" role="usernameLink"><?= $authorUser->username ?></a>
+		</div>
 		<div id="messageActions<?= $model->id ?>" class="message-actions">
 		<?php
 			if(\Yii::$app->userMeta->isAdmin())

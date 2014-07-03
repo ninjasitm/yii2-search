@@ -1,7 +1,7 @@
 <?php
 
 use yii\helpers\Html;
-use nitme\models\Issues;
+use nitm\models\Issues;
 
 /**
  * @var yii\web\View $this
@@ -15,7 +15,7 @@ $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => [
 $this->params['breadcrumbs'][] = $this->title;
 $enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get(Issues::COMMENT_PARAM);
 ?>
-<div class="issues-create">
+<div class="issues-create wrapper">
 
     <h3><?= Html::encode($this->title) ?></h2>
 

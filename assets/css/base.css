@@ -152,3 +152,27 @@ a.bg-duplicate:hover {
   background-color: transparent;
   border-color: transparent;
 }
+
+
+.list-group-item-transparent {
+  color: inherit;
+  background-color: transparent;
+}
+a.list-group-item-transparent {
+  color: inherit;
+}
+a.list-group-item-transparent .list-group-item-heading {
+  color: inherit;
+}
+a.list-group-item-transparent:hover,
+a.list-group-item-transparent:focus {
+  color: inherit;
+  background-color: transparent;
+}
+a.list-group-item-transparent.active,
+a.list-group-item-transparent.active:hover,
+a.list-group-item-transparent.active:focus {
+  color: inherit;
+  background-color: transparent;
+  border-color: #3c763d;
+}

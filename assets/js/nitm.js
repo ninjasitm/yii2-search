@@ -9,6 +9,9 @@ if (typeof jQuery === 'undefined') { throw new Error('Nitm\'s JavaScript require
 function Nitm ()
 {
 	var self = this;
+	this.events = {};
+	this.current ='';
+	this.modules = {};
 	this.r = {'url':'/r/', 'type':'POST', 'dataType':'json'};
 	this.responseSection = 'alert';
 	this.classes = {
@@ -331,13 +334,26 @@ function Nitm ()
 		}
 	}
 	
-	this.handleVis = function (e)
+	this.handleVis = function (e, onlyShow)
 	{
-		this.getObj(e).each(function () {
-			$(this).slideToggle('fast');
-			if($(this).hasClass('hidden')) 
-				$(this).removeClass('hidden');
-		});
+		switch(onlyShow)
+		{
+			case true:
+			this.getObj(e).each(function () {
+				$(this).show('slow');
+				if($(this).hasClass('hidden')) 
+					$(this).removeClass('hidden');
+			});
+			break;
+			
+			default:
+			this.getObj(e).each(function () {
+				$(this).slideToggle('slow');
+				if($(this).hasClass('hidden')) 
+					$(this).toggleClass('hidden');
+			});
+			break;
+		}
 	}
 	//function to hcndle element visibility and hide others
 	this.handleVisHideOther = function (iSub, iRowObj)
@@ -476,8 +492,8 @@ function Nitm ()
 		switch(this.r.hasOwnProperty('token'))
 		{
 			case true:
-				this.r.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Basic "+this.r.token);};
-				break;
+			this.r.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Basic "+this.r.token);};
+			break;
 		}
 		if (rUrl != undefined) {
 			//code
@@ -492,7 +508,7 @@ function Nitm ()
 		{
 			for(var key in headers)
 			{
-				r[key] = headers[key];
+				this.r.beforeSend = function (xhr) {xhr.setRequestHeader(key, headers[key])};
 			}
 		}
 		var ret_val = $.ajax(this.r);
@@ -748,15 +764,104 @@ function Nitm ()
 		return string.join('');
 	}
 	
-	this.onModuleLoad = function(module, callback) {
-		$(window).on(module+'Loaded', function () {
-			callback();
+	/**
+	 * Module related functions
+	 */
+	this.onModuleLoad = function(module, callback, namespace) {
+		var ns = namespace == undefined ? '' : '.'+namespace;
+		var event = 'nitm:'+module+ns;
+		$('body').one(event, callback);
+		switch(self.hasModule(module, false))
+		{
+			case true:
+			self.moduleLoaded(module, namespace);
+			break;
+		}
+	}
+	
+	this.moduleLoaded = function(module, namespace) {
+		var ns = namespace == undefined ? '' : '.'+namespace;
+		var event = 'nitm:'+module+ns;
+		$('body').trigger(event);
+	}
+	
+	this.module = function (name, defaultValue) {
+		var found = false;
+		var hierarchy = name.split(':');
+		var index = this;
+		for(var i in hierarchy)
+		{
+			if (index.hasOwnProperty('modules')) {
+				index = index.modules;
+			} 
+			if(index.hasOwnProperty(hierarchy[i])) {
+				index = index[hierarchy[i]];
+				if(i == (hierarchy.length - 1)) {
+					found = true;
+					break;
+				}
+			}
+		}
+		ret_val = (found === true) ? index : defaultValue;
+		return ret_val;
+	}
+	
+	this.hasModule = function (name) {
+		var ret_val = self.module(name, false) === false ? false : true;
+		return ret_val;
+	}
+	
+	this.setModule = function (name, module) {
+		var hierarchy = name.split(':');
+		var moduleName = hierarchy.pop();
+		var parent = (hierarchy.length == 0) ? self : self.module(hierarchy.join(':'));
+		if(!parent.hasOwnProperty('modules')) {
+			parent['modules'] = {};
+			Object.defineProperty(parent, 'modules', {
+				'value': new Object,
+				'enumerable': true
+			});
+		}
+		Object.defineProperty(parent.modules, moduleName, {
+			'value': module,
+			'enumerable': true
 		});
 	}
 	
-	this.moduleLoaded = function(module) {
-		$(window).triggerHandler(module+'Loaded');
-		$(window).off(module+'Loaded');
+	this.setCurrent = function (index) {
+		if(index != undefined) {
+			self.current = index;
+		}
+	}
+	
+	this.initModule = function (name, object) {
+		switch(typeof object == 'object') {
+			case true:
+			switch(self.hasModule(name))
+			{
+				case false:
+				if(typeof object['init'] == 'function')
+					object.init();
+				self.current = name;
+				self.setModule(name, object);
+				self.moduleLoaded(name);
+				break;
+			}
+			break;
+		}
+		switch((typeof self.defaultInit == 'object') && (self.selfInit == false))
+		{
+			case true:
+			self.defaultInit.map(function (method, key) {
+				if(typeof self[method] == 'function')
+				{
+					var container = (typeof object == 'object') ? object.views.container : '';
+					self[method](name, container);
+				}
+			});
+			self.selfInit = true;
+			break;
+		}
 	}
 }
 
@@ -764,4 +869,4 @@ String.prototype.ucfirst = function() {
 	return this.charAt(0).toUpperCase() + this.slice(1);
 }
 
-$nitm = new Nitm();
+$nitm = (window.$nitm == undefined) ? new Nitm() : $nitm;

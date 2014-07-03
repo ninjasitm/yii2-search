@@ -7,7 +7,7 @@ use yii\base\Model;
 use yii\base\Event;
 use nitm\models\Data;
 use nitm\models\User;
-use nitm\models\security\Fingerprint;
+use nitm\helpers\security\Fingerprint;
 use nitm\interfaces\DataInterface;
 
 /**
@@ -134,9 +134,9 @@ class Replies extends BaseWidget
 		{
 			case !empty($using[2]):
 			case !empty($using['key']):
-			$this->constraints['parent_key'] = date($this->_dateFormat, strtotime(isset($using['key']) ? $using['key'] : $using[2]));
-			$this->queryFilters['parent_key'] = $this->constraints['parent_key'];
-			$this->parent_key = $this->constraints['parent_key'];
+			//$this->constraints['parent_key'] = date($this->_dateFormat, strtotime(isset($using['key']) ? $using['key'] : $using[2]));
+			//$this->queryFilters['parent_key'] = $this->constraints['parent_key'];
+			//$this->parent_key = $this->constraints['parent_key'];
 			break;
 		}
 		//constrain for admin user

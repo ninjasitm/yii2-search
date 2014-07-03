@@ -110,7 +110,7 @@ switch(1)
 
 <script type='text/javascript'>
 $nitm.onModuleLoad('replies', function () {
-	$nitm.replies.initCreating('chat-form<?= $parentId ?>');
+	$nitm.module('replies').initCreating('chat-form<?= $parentId ?>');
 });
 </script>
 </div>

@@ -93,7 +93,11 @@ class Form extends Behavior
 						$title = ($model->getIsNewRecord() ? "Create" : "Update")." ".ucfirst($model->isWhat());
 						break;
 					}
-					$footer = isset($options['footer']) ? $options['footer'] : Html::submitButton($model->isNewRecord ? \Yii::t('app', 'Create') :\ Yii::t('app', 'Update'), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']);
+					$options['formId'] = isset($options['formId']) ? $options['formId'] : $model->isWhat()."_form";
+					$footer = isset($options['footer']) ? $options['footer'] : Html::submitButton($model->isNewRecord ? \Yii::t('app', 'Create') :\ Yii::t('app', 'Update'), [
+						'class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary',
+						'form' => $options['formId'].$model->getId()
+					]);
 					Response::$viewOptions = [
 						"view" => $options['view'],
 						'modalOptions' => $modalOptions,
