@@ -266,7 +266,7 @@ function Nitm ()
 			break;
 				
 			default:
-			$(document).ready(func);
+			$(document).ready(function () {func()});
 			break;
 		}
 	}
@@ -840,11 +840,24 @@ function Nitm ()
 			switch(self.hasModule(name))
 			{
 				case false:
-				if(typeof object['init'] == 'function')
-					object.init();
 				self.current = name;
 				self.setModule(name, object);
-				self.moduleLoaded(name);
+				if(typeof object.init == 'function') {
+					switch(document.readyState)
+					{
+						case 'complete':
+						object.init();
+						self.moduleLoaded(name);
+						break;
+						
+						default:
+						$(document).ready(function () {
+							object.init();
+							self.moduleLoaded(name);
+						});							
+						break;
+					}
+				}
 				break;
 			}
 			break;
@@ -853,8 +866,7 @@ function Nitm ()
 		{
 			case true:
 			self.defaultInit.map(function (method, key) {
-				if(typeof self[method] == 'function')
-				{
+				if(typeof self[method] == 'function'){
 					var container = (typeof object == 'object') ? object.views.container : '';
 					self[method](name, container);
 				}

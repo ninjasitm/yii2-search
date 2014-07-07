@@ -519,7 +519,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	 */
 	public static function properName($value)
 	{
-		$ret_val = empty($value) ?  [] : preg_replace('/[\-\_]/', " ", $value);
+		$ret_val = empty($value) ?  '' : preg_replace('/[\-\_]/', " ", $value);
 		return implode(' ', array_map('ucfirst', explode(' ', $ret_val)));
 	}
 	

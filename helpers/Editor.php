@@ -71,6 +71,8 @@ class Editor extends \yii\imperavi\Widget
 			$this->htmlOptions['rows'] = 3;
 			break;
 		}
+		$this->htmlOptions['id'] = 'editor'.uniqid();
+		$this->selector = $this->htmlOptions['id'];
 		$this->htmlOptions['role'] = $this->role;
 		return parent::run();
 	}
