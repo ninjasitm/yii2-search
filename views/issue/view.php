@@ -18,8 +18,9 @@ $enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request
 if($enableComments == true) $repliesModel = new \nitm\models\Replies([
 	"constrain" => [$model->getId(), $model->isWhat()]
 ]);
+$uniqid = uniqid();
 ?>
-<div id="issue<?= $model->getId() ?>" class="issues-view <?= \nitm\helpers\Statuses::getIndicator($model->getStatus())?> wrapper" style="border-bottom: solid thin gray">
+<div id="issue<?= $uniqid ?>" class="issues-view <?= \nitm\helpers\Statuses::getIndicator($model->getStatus())?> wrapper" style="border-bottom: solid thin gray">
 	<div class="row">
 		<div class="col-md-12 col-lg-12">
 			<div class="row">
@@ -94,7 +95,7 @@ if($enableComments == true) $repliesModel = new \nitm\models\Replies([
 <?php if(\Yii::$app->request->isAjax): ?>
 <script type="text/javascript">
 $nitm.onModuleLoad('issueTracker', function () {
-	$nitm.module('tools').initVisibility("issue<?= $model->getId() ?>");
+	$nitm.module('tools').initVisibility("issue<?= $uniqid ?>");
 }, 'issueTrackerView');
 </script>
 <?php endif ?>

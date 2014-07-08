@@ -79,6 +79,7 @@ class ReplyController extends DefaultController
      */
     public function actionIndex($type, $id, $key=null)
     {
+		$uniqid = uniqid();
 		$this->model = new Replies(['constrain' => [$id, $type, $key]]);
 		switch($type)
 		{
@@ -99,10 +100,12 @@ class ReplyController extends DefaultController
 			default:
 			$replies = RepliesWidget::widget([
 				"model" => $this->model, 
+				'uniqid' => $uniqid
 			]);
 			$form = RepliesForm::widget([
 				"model" => $this->model, 
-				'useModal' => false
+				'useModal' => false, 
+				'uniqid' => $uniqid
 			]);
 			break;
 		}

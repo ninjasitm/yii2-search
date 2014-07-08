@@ -35,7 +35,7 @@ function Tools ()
 	 */
 	this.initSubmitSelect = function (containerId) {
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);	
-		container.find("[role='changeSubmit']").map(function(e) {
+		container.find("[role~='changeSubmit']").map(function(e) {
 			$(this).off('change');
 			$(this).on('change', function (event) {
 				window.location.replace($(this).val());
@@ -178,7 +178,7 @@ function Tools ()
 	this.initVisibility = function (containerId) {
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
 		//enable hide/unhide functionality with optional data retrieval
-		container.find("[role='visibility']").map(function(e) {
+		container.find("[role~='visibility']").map(function(e) {
 			var id = $(this).data('id');
 			switch(id != undefined)
 			{
@@ -209,13 +209,9 @@ function Tools ()
 						});
 						break;
 					}
-					var success = ($(this).data('success') != undefined) ? $(this).data('success') : null;
+					var success = ($(object).data('success') != undefined) ? $(object).data('success') : null;
 					eval(success);
-					if($(this).data('toggle')) $nitm.handleVis($(this).data('toggle'));
-					if($(this).data("remove-event") == 1) {
-						$(this).attr('href', '');
-						$(this).data('url', '');
-					}
+					if($(object).data('toggle')) $nitm.handleVis($(object).data('toggle'));
 					$nitm.handleVis(id);
 				}
 				$(this).off('click');
@@ -226,10 +222,6 @@ function Tools ()
 					$(this).one('click', function (e) {
 						e.preventDefault();
 						dynamicFunction(this);
-					});
-					$(this).on('click', function (e) {
-						e.preventDefault();
-						$nitm.handleVis(id, true);
 					});
 					break;
 					
@@ -250,7 +242,7 @@ function Tools ()
 	 */
 	this.initDynamicDropdown = function (containerId) {
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);		
-		container.find("[role='dynamicDropdown']").map(function(e) {
+		container.find("[role~='dynamicDropdown']").map(function(e) {
 			var id = $(this).data('id');
 			switch(id != undefined)
 			{
@@ -288,7 +280,7 @@ function Tools ()
 	this.initDynamicValue = function (containerId) {
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
 		//enable hide/unhide functionality with optional data retrieval
-		container.find("[role='dynamicValue']").map(function(e) {
+		container.find("[role~='dynamicValue']").map(function(e) {
 			switch($(this).data('id') != undefined)
 			{
 				case true:
@@ -456,8 +448,7 @@ function Tools ()
 	this.initRemoveParent = function (containerId) {
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
 		//enable hide/unhide functionality
-		container.find("[role='removeParent']").map(function(e) {
-			$(this).off('click');
+		container.find("[role~='removeParent']").map(function(e) {
 			$(this).on('click', function (e) {
 				e.preventDefault();
 				self.removeParent(this);
@@ -486,8 +477,7 @@ function Tools ()
 	this.initDisableParent = function (containerId) {
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
 		//enable hide/unhide functionality
-		container.find("[role='removeParent']").map(function(e) {
-			$(this).off('click');
+		container.find("[role~='disableParent']").map(function(e) {
 			$(this).on('click', function (e) {
 				self.disableParent(this);
 				return false;
@@ -647,7 +637,7 @@ function Tools ()
 	 */
 	this.initAutocompleteSelect = function (containerId) {
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
-		container.find("[role='autocompleteSelect']").each(function() {
+		container.find("[role~='autocompleteSelect']").each(function() {
 			$(this).on('autocompleteselect', function (e, ui) {
 				e.preventDefault();
 				var element = $(this).data('real-input');

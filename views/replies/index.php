@@ -12,6 +12,7 @@ use nitm\widgets\replies\RepliesModal;
  * @var app\models\search\Replies $searchModel
  */
 
+$uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 $title = Yii::t('app', 'Replies: '.ucfirst($parentType).": ".$parentId);
 switch(\Yii::$app->request->isAjax)
 {
@@ -35,7 +36,7 @@ if($useModal == true) {
 	<?php
 		$options = is_array($options) ? $options : [
 			'role' => 'entityMessages',
-			'id' => 'messages'.$parentId,
+			'id' => 'messages'.$uniqid,
 			'data-parent' => 'replyFormParent'
 		];
 		echo ListView::widget([
@@ -45,8 +46,8 @@ if($useModal == true) {
 			'options' => $options,
 			'dataProvider' => $dataProvider,
 			'itemOptions' => ['class' => 'item'],
-			'itemView' => function ($model, $key, $index, $widget) {
-					return $widget->render('@nitm/views/replies/view',['model' => $model]);
+			'itemView' => function ($model, $key, $index, $widget) use($uniqid) {
+					return $widget->render('@nitm/views/replies/view',['model' => $model, 'uniqid' => $uniqid]);
 			},
 			'pager' => ['class' => \kop\y2sp\ScrollPager::className()]
 		
@@ -62,7 +63,7 @@ if($useModal == true) {
 <?php if(\Yii::$app->request->isAjax ): ?>
 <script type="text/javascript">
 $nitm.onModuleLoad('replies', function () {
-	$nitm.module('replies').init("messages<?=$parentId?>");
+	$nitm.module('replies').init("messages<?=$uniqid?>");
 });
 </script>
 <?php endif; ?>

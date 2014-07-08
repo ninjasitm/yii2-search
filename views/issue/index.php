@@ -13,6 +13,7 @@ use nitm\models\Issues;
  * @var app\models\search\Issues $searchModel
  */
 
+$uniqid = uniqid();
 $title = Yii::t('app', 'Issues: '.ucfirst($parentType).": ".$parentId);
 switch(\Yii::$app->request->isAjax)
 {
@@ -36,7 +37,7 @@ $baseModel = new Issues;
 		'enableComments' => $enableComments
 	]);
 ?>
-<div class="issues-index wrapper" id="issue-tracker<?=$parentId?>">
+<div class="issues-index wrapper" id="issue-tracker<?=$uniqid?>">
 	<h3><?= Html::encode($title) ?></h3>
 	<?=
 		Tabs::widget([
@@ -46,93 +47,93 @@ $baseModel = new Issues;
 					'label' => 'Open '.Html::tag('span', $dataProviderOpen->getCount(), ['class' => 'badge']),
 					'content' =>Html::tag('div', $issuesOpen,
 						[
-							'id' => 'open-issues-content'.$parentId,
+							'id' => 'open-issues-content'.$uniqid,
 						]
 					),
 					'options' => [
-						'id' => 'open-issues'.$parentId
+						'id' => 'open-issues'.$uniqid
 					],
 					'headerOptions' => [
-						'id' => 'open-issues-tab'.$parentId
+						'id' => 'open-issues-tab'.$uniqid
 					],
 					'linkOptions' => [
 						'role' => 'dynamicValue',
 						'data-type' => 'html',
-						'data-id' => '#open-issues'.$parentId,
+						'data-id' => '#open-issues'.$uniqid,
 						'data-url' => \Yii::$app->urlManager->createUrl(['/issue/issues/'.$parentType.'/'.$parentId, '__format' => 'html', Issues::COMMENT_PARAM => $enableComments]),
-						'id' => 'open-issues-link'.$parentId
+						'id' => 'open-issues-link'.$uniqid
 					]
 				],
 				[
 					'label' => 'Closed '.Html::tag('span', $dataProviderClosed->getCount(), ['class' => 'badge']),
 					'content' => Html::tag('div', $issuesClosed,
 						[
-							'id' => 'closed-issues-content'.$parentId,
+							'id' => 'closed-issues-content'.$uniqid,
 						]
 					),
 					'options' => [
-						'id' => 'closed-issues'.$parentId
+						'id' => 'closed-issues'.$uniqid
 					],
 					'headerOptions' => [
-						'id' => 'closed-issues-tab'.$parentId
+						'id' => 'closed-issues-tab'.$uniqid
 					],
 					'linkOptions' => [
 						'role' => 'dynamicValue',
 						'data-type' => 'html',
-						'data-id' => '#closed-issues'.$parentId,
+						'data-id' => '#closed-issues'.$uniqid,
 						'data-url' => \Yii::$app->urlManager->createUrl(['/issue/issues/'.$parentType.'/'.$parentId.'/closed', '__format' => 'html', Issues::COMMENT_PARAM => $enableComments]),
-						'id' => 'closed-issues-link'.$parentId
+						'id' => 'closed-issues-link'.$uniqid
 					]
 				],
 				[
 					'label' => 'Create Issue ',
 					'content' => Html::tag('div', $issuesForm,
 						[
-							'id' => 'create-issue'.$parentId,
+							'id' => 'create-issue'.$uniqid,
 						]
 					),
 					'options' => [
-						'id' => 'issues-form'.$parentId
+						'id' => 'issues-form'.$uniqid
 					],
 					'headerOptions' => [
-						'id' => 'issues-form-tab'.$parentId,
+						'id' => 'issues-form-tab'.$uniqid,
 						'class' => 'bg-success'
 					],
 					'linkOptions' => [ 
-						'id' => 'issues-form-link'.$parentId,
+						'id' => 'issues-form-link'.$uniqid,
 					]
 				],
 				[
 					'label' => 'Update Issue ',
 					'content' => Html::tag('div', '',
 						[
-							'id' => 'update-issue'.$parentId,
+							'id' => 'update-issue'.$uniqid,
 							'style' => 'display:none'
 						]
 					),
 					'options' => [
-						'id' => 'issues-update-form'.$parentId
+						'id' => 'issues-update-form'.$uniqid
 					],
 					'headerOptions' => [
-						'id' => 'issues-update-form-tab'.$parentId,
+						'id' => 'issues-update-form-tab'.$uniqid,
 						'class' => 'hidden'
 					],
 					'linkOptions' => [
-						'id' => 'issues-update-form-link'.$parentId, 
+						'id' => 'issues-update-form-link'.$uniqid, 
 					]
 				],
 				[
 					'label' => Html::tag('div', '',
 						[
-							'id' => 'issues-alerts-message'.$parentId,
+							'id' => 'issues-alerts-message'.$uniqid,
 						]
 					),
 					'content' => '',
 					'headerOptions' => [
-						'id' => 'issues-alerts-tab'.$parentId,
+						'id' => 'issues-alerts-tab'.$uniqid,
 					],
 					'linkOptions' => [
-						'id' => 'issues-alerts-link'.$parentId, 
+						'id' => 'issues-alerts-link'.$uniqid, 
 					]
 				]
 			]
@@ -143,11 +144,11 @@ $baseModel = new Issues;
 <script type="text/javascript">
 <?php if(\Yii::$app->request->isAjax): ?>
 $nitm.onModuleLoad('issueTracker', function () {
-	$nitm.module('issueTracker').init("issue-tracker<?=$parentId?>");
+	$nitm.module('issueTracker').init("issue-tracker<?=$uniqid?>");
 }, 'issueTrackerIndex');
 $nitm.onModuleLoad('tools', function () {
-	$nitm.module('tools').initVisibility("issue-tracker<?=$parentId?>");
-	$nitm.module('tools').initDynamicValue("issue-tracker<?=$parentId?>");
+	$nitm.module('tools').initVisibility("issue-tracker<?=$uniqid?>");
+	$nitm.module('tools').initDynamicValue("issue-tracker<?=$uniqid?>");
 }, 'issueTrackerIndex');
 <?php endif ?>
 </script>
@@ -155,10 +156,10 @@ $nitm.onModuleLoad('tools', function () {
 <?php 
 	function getIssues($dataProvider, $options=[])
 	{
-		global $parentId;
+		global $uniqid;
 		return ListView::widget([
 			'options' => [
-				'id' => 'issues'.$parentId,
+				'id' => 'issues'.$uniqid,
 				'class' => 'col-md-12 col-lg-12'
 			],
 			'dataProvider' => $dataProvider,

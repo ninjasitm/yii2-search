@@ -12,20 +12,21 @@ use nitm\widgets\editor\Editor;
  * @var yii\widgets\ActiveForm $form
  */
 
+$uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 $action = ($model->getIsNewRecord()) ? "create" : "update";
 ?>
 
-<div class="message-form" id='messagesForm<?= $parentId ?>'>
+<div class="message-form" id='messagesForm<?= $uniqid ?>'>
 	<?= \nitm\widgets\alert\Alert::widget(); ?>
 	<div id="alert"></div>
 	<h3>Reply</h3>
 	<?php $form = ActiveForm::begin([
-			'id' => 'reply_form'.$parentId,
+			'id' => 'reply_form'.$uniqid,
 			'type' => ActiveForm::TYPE_HORIZONTAL,
 			"action" => "/reply/new/".$parentType."/".$parentId.(isset($parentKey) ? "/".urlencode($parentKey) : ''),
 			"options" => [
 				'data-editor' => $editor,
-				'data-parent' => 'messages'.$parentId,
+				'data-parent' => 'messages'.$uniqid,
 				"role" => "replyForm",
 			],
 			"fieldConfig" => [
@@ -42,7 +43,7 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 				'Click to Reply',
 				[
 					'role' => "startEditor",
-					'data-container' => 'messagesForm'.$parentId,
+					'data-container' => 'messagesForm'.$uniqid,
 					'data-editor' => $editor,
 					'data-id' => $parentId,
 					'data-use-modal' => @$useModal ? 'true' : 'false',
@@ -52,7 +53,7 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 			break;
 			
 			default:
-			$editorOptions['id'] = 'message'.$parentId;
+			$editorOptions['id'] = 'reply-message'.$uniqid;
 			$editorOptions['model'] = $model;
 			$editorOptions['attribute'] = 'message';
 			$editorOptions['role'] = 'message';
@@ -67,6 +68,6 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 </div>
 <script type="text/javascript">
 $nitm.onModuleLoad('replies', function () {
-	$nitm.module('replies').initCreating('messagesForm<?= $parentId ?>');
+	$nitm.module('replies').initCreating('messagesForm<?= $uniqid ?>');
 });
 </script>

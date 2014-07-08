@@ -11,11 +11,12 @@ use nitm\models\Issues;
  * @var yii\widgets\ActiveForm $form
  */
 
+$uniqid = uniqid();
 $action = ($model->getIsNewRecord()) ? "create" : "update";
 $enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request->get(Issues::COMMENT_PARAM);
 ?>
 
-<div class="issues-form row" id='issues-form'>
+<div class="issues-form row" id='issues-form<?=$uniqid?>'>
 	<div class="col-lg-12 col-md-12">
 		<?= \nitm\widgets\alert\Alert::widget(); ?>
 		<div id="alert"></div>
@@ -24,7 +25,8 @@ $enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request
 			"type" => ActiveForm::TYPE_VERTICAL,
 			'action' => \Yii::$app->urlManager->createUrl(['/issue/'.$action.($model->getIsNewRecord() ? "" : "/".$model->getId()), Issues::COMMENT_PARAM => $enableComments]),
 			'options' => [
-				"role" => "updateIssue"
+				"role" => $action."Issue",
+				'id' => 'issue-'.$action.'-form'.$uniqid
 			],
 			'fieldConfig' => [
 				'inputOptions' => ['class' => 'form-control'],
@@ -52,6 +54,7 @@ $enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request
 					],
 					'options' => [
 						'class' => 'chat-message-title',
+						'id' => 'chat-message-title'.$uniqid,
 					]
 				])->textInput([
 				'placeholder' => "Title for this issue",
@@ -79,6 +82,6 @@ $enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request
 
 <script type='text/javascript'>
 $nitm.onModuleLoad('issueTracker', function () {
-	$nitm.module('issueTracker').initCreateUpdate('#issues-form');
+	$nitm.module('issueTracker').initCreateUpdate('#issues-form<?=$uniqid?>');
 });
 </script>

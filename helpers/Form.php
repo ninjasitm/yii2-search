@@ -89,8 +89,16 @@ class Form extends Behavior
 						$title = $model->getAttribute($options['title'][0]);
 						break;
 						
+						case is_string($options['title']):
+						$title = $options['title'];
+						break;
+						
+						/*case is_array($options['title']):
+						$title = @$options['title'][1];
+						break;*/
+						
 						default:
-						$title = ($model->getIsNewRecord() ? "Create" : "Update")." ".ucfirst($model->isWhat());
+						$title = ($model->getIsNewRecord() ? "Create" : "Update")." ".ucfirst($model->properName($model->isWhat()));
 						break;
 					}
 					$options['formId'] = isset($options['formId']) ? $options['formId'] : $model->isWhat()."_form";
