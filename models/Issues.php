@@ -27,7 +27,7 @@ class Issues extends BaseWidget
 	const COMMENT_PARAM = '__enComm';
 	
 	public static $statuses = [
-		'normal' => 'default',
+		'normal' => 'disabled',
 		'important' => 'info',
 		'critical' => 'error'
 	];

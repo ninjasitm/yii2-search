@@ -202,8 +202,8 @@ function Tools ()
 							url: url, 
 							dataType: 'html',
 							complete: function (result) {
-								self.evalScripts(result.responseText, function () {
-									element.html(result.responseText);
+								self.evalScripts(result.responseText, function (responseText) {
+									element.html(responseText);
 								});
 							}
 						});
@@ -308,8 +308,8 @@ function Tools ()
 								url: url+selected, 
 								dataType: 'html',
 								complete: function (result) {
-									self.evalScripts(result.responseText, function () {
-										element.html(result.responseText);
+									self.evalScripts(result.responseText, function (responseText) {
+										element.html(responseText);
 									});
 								}
 							});
@@ -395,7 +395,9 @@ function Tools ()
 	 */
 	this.evalScripts = function (text, callback) {
 		var dom = $(text);
-		var scripts = dom.filter('script');
+		//Need to find top level and nested scripts in returned text
+		var scripts = dom.find('script');
+		$.merge(scripts, dom.filter('script'));
 		//Load remote scripts before ading content to DOM
 		scripts.each(function(){
 			if(this.src) {
@@ -408,14 +410,14 @@ function Tools ()
 				var wrapperId = 'wrapper'+Date.now();
 				var wrapper = $('<div id="'+wrapperId+'">').append(dom);
 				//Execute basic init on new content
-				var c = function () {
-					try {
+				(function () {
+					return $.Deferred(function (deferred) {
 						callback($('<div>').append(wrapper).html());
-					} catch (error) {}
-				}
-				$.when(c()).done(function () {
+						deferred.resolve();
+					}).promise();
+				})().then(function () {
 					self.coreInit(wrapperId);
-					dom.filter('script').each(function(){
+					scripts.each(function(){
 						if($(this).text()) {
 							eval($(this).text());
 							$(this).remove();
@@ -681,6 +683,4 @@ function Tools ()
 	}
 }
 
-$nitm.addOnLoadEvent(function () {
-	$nitm.initModule('tools', new Tools());
-});
+$nitm.initModule('tools', new Tools());

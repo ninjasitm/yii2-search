@@ -51,7 +51,8 @@ $baseModel = new Issues;
 						]
 					),
 					'options' => [
-						'id' => 'open-issues'.$uniqid
+						'id' => 'open-issues'.$uniqid,
+						'style' => 'color:black;'
 					],
 					'headerOptions' => [
 						'id' => 'open-issues-tab'.$uniqid
@@ -72,7 +73,8 @@ $baseModel = new Issues;
 						]
 					),
 					'options' => [
-						'id' => 'closed-issues'.$uniqid
+						'id' => 'closed-issues'.$uniqid,
+						'style' => 'color:black;'
 					],
 					'headerOptions' => [
 						'id' => 'closed-issues-tab'.$uniqid
@@ -144,6 +146,7 @@ $baseModel = new Issues;
 <script type="text/javascript">
 <?php if(\Yii::$app->request->isAjax): ?>
 $nitm.onModuleLoad('issueTracker', function () {
+	console.log('Waiting for issueTracker');
 	$nitm.module('issueTracker').init("issue-tracker<?=$uniqid?>");
 }, 'issueTrackerIndex');
 $nitm.onModuleLoad('tools', function () {

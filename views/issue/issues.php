@@ -13,7 +13,8 @@ use nitm\models\Issues;
  */
 echo ListView::widget([
 	'options' => [
-		'id' => 'issues-'.$filterType.'-list'.$parentId
+		'id' => 'issues-'.$filterType.'-list'.$parentId,
+		'style' => 'color:black;'
 	],
 	'dataProvider' => $dataProvider,
 	'itemOptions' => ['class' => 'item'],

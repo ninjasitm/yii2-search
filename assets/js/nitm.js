@@ -266,7 +266,7 @@ function Nitm ()
 			break;
 				
 			default:
-			$(document).ready(function () {func()});
+			$(document).ready(func);
 			break;
 		}
 	}
@@ -826,6 +826,7 @@ function Nitm ()
 			'value': module,
 			'enumerable': true
 		});
+		self.moduleLoaded(name);
 	}
 	
 	this.setCurrent = function (index) {
@@ -837,7 +838,7 @@ function Nitm ()
 	this.initModule = function (name, object) {
 		switch(typeof object == 'object') {
 			case true:
-			switch(self.hasModule(name))
+			switch(self.hasModule(name, false))
 			{
 				case false:
 				self.current = name;
@@ -847,17 +848,19 @@ function Nitm ()
 					{
 						case 'complete':
 						object.init();
-						self.moduleLoaded(name);
 						break;
 						
 						default:
 						$(document).ready(function () {
 							object.init();
-							self.moduleLoaded(name);
 						});							
 						break;
 					}
 				}
+				break;
+				
+				default:
+				object.init();
 				break;
 			}
 			break;

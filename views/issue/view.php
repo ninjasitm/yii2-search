@@ -20,7 +20,7 @@ if($enableComments == true) $repliesModel = new \nitm\models\Replies([
 ]);
 $uniqid = uniqid();
 ?>
-<div id="issue<?= $uniqid ?>" class="issues-view <?= \nitm\helpers\Statuses::getIndicator($model->getStatus())?> wrapper" style="border-bottom: solid thin gray">
+<div id="issue<?=$model->getId()?> issue<?= $uniqid ?>" class="issues-view <?= \nitm\helpers\Statuses::getIndicator($model->getStatus())?> wrapper" style="color:auto;border-bottom: solid thin gray">
 	<div class="row">
 		<div class="col-md-12 col-lg-12">
 			<div class="row">
@@ -30,7 +30,7 @@ $uniqid = uniqid();
 				</h4>
 				<h4 class="col-md-5 col-lg-5 text-right"><small>by <b><?= $model->authorUser->fullName(true) ?></b> on <?= $model->created_at ?></small></h4>
 			</div>
-			<p class=""><?= $model->notes; ?></p>
+			<p><?= $model->notes; ?></p>
 		</div>
 		<div class="col-md-8 col-lg-8 text-left">
 			<div class="pull-left">

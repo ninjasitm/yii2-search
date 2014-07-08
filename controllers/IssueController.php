@@ -101,7 +101,16 @@ class IssueController extends WidgetController
      */
     public function actionIssues($type, $id, $key='open')
     {
-		$this->model = Issues::findModel(['type' => $type, 'id' => $id]);
+		switch($type)
+		{
+			case 'all':
+			$this->model = new Issues();
+			break;
+			
+			default:	
+			$this->model = Issues::findModel(['type' => $type, 'id' => $id]);
+			break;
+		}
 		$searchModel = new IssuesSearch;
 		$searchModel->withThese = ['closeUser', 'resolveUser'];
 		$get = \Yii::$app->request->getQueryParams();
