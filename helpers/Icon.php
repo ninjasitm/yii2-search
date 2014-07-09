@@ -15,7 +15,7 @@ class Icon
 	 */
 	public static function forAction($action, $attribute=null, $model=null, $options=[])
 	{
-		$icon = '';
+		$icon = $action;
 		switch(is_object($model) && $model->hasAttribute($attribute))
 		{
 			case true:

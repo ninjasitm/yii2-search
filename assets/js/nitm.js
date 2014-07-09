@@ -118,6 +118,22 @@ function Nitm ()
 		}
 	}
 	
+	this.startSpinner = function (elem) {
+		var element = $(elem);
+		var style = $(element).css(['font-size', 'line-height', 'width']);
+		console.log(style);
+		element.data('old-html', element.html());
+		element.html('');
+		element.append("<span class='spinner'><i class='fa fa-spin fa-spinner'></i></span>");
+		element.addClass('has-spinner active');
+	}
+	
+	this.stopSpinner = function (elem) {
+		var element = $(elem);
+		element.removeClass('has-spinner active');
+		element.data('old-html', '');
+	}
+	
 	this.dump = function (arr,level) 
 	{
 		var dumped_text = "";

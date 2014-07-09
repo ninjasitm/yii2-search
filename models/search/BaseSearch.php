@@ -30,6 +30,7 @@ class BaseSearch extends \nitm\models\Data
 	public $inclusiveSearch;
 	
 	const SEARCH_PARAM = '__searchType';
+	const SEARCH_PARAM_BOOL = '__searchIncl';
 	const SEARCH_FULLTEXT = 'text';
 	const SEARCH_NORMAL = 'default';
 	
@@ -39,6 +40,8 @@ class BaseSearch extends \nitm\models\Data
 	
 	public function init()
 	{
+		$this->booleanSearch = isset($_REQUEST[self::SEARCH_PARAM_BOOL]) ? true : $this->booleanSearch;
+		$this->inclusiveSearch = isset($_REQUEST[self::SEARCH_PARAM]) ? true : $this->inclusiveSearch;
 		$class = $this->getModelClass(static::formName());
 		$this->primaryModel = new $class;
 		$this->primaryModelAttributes = $this->primaryModel->attributes();
