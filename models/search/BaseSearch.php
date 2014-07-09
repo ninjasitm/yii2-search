@@ -151,11 +151,11 @@ class BaseSearch extends \nitm\models\Data
 				switch($this->inclusiveSearch)
 				{
 					case true:
-					$query->orWhere(['like', "LOWER(".$attribute.")", $value]);
+					$query->orWhere(['like', "LOWER(".$attribute.")", strtolower($value)]);
 					break;
 					
 					default:
-					$query->andWhere(['like', "LOWER(".$attribute.")", $value]);
+					$query->andWhere(['like', "LOWER(".$attribute.")", strtolower($value)]);
 					break;
 				}
 				break;

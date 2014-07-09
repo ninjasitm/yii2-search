@@ -195,7 +195,7 @@ function Tools ()
 						if($(on).get(0) == undefined) getUrl = false;
 						break;
 					}
-					switch((url != '#') && (url.length >= 2) && getUrl)
+					switch((url != undefined) && (url != '#') && (url.length >= 2) && getUrl)
 					{
 						case true:
 						$.ajax({
@@ -393,7 +393,7 @@ function Tools ()
 	/**
 	 * THis is used to evaluate remote js files returned in ajax calls
 	 */
-	this.evalScripts = function (text, callback) {
+	this.evalScripts = function (text, callback, options) {
 		var dom = $(text);
 		//Need to find top level and nested scripts in returned text
 		var scripts = dom.find('script');
@@ -407,8 +407,31 @@ function Tools ()
 		});
 		if (typeof callback == 'function') {
 			$(document).one('ajaxStop', function () {
-				var wrapperId = 'wrapper'+Date.now();
-				var wrapper = $('<div id="'+wrapperId+'">').append(dom);
+				switch(options != undefined)
+				{
+					case true:
+					var existing = (options.context == undefined) ? false : options.context.attr('id');
+					break;
+					
+					default:
+					var existing = false;
+					break;
+				}
+				var existingWrapper = !existing ? false : $nitm.getObj(existing).find("[role='nitmToolsAjaxWrapper']").attr('id');
+				switch(!existingWrapper)
+				{
+					case false:
+					var wrapperId = existingWrapper;
+					var wrapper = $('#'+wrapperId);
+					wrapper.html('').html(dom.html());
+					break;
+					
+					default:
+					var wrapperId = 'nitm-tools-ajax-wrapper'+Date.now();
+					var wrapper = $('<div id="'+wrapperId+'" role="nitmToolsAjaxWrapper">');
+					wrapper.append(dom);
+					break;
+				}
 				//Execute basic init on new content
 				(function () {
 					return $.Deferred(function (deferred) {
@@ -439,7 +462,7 @@ function Tools ()
 			options.success = function () {
 				self.evalScripts(xhr.responseText, function (responseText) {
 					success(responseText, status, xhr);
-				});
+				}, options);
 			}
 		});
 	};
