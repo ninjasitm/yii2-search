@@ -16,8 +16,8 @@ trait Configer {
 	{
 		$module = \Yii::$app->getModule('nitm');
 		$container = empty($container) ? $module->configOptions['container'] : $container;
-		$module->configModel->setEngine($module->configOptions['engine']);
-		$module->configModel->setType($module->configOptions['engine'], $container);
+		$module->config->setEngine($module->configOptions['engine']);
+		$module->config->setType($module->configOptions['engine'], $container);
 		switch($module->configOptions['engine'])
 		{
 			case 'file':
@@ -31,7 +31,7 @@ trait Configer {
 			break;
 			
 			default:
-			$config = $module->configModel->getConfig($module->configOptions['engine'], $container, true);
+			$config = $module->config->getConfig($module->configOptions['engine'], $container, true);
 			switch($container)
 			{
 				case $module->configOptions['container']:

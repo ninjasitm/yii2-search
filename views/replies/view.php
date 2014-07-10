@@ -26,7 +26,7 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 		}
 	?>
 	<div class="message-avatar">
-		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar avatar-small" alt="<? $authorUser->username; ?>" src="<?= $authorUser->getAvatar(); ?>" />
+		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar avatar-small" alt="<? $authorUser->username; ?>" src="<?= $authorUser->avatar(); ?>" />
 	</div>
 	<div id="messageHeader<?= $localUniqid ?>" class="message-header">
 		<?php if($model->replyTo != null): ?>
@@ -42,7 +42,7 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 		</div>
 		<div id="messageActions<?= $localUniqid ?>" class="message-actions">
 		<?php
-			if(\Yii::$app->userMeta->isAdmin())
+			if(\Yii::$app->user->identity->isAdmin())
 			{
 				echo Html::a($model->hidden ? 'unhide' : 'hide', \Yii::$app->urlManager->createUrl(['/reply/hide/'.$model->getId()]), [
 					'id' => "hideMessage".$model->getId(),

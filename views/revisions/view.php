@@ -10,7 +10,7 @@ use kartik\icons\Icon;
  * @var nitm\module\models\Revisions $model
  */
 
-$this->title = "Revision for ".$model->parent_type." by ".\Yii::$app->userMeta->getFullName(true, $model->author);
+$this->title = "Revision for ".$model->parent_type." by ".$model->authorUser->username;
 $this->params['breadcrumbs'][] = ['label' => 'Revisions', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>

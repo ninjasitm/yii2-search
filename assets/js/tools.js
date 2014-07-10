@@ -16,7 +16,6 @@ function Tools ()
 		'initOffCanvasMenu',
 		'initAutocompleteSelect',
 		'initSubmitSelect',
-		'initScrolledIntoView'
 	];
 	
 	this.init = function (containerId) {
@@ -41,135 +40,6 @@ function Tools ()
 				window.location.replace($(this).val());
 			});
 		});
-	}
-	
-	/**
-	 * Use data attributes to load a URL into a container/element
-	 */
-	this.initScrolledIntoView = function (containerId) {
-		_self = this;
-		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);	
-		this._watch = [];
-		this.$window = $(window),
-		this._buffer = null;
-		
-		this.init = function () {
-			/**
-			 * Scrolled into view plugin
-			 */
-			var pluginName = 'scrolledIntoView',
-			settings = {
-				scrolledin: null,
-				scrolledout: null
-			}
-			
-			$.fn[pluginName] = function( options ) {
-				var options = $.extend({}, settings, options);
-				this.each( function () {
-					var $el = $(this),
-						   instance = $.data( this, pluginName );
-						   if ( instance ) {
-							   instance.options = options;
-						   } else {
-							   $.data(this, pluginName, _self.monitor( $el, options ) );
-							   $el.on( 'remove', $.proxy( function () {
-								   $.removeData(this, pluginName);
-								   self.unmonitor( instance );
-							   }, this ) );
-						   }
-				});
-				return this;
-			}
-			
-			/**
-			 * Intiialze scroll monitor
-			 */
-			this.monitorElement(window);
-			this.monitorElement("[role~='scrolledIntoViewContainer']");
-			
-			
-			/*
-			 * Find elements that need to be activated on scrolledIntoView
-			 */
-			container.find("[role~='onScrolledIntoView']").map(function(e) {
-				var inCallback = window[$(this).data('on-scrolled-in')];
-				var outCallback = window[$(this).data('on-scrolled-out')];
-				switch(_self.test($(this)))
-				{
-					case true:
-						try {inCallback()} catch(error) {};
-						break;
-						
-					default:
-						$(this)
-						.scrolledIntoView()
-						.on('scrolledin', function () { try {inCallback()} catch(error) {}})
-						.on('scrolledout', function () { try {outCallback()} catch(error) {}});
-						break;
-				}
-			});
-			return this;
-		}
-		
-		this.monitorElement = function (containerId) {
-			var container = (container == undefined) ? 'body' : container;
-			$(container).on('scroll', function (e) {
-				if ( !this._buffer ) {
-					_self._buffer = setTimeout(function () {
-						_self.isInView(e);
-						_self._buffer = null;
-					}, 300);
-					_self.monitor($(container));
-				}
-			});
-		}
-		
-		this.monitor = function( element, options ) {
-			var item = { element: element, options: options, invp: false };
-			_self._watch.push(item);
-			return item;
-		}
-		
-		
-		this.unmonitor = function( item ) {
-			for ( var i=0;i<_watch.length;i++ ) {
-				if ( _self._watch[i] === item ) {
-					_self._watch.splice( i, 1 );
-					item.element = null;
-					break;
-				}
-			}
-		}
-		
-		
-		this.test = function ($el) {
-			var docViewTop = this.$window.scrollTop(),
-			docViewBottom = docViewTop + this.$window.height(),
-			elemTop = $el.offset().top,
-			elemBottom = elemTop + $el.height();
-			
-			return ((elemBottom >= docViewTop) && (elemTop <= docViewBottom)
-			&& (elemBottom <= docViewBottom) &&  (elemTop >= docViewTop) );
-		}
-		
-		this.isInView = function (e) {
-			
-			$.each(_self._watch, function () {
-				
-				if ( _self.test( this.element ) ) {
-					if ( !this.invp ) {
-						this.invp = true;
-						if ( this.options && this.options.scrolledin ) this.options.scrolledin.call( this.element, e );
-				   this.element.trigger( 'scrolledin', e );
-					}
-				} else if ( this.invp ) {
-					this.invp = false;
-					if ( this.options.scrolledout ) this.options.scrolledout.call( this.element, e );
-				   this.element.trigger( 'scrolledout', e );
-				}
-			});
-		}
-		this.init();
 	}
 	
 	/**
@@ -362,33 +232,6 @@ function Tools ()
 			}
 		});
 	}
-	
-	/**
-	 * THis is used to evaluate remote js files returned in ajax calls
-	 */
-	/*this.evalScripts = function (text, callback) {
-		var dom = $(text);
-		//Load remote scripts before ading content to DOM
-        dom.filter('script').each(function(){
-            if(this.src) {
-				$.getScript(this.src);
-				$(this).remove();
-			} 
-        });
-		if (typeof callback == 'function') {
-			$(document).one('ajaxStop', function () {
-				callback();
-				//Execute javasript after callback has been called
-				dom.filter('script').each(function(){
-					if($(this).text()) {
-						eval($(this).text());
-						$(this).remove();
-					}
-				});
-				self.init();	
-			});
-		}
-	}*/
 	
 	/**
 	 * THis is used to evaluate remote js files returned in ajax calls

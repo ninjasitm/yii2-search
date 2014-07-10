@@ -140,7 +140,7 @@ class Replies extends BaseWidget
 			break;
 		}
 		//constrain for admin user
-		switch(\Yii::$app->userMeta->isAdmin())
+		switch(\Yii::$app->user->identity->isAdmin())
 		{
 			case false:
 			$this->queryFilters['hidden'] = 0;

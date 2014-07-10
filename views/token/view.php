@@ -32,7 +32,7 @@ $this->params['breadcrumbs'][] = $this->title;
 			[
 				'attribute' => 'user_id',
 				'name' => 'user_id',
-				'value' => $model->getUserName(),
+				'value' => $model->authoruser->url(),
 			],
 			'token:ntext',
 			'added',

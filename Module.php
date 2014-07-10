@@ -34,20 +34,20 @@ class Module extends \yii\base\Module
 	/*
 	 * @var nitm\models\Configer object
 	 */
-	public $configModel;
+	public $config;
 	
 	/*
 	 * @var nitm\models\Logger object
 	 */
-	public $logModel;
+	public $logger;
 
 	public function init()
 	{
 		parent::init();
 		// custom initialization code goes here
-		$this->configModel = new models\Configer($this->configOptions);
+		$this->config = new models\Configer($this->configOptions);
 		$this->logOptions['db'] = DB::getDefaultDbName();
-		$this->logModel = new models\Logger();
+		$this->logger = new models\Logger();
 		Session::del(Session::current);
 		
 		/**

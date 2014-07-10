@@ -63,7 +63,7 @@ class Logger extends DB
 		}
 		//$currentUser = Session::getVal(AUTH_DOMAIN.'.username');
 		$this->logDir = is_dir($this->logDir) ? $this->logDir : $_SERVER['DOCUMENT_ROOT'].$this->logDir;
-		$this->currentUser = ($this->currentUser == '') ? $this->currentUser : User::getUsername();
+		$this->currentUser = ($this->currentUser == '') ? $this->currentUser : \Yii::$app->user->identity->username;
 	}
 	
 	public function __destruct()
@@ -309,7 +309,7 @@ class Logger extends DB
 				case 1:
 				parent::changeDbt($this->logDb, $this->logTable);
 				$this->prepareDb();
-				$this->currentUser = (!$this->currentUser) ? User::getUsername() : $this->currentUser;
+				$this->currentUser = (!$this->currentUser) ? \Yii::$app->user->username : $this->currentUser;
 				$hostname = (empty($_SERVER['REMOTE_HOST'])) ? Network::getHost(@$_SERVER['REMOTE_ADDR']) : $_SERVER['REMOTE_HOST'];
 				$hostname = (empty($hostname)) ? 'localhost' : $hostname;
 				$ipaddr = (!empty($_SERVER['REMOTE_ADDR'])) ? $_SERVER['REMOTE_ADDR'] : 'localhost';

@@ -61,7 +61,7 @@ class User extends Model
 		switch($this->getScenario())
 		{
 			case 'apiSearch':
-			$dataProvider->query->select(['id', 'username', '(SELECT name FROM `tbl_profile` WHERE user_id=id) AS name']);
+			$dataProvider->query->select(['id', 'username', '(SELECT name FROM `profile` WHERE user_id=id) AS name']);
 			$this->setAttributes($params);
 			if($this->validate())
 			{
@@ -111,8 +111,8 @@ class User extends Model
 		$this->addCondition($query, 'role', true);
 		$this->addCondition($query, 'email');
 		$this->addCondition($query, 'email', true);
-		//$this->addCondition($query, ['name' => $this->term, 'value' => '(SELECT name FROM `tbl_profile`.`name` WHERE name="'.$this->term.'")', 'operator' => 'in']);
-		$this->addCondition($query,  ['name' => '', 'value' => '(SELECT 1 FROM `tbl_profile` WHERE (LOWER(`tbl_profile`.`name`) LIKE "%'.strtolower($this->term).'%") OR (`tbl_profile`.`public_email` LIKE "%'.$this->term.'") OR (`tbl_profile`.`gravatar_email` LIKE "%'.$this->term.'") AND `tbl_profile`.`user_id`=id)', 'operator' => 'expression'], true);
+		//$this->addCondition($query, ['name' => $this->term, 'value' => '(SELECT name FROM `profile`.`name` WHERE name="'.$this->term.'")', 'operator' => 'in']);
+		$this->addCondition($query,  ['name' => '', 'value' => '(SELECT 1 FROM `profile` WHERE (LOWER(`profile`.`name`) LIKE "%'.strtolower($this->term).'%") OR (`profile`.`public_email` LIKE "%'.$this->term.'") OR (`profile`.`gravatar_email` LIKE "%'.$this->term.'") AND `profile`.`user_id`=id)', 'operator' => 'expression'], true);
 		return $dataProvider;
 	}
 

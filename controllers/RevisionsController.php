@@ -54,7 +54,6 @@ class RevisionsController extends WidgetController
 				'contentOnly' => true
 			]
 		];
-		$this->setResponseFormat(\Yii::$app->request->isAjax ? 'modal' : 'html');
 		return $this->renderResponse(null, null, \Yii::$app->request->isAjax);
     }
 

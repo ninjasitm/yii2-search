@@ -24,7 +24,7 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 		}
 	?>
 	<div id="messageAvatar<?= $model->getId() ?>" class="message-avatar">
-		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar-small" alt="<? $authorUser->username; ?>" src="<?= $authorUser->getAvatar(); ?>" />
+		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar-small" alt="<? $authorUser->username; ?>" src="<?= $authorUser->avatar(); ?>" />
 	</div>
 	<div id="messageHeader<?= $model->getId() ?>" class="message-header">
 		<?php if($model->replyTo != null): ?>

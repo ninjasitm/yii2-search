@@ -117,10 +117,13 @@ class DefaultController extends Controller
 			case true:
 			foreach($this->_jsFiles as $js)
 			{
-				switch($js['src'][0] == ':')
+				switch(1)
 				{
-					case true:
-					$js['src'] = substr($script, 1, strlen($js['src']));
+					case $js['src'][0] == ':':
+					$js['src'] = substr($js['src'], 1, strlen($js['src']));
+					break;
+					
+					case $js['src'][0] == '@':
 					break;
 					
 					default:
@@ -128,11 +131,23 @@ class DefaultController extends Controller
 					break;
 				}
 				$js['src'] = $js['src'].'.js';
-				switch(file_exists(Yii::$app->basePath.'/web'.$js['src']))
+				switch(1)
 				{
-					case true:
+					case file_exists(\Yii::$app->basePath.'/web'.$js['src']):
 					$js['src'] = Yii::$app->UrlManager->baseUrl.$js['src'];
 					$this->view->registerJsFile($js['src'], @$js['depends'], ["position" => $js['position']]);
+					break;
+					
+					case file_exists(\Yii::getAlias($js['src'])):
+					echo \Yii::getAlias("@web");
+					$f = pathinfo($js['src']);
+					$asset = new \yii\web\AssetBundle([
+						'sourcePath' => $f['dirname'],
+						'js' => [$f['basename']],
+						'jsOptions' => ["position" => $js['position']]
+					]);
+					$asset->publish($this->view->getAssetManager());
+					$this->view->assetBundles[$f['basename']] = $asset;
 					break;
 				}
 			}
@@ -155,9 +170,10 @@ class DefaultController extends Controller
 				case true:
 				foreach($jscript as $script)
 				{
-					$this->_jsFiles[] = array('src' => $script,
-											'position' => (($footer === true) ? \yii\web\View::POS_END : \yii\web\View::POS_HEAD)
-					);
+					$this->_jsFiles[] = [
+						'src' => $script,
+						'position' => (($footer === true) ? \yii\web\View::POS_END : \yii\web\View::POS_HEAD)
+					];
 				}
 				break;
 			}

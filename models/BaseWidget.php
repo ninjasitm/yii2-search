@@ -12,7 +12,7 @@ use nitm\models\security\Fingerprint;
 use nitm\interfaces\DataInterface;
 
 /**
- * Class Replies
+ * Class BaseWidget
  * @package nitm\models
  *
  */
@@ -242,13 +242,13 @@ class BaseWidget extends Data implements DataInterface
 	public function hasNew()
 	{
 		$queryFilters = is_array($this->queryFilters) ? $this->queryFilters : null;
-		$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.\Yii::$app->userMeta->lastActive()];
+		$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.\Yii::$app->user->identity->lastActive()];
 		$ret_val = $this->find()
 			->where($queryFilters)
 			->orderBy([array_shift($this->primaryKey()) => SORT_DESC])
 			->andWhere($andWhere)
 			->count();
-		\Yii::$app->userMeta->updateActivity();
+		\Yii::$app->user->identity->updateActivity();
 		return $ret_val;
 	}
 	
@@ -258,7 +258,7 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function isNew()
 	{
-		$this->userLastActive = is_null($this->userLastActive) ? \Yii::$app->userMeta->lastActive() : $this->userLastActive;
+		$this->userLastActive = is_null($this->userLastActive) ? \Yii::$app->user->identity->lastActive() : $this->userLastActive;
 		return strtotime($this->created_at) > $this->userLastActive;
 	}
 	

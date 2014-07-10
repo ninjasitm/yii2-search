@@ -40,7 +40,7 @@ $this->params['breadcrumbs'][] = $this->title;
 				'label' => 'User',
 				'attribute' => 'user_id',
 				'value' => function ($model) {
-					return $model->user->getFullName();
+					return $model->user->fullName(true);
 				},
 			],
 			'token:ntext',
