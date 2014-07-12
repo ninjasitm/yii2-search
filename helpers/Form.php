@@ -41,11 +41,20 @@ class Form extends Behavior
 						
 						default:
 						$pk = $model->primaryKey();
-						$find = $model->find()->where([$pk[0] => $model->unique]);
+						$find = $model->find()->select('*')->where([$pk[0] => $model->unique]);
 						switch(1)
 						{
 							case isset($options['modelOptions']['withThese']):
 							$find->with($options['modelOptions']['withThese']);
+							break;
+						}
+						switch(!empty($options['queryOptions']) && is_array($options['queryOptions']))
+						{
+							case true:
+							foreach($options['queryOptions'] as $type=>$value)
+							{
+								$find->$type($value);
+							}
 							break;
 						}
 						$found = $find->one();

@@ -68,7 +68,7 @@ function Tools ()
 					switch((url != undefined) && (url != '#') && (url.length >= 2) && getUrl)
 					{
 						case true:
-						$.ajax({
+						var ret_val = $.ajax({
 							url: url, 
 							dataType: 'html',
 							complete: function (result) {
@@ -83,6 +83,7 @@ function Tools ()
 					eval(success);
 					if($(object).data('toggle')) $nitm.handleVis($(object).data('toggle'));
 					$nitm.handleVis(id);
+					return ret_val;
 				}
 				$(this).off('click');
 				switch($(this).data('run-once'))
@@ -90,15 +91,23 @@ function Tools ()
 					case true:
 					case 1:
 					$(this).one('click', function (e) {
+						var element = this;
 						e.preventDefault();
-						dynamicFunction(this);
+						$nitm.startSpinner(this);
+						$.when(dynamicFunction(this)).done(function () {
+							$nitm.stopSpinner(element);
+						});
 					});
 					break;
 					
 					default:
 					$(this).on('click', function (e) {
+						var element = this;
 						e.preventDefault();
-						dynamicFunction(this);
+						$nitm.startSpinner(this);
+						$.when(dynamicFunction(this)).done(function () {
+							$nitm.stopSpinner(element);
+						});
 					});
 					break;
 				}
@@ -126,7 +135,8 @@ function Tools ()
 					{
 						case true:
 							element.removeAttr('disabled');
-							element.empty();	$.get(url+$(this).find(':selected').val()).done( function (result) {
+							element.empty();	
+							var ret_val = $.get(url+$(this).find(':selected').val()).done( function (result) {
 								var result = $.parseJSON(result);
 								element.append( $('<option></option>').val('').html('Select value...') );
 								if(typeof result == 'object')
@@ -138,6 +148,7 @@ function Tools ()
 							}, 'json');
 							break;
 					}
+					return ret_val;
 				});
 				break;
 			}
@@ -154,6 +165,7 @@ function Tools ()
 			switch($(this).data('id') != undefined)
 			{
 				case true:
+				var ret_val = null;
 				var dynamicFunction = function (object) {
 					var id = $(object).data('id');
 					var element = $nitm.getObj(id);
@@ -174,7 +186,7 @@ function Tools ()
 						switch($(object).data('type'))
 						{
 							case 'html':
-							$.ajax({
+							var ret_val = $.ajax({
 								url: url+selected, 
 								dataType: 'html',
 								complete: function (result) {
@@ -187,7 +199,7 @@ function Tools ()
 							
 							case 'callback':
 							var callback = $(object).data('callback');
-							$.ajax({
+							var ret_val = $.ajax({
 								url: url+selected, 
 								dataType: 'json',
 								complete: function (result) {
@@ -197,18 +209,18 @@ function Tools ()
 							break;
 							
 							default:
-							$.ajax({
+							var ret_val = $.ajax({
 								url: url+selected, 
-								dataType: 'json',
+								dataType: 'text',
 								complete: function (result) {
-									var result = $.parseJSON(result);
-									element.val(result);
+									element.val(result.responseText);
 								}
 							});
 							break;
 						}
 						break;
 					}
+					return ret_val; 
 				}
 				$(this).off('click');
 				switch($(this).data('run-once'))
@@ -216,15 +228,23 @@ function Tools ()
 					case true:
 					case 1:
 					$(this).one('click', function (e) {
+						var element = this;
 						e.preventDefault();
-						dynamicFunction(this);
+						$nitm.startSpinner(this);
+						$.when(dynamicFunction(this)).done(function () {
+							$nitm.stopSpinner(element);
+						});
 					});
 					break;
 					
 					default:
 					$(this).on('click', function (e) {
+						var element = this;
 						e.preventDefault();
-						dynamicFunction(this);
+						$nitm.startSpinner(this);
+						$.when(dynamicFunction(this)).done(function () {
+							$nitm.stopSpinner(element);
+						});
 					});
 					break;
 				}

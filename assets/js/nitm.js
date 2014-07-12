@@ -121,7 +121,7 @@ function Nitm ()
 	this.startSpinner = function (elem) {
 		var element = $(elem);
 		var style = $(element).css(['font-size', 'line-height', 'width']);
-		element.data('old-html', element.html());
+		element.data('old-contents', element.html());
 		element.html('');
 		element.append("<span class='spinner'><i class='fa fa-spin fa-spinner'></i></span>");
 		element.addClass('has-spinner active');
@@ -129,8 +129,9 @@ function Nitm ()
 	
 	this.stopSpinner = function (elem) {
 		var element = $(elem);
+		element.html(element.data('old-contents'));
 		element.removeClass('has-spinner active');
-		element.data('old-html', '');
+		element.data('old-contents', '');
 	}
 	
 	this.dump = function (arr,level) 

@@ -41,7 +41,7 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 		</div>
 		<div id="messageActions<?= $model->getId() ?>" class="message-actions">
 		<?php
-			if(\Yii::$app->userMeta->isAdmin())
+			if(\Yii::$app->user->identity->isAdmin())
 			{
 				echo Html::a($model->hidden ? 'unhide' : 'hide', \Yii::$app->urlManager->createUrl(['/reply/hide/'.$model->getId()]), [
 					'id' => "hideMessage".$model->getId(),

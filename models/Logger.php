@@ -63,7 +63,7 @@ class Logger extends DB
 		}
 		//$currentUser = Session::getVal(AUTH_DOMAIN.'.username');
 		$this->logDir = is_dir($this->logDir) ? $this->logDir : $_SERVER['DOCUMENT_ROOT'].$this->logDir;
-		$this->currentUser = ($this->currentUser == '') ? $this->currentUser : \Yii::$app->user->identity->username;
+		$this->currentUser = ($this->currentUser == '') ? $this->currentUser : (!\Yii::$app->user->identity ? 'loggedOut' : \Yii::$app->user->identity->username);
 	}
 	
 	public function __destruct()

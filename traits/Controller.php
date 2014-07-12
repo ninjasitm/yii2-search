@@ -116,7 +116,7 @@ use nitm\helpers\Response;
      * @return the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
-    protected function findModel($className, $id, $with=null)
+    protected function findModel($className, $id, $with=null, $queryOptions=[])
     {
         if ($id !== null && ($model = $className::find()->where(['id' => $id])) !== null) {
 			$with = is_array($with) ? $with : (is_null($with) ? null : [$with]);
@@ -124,6 +124,15 @@ use nitm\helpers\Response;
 			{
 				case true:
 				$model->with($with);
+				break;
+			}
+			switch(!empty($queryOptions))
+			{
+				case true:
+				foreach($queryOptions as $type=>$options)
+				{
+					$model->$type($options);
+				}
 				break;
 			}
             return $model->one();
