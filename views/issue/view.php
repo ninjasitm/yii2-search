@@ -76,7 +76,7 @@ $uniqid = uniqid();
 					echo Html::a(Icon::forAction('comment', null, null, ['size' => '2x']).ActivityIndicator::widget(['position' => 'top right', 'size' => 'small', 'text' => $repliesModel->getCount(), 'type' => 'info']), \Yii::$app->urlManager->createUrl(['/reply/index/'.$model->isWhat().'/'.$model->getId(), '__format' => 'html']), [
 						'title' => 'See comments for this issue',
 						'role' => 'visibility',
-						'data-id' => 'issue-comments'.$model->getId(),
+						'data-id' => 'issue-comments'.$uniqid,
 						'data-remove-event' => 1
 					]);
 				}
@@ -84,7 +84,7 @@ $uniqid = uniqid();
 		</div>
 		<?php if($enableComments==true): ?>
 		<div class="col-lg-12 col-md-12">
-			<div class="clear" style="display:none;" id="issue-comments<?=$model->getId();?>">
+			<div class="clear" style="display:none;" id="issue-comments<?=$uniqid;?>">
 			</div>
 		</div>
 		<?php endif; ?>

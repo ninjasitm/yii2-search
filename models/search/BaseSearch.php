@@ -250,6 +250,7 @@ class BaseSearch extends \nitm\models\Data
 				case 'text':
 				if(!empty($value)) 
 				{
+					$this->text = $value;
 					foreach($this->primaryModelTable->columns as $column)
 					{
 						switch($column->phpType)

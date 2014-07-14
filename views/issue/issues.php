@@ -5,15 +5,32 @@ use yii\widgets\ListView;
 use kartik\icons\Icon;
 use yii\bootstrap\Modal;
 use nitm\models\Issues;
+use yii\widgets\Pjax;
 
 /**
  * @var yii\web\View $this
  * @var yii\data\ActiveDataProvider $dataProvider
  * @var app\models\search\Issues $searchModel
  */
+ 
+$uniqid = uniqid();
+Pjax::begin([
+	'enablePushState' => false,
+	'linkSelector' => "a[data-pjax], [data-pjax] a",
+	'formSelector' => "[data-pjax]",
+	'options' => [
+		'id' => 'issues-list'
+	]
+]);
+echo $this->render('_search', [
+	'model' => $searchModel, 
+	'enableComments' => $enableComments,
+	'parentType' => $parentType,
+	'parentId' => $parentId
+]);
 echo ListView::widget([
 	'options' => [
-		'id' => 'issues-'.$filterType.'-list'.$parentId,
+		'id' => 'issues-'.$filterType.'-list'.$uniqid,
 		'style' => 'color:black;'
 	],
 	'dataProvider' => $dataProvider,
@@ -28,9 +45,9 @@ echo ListView::widget([
 ?>
 <script type="text/javascript">
 $nitm.onModuleLoad('issueTracker', function () {
-	$nitm.module('issueTracker').init("issues-<?=$filterType.'-list'.$parentId?>");
-	$nitm.module('tools').initVisibility("issues-<?=$filterType.'-list'.$parentId?>");
-	//$nitm.module('tools').initDynamicValue("issues-<?=$filterType.'-list'.$parentId?>");
+	$nitm.module('issueTracker').init("issues-<?=$filterType.'-list'.$uniqid?>");
+	$nitm.module('tools').initVisibility("issues-<?=$filterType.'-list'.$uniqid?>");
 }, 'issueTrackerIssues');
 </script>
 <br>
+<? Pjax::end();

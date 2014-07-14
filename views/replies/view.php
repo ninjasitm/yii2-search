@@ -59,7 +59,7 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 				'class' => 'fa-2x',
 				'role' => 'replyTo',
 				'data-parent' => $uniqid,
-				'data-reply-to' => $localUniqid,
+				'data-reply-to' => $model->getId(),
 				'data-author' => $authorUser->username,
 				'data-title' => $model->title
 			]);
@@ -69,7 +69,7 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 				'class' => 'fa-2x',
 				'role' => 'quoteReply',
 				'data-parent' => $uniqid,
-				'data-reply-to' => $localUniqid,
+				'data-reply-to' => $model->getId(),
 				'data-author' => $authorUser->username,
 				'data-title' => $model->title
 			]);

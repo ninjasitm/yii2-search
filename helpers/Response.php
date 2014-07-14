@@ -66,6 +66,7 @@ class Response extends Behavior
 			break;
 		}
 		$params = is_null($params) ? static::$viewOptions : $params;
+		if(isset($params['js'])) $params['js'] = is_array($params['js']) ? implode(PHP_EOL, $params['js']) : $params['js'];
 		$format = (!\Yii::$app->request->isAjax && (static::getFormat() == 'modal')) ? 'html' : static::getFormat();
 		switch($format)
 		{
@@ -78,12 +79,14 @@ class Response extends Behavior
 			case 'html':
 			$params['view'] =  empty($params['view']) ? static::$viewPath :  $params['view'];
 			$params['options'] = isset(static::$viewOptions['options']) ? static::$viewOptions['options'] : [];
+			if(isset($params['js'])) static::$view->registerJs($params['js']);
 			$ret_val = static::$controller->$render($params['view'], $params['args'], static::$controller);
 			break;
 			
 			case 'modal':
 			$params['view'] =  empty($params['view']) ? static::$viewPath :  $params['view'];
 			$params['args']['options'] = isset(static::$viewOptions['options']) ? static::$viewOptions['options'] : [];
+			if(isset($params['js'])) static::$view->registerJs($params['js']);
 			$ret_val = static::$controller->$render(static::$viewModal, 
 				[
 					'content' => static::$controller->$render($params['view'], $params['args'], static::$controller),

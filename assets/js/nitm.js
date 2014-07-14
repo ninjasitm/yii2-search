@@ -64,8 +64,8 @@ function Nitm ()
 				switch(highlight)
 				{
 					case true:
-						element.effect("pulsate", {times: 3}, 150, 'ease');
-						break;
+					element.effect("pulsate", {times: 3}, 150, 'ease');
+					break;
 				}
 			} catch(error) {};
 		});
@@ -75,46 +75,24 @@ function Nitm ()
 	{
 		var _form = getObj(form);
 		switch(1)
-		{
-			case _form.find("input[type='submit']").get(0) !== undefined:
-				var button = _form.find("input[type='submit']");
-				break;
-				
-			case _form.find("button[type='submit']").get(0) !== undefined:
-				var button = _form.find("button[type='submit']");
-				break;
+		{				
+			case _form.find("[type='submit']").get(0) !== undefined:
+			var button = _form.find("button[type='submit']");
+			break;
 				
 			default:
-				var button = _form.find("input[type='image']");
-				break;
+			var button = _form.find("input[type='image']");
+			break;
 		}
 		switch(before)
 		{
 			case true:
-				try
-				{
-					button.attr('oldtype', button.attr('type'));
-					button.attr('type', 'image');
-					button.attr('oldsrc', button.attr('src'));
-					button.attr('src', globals.loading_src);
-					button.prop('disabled', true);
-					button.attr('oldonclick', button.attr('onclick'));
-					button.click(void(0));
-				} catch(error) {};
-				break;
+			self.startSpinner(button.get(0));
+			break;
 				
 			default:
-				try
-				{
-					button.attr('src', button.attr('oldsrc'));
-					button.attr('onclick', button.attr('oldonclick'));
-					button.attr('type', button.attr('oldtype'));
-					button.removeAttr('oldonclick');
-					button.removeAttr('oldsrc');
-					button.removeAttr('oldtype');
-					button.removeProp('disabled');
-				} catch(error) {};
-				break;
+			self.stopSpinner(button.get(0));
+			break;
 		}
 	}
 	
@@ -134,60 +112,6 @@ function Nitm ()
 		element.data('old-contents', '');
 	}
 	
-	this.dump = function (arr,level) 
-	{
-		var dumped_text = "";
-		if(!level) level = 0;
-		
-		//The padding given at the beginning of the line.
-		var level_padding = "";
-		for(var j=0;j<level+1;j++) level_padding += "    ";
-		
-		if(typeof(arr) == 'object') 
-		{ //Array/Hashes/Objects
-			for(var item in arr) 
-			{
-				var value = arr[item];
-				
-				if(typeof(value) == 'object') 
-				{ //If it is an array,
-					dumped_text += level_padding + "'" + item + "' ...\n";
-					dumped_text += dump(value,level+1);
-				} 
-				else 
-				{
-					dumped_text += level_padding + "'" + item + "' => \"" + value + "\"\n";
-				}
-			}
-		} 
-		else 
-		{ //Stings/Chars/Numbers etc.
-			dumped_text = "===>"+arr+"<===("+typeof(arr)+")";
-		}
-		return dumped_text;
-	} 
-	
-	this.objectLength = function (obj)
-	{
-		switch(obj.length != undefined)
-		{
-			case true:
-				count = obj.length;
-				break;
-				
-			default:
-				count = 0;
-				break;
-		}
-		switch(count)
-		{
-			case 0:
-				for (k in obj) if (obj.hasOwnProperty(k)) count++;
-				break;
-		}
-		return count;
-	}
-	
 	this.notify = function (nMsg, nClass, nObj)
 	{
 		var nMessage = new String(nMsg);
@@ -201,9 +125,11 @@ function Nitm ()
 			var obj = this.getObj((nObj == undefined ? this.responseSection : nObj), null, false, false);
 			if(obj instanceof jQuery)
 			{
-				obj.fadeIn();
-				obj.removeClass().addClass(nClass);
-				obj.html(nMessage);
+				obj.fadeIn(function () {
+					obj.removeClass().addClass(nClass);
+					obj.html(nMessage);
+					obj.fadeOut(10000);
+				});
 			}
 		}
 		return obj;
@@ -215,12 +141,12 @@ function Nitm ()
 		switch(uApp)
 		{
 			case true:
-				this.getObj(uID).append("<span class='"+uClass+"'>"+uMessage+"</span>");
-				break;
+			this.getObj(uID).append("<span class='"+uClass+"'>"+uMessage+"</span>");
+			break;
 				
 			default:
-				this.getObj(uID).html("<span class='"+uClass+"'>"+uMessage+"</span>");
-				break;
+			this.getObj(uID).html("<span class='"+uClass+"'>"+uMessage+"</span>");
+			break;
 		}
 	}
 	

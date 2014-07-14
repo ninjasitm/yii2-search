@@ -298,14 +298,18 @@ function Tools ()
 				//Execute basic init on new content
 				(function () {
 					return $.Deferred(function (deferred) {
-						callback($('<div>').append(wrapper).html());
+						//try {
+							callback($('<div>').append(wrapper).html());
+						//} catch (error) {};
 						deferred.resolve();
 					}).promise();
 				})().then(function () {
 					self.coreInit(wrapperId);
 					scripts.each(function(){
 						if($(this).text()) {
-							eval($(this).text());
+							//try {
+								eval($(this).text());
+							//} catch (error) {};
 							$(this).remove();
 						}
 					});

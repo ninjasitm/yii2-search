@@ -72,7 +72,7 @@ $enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request
 			}
 		?>
 			
-		<div class="fixed-actions text-right">
+		<div class="pull-right">
 			<?= Html::submitButton(ucfirst($action), ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
 		</div>
 		<?php ActiveForm::end(); ?>

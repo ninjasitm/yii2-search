@@ -17,7 +17,7 @@ use yii\data\ArrayDataProvider;
  */
 class IssueController extends WidgetController
 {
-	use \nitm\traits\Widgets;
+	use \nitm\traits\Controller;
 	
 	public $legend = [
 		'success' => 'Closed and Resolved',
@@ -99,7 +99,7 @@ class IssueController extends WidgetController
      * @param integer $id
      * @return mixed
      */
-    public function actionIssues($type, $id, $key='open')
+    public function actionIssues($type, $id, $key=null)
     {
 		switch($type)
 		{
@@ -120,11 +120,34 @@ class IssueController extends WidgetController
 		$options = [
 			'enableComments' => $this->enableComments
 		];
-		$params = array_merge($params, ['closed' => ($key == 'open' ? 0 : 1)]);
+		switch($key)
+		{
+			case 'duplicate':
+			$params = array_merge($params, ['duplicate' => 1]);
+			$orderBy = ['id' => SORT_DESC];
+			break;
+			
+			case 'closed':
+			$params = array_merge($params, ['closed' => 1]);
+			$orderBy = ['closed_at' => SORT_DESC];
+			break;
+			
+			case 'open':
+			$params = array_merge($params, ['closed' => 0]);
+			$orderBy = ['id' => SORT_DESC];
+			break;
+			
+			default:
+			$orderBy = [];
+			break;
+		}
 		$dataProvider = $searchModel->search($params);
+		$dataProvider->query->orderBy($orderBy);
 		Response::$viewOptions = [
 			'args' => [
 				"content" => $this->renderAjax('issues', [
+					'enableComments' => $this->enableComments,
+					'searchModel' => $searchModel,
 					'dataProvider' => $dataProvider,
 					'options' => $options,
 					'parentId' => $id,
@@ -166,9 +189,7 @@ class IssueController extends WidgetController
 			'param' => $type,
 			'title' => ['title', 'Create Issue'],
 			'scenario' => 'create',
-			'provider' => null,
-			'dataProvider' => null,
-			'view' => !$id ? 'create' : 'update',
+			'view' => $type,
 			'viewArgs' => [
 				'parentId' => $id,
 				'parentType' => $type

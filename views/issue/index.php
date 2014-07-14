@@ -28,7 +28,15 @@ $baseModel = new Issues;
 	$viewOptions = [
 		'enableComments' => $enableComments
 	];
-	$issuesOpen = Html::tag('div', '', ['id' => 'alert'.$parentId]).getIssues($dataProviderOpen, $viewOptions);
+	$issuesOpen = Html::tag('div', '', ['id' => 'alert'.$parentId]).$this->render('issues', [
+		'searchModel' => $searchModel,
+		"options" => $viewOptions, 
+		'dataProvider' => $dataProviderOpen, 
+		'filterType' => 'open',
+		'enableComments' => $enableComments,
+		'parentType' => $parentType,
+		'parentId' => $parentId
+	]);
 	$issuesClosed = Html::tag('div', '', ['id' => 'alert'.$parentId]).Html::tag('div', '', ['class' => 'issues']);
 	$issuesForm =  $this->render('create', [
 		'model' => new Issues,
@@ -41,6 +49,9 @@ $baseModel = new Issues;
 	<h3><?= Html::encode($title) ?></h3>
 	<?=
 		Tabs::widget([
+			'options' => [
+				'id' => 'issue-tracker'.uniqid()
+			],
 			'encodeLabels' => false,
 			'items' => [
 				[
@@ -52,7 +63,6 @@ $baseModel = new Issues;
 					),
 					'options' => [
 						'id' => 'open-issues'.$uniqid,
-						'style' => 'color:black;'
 					],
 					'headerOptions' => [
 						'id' => 'open-issues-tab'.$uniqid
@@ -61,7 +71,7 @@ $baseModel = new Issues;
 						'role' => 'dynamicValue',
 						'data-type' => 'html',
 						'data-id' => '#open-issues'.$uniqid,
-						'data-url' => \Yii::$app->urlManager->createUrl(['/issue/issues/'.$parentType.'/'.$parentId, '__format' => 'html', Issues::COMMENT_PARAM => $enableComments]),
+						'data-url' => \Yii::$app->urlManager->createUrl(['/issue/issues/'.$parentType.'/'.$parentId."/open", '__format' => 'html', Issues::COMMENT_PARAM => $enableComments]),
 						'id' => 'open-issues-link'.$uniqid
 					]
 				],
@@ -74,7 +84,6 @@ $baseModel = new Issues;
 					),
 					'options' => [
 						'id' => 'closed-issues'.$uniqid,
-						'style' => 'color:black;'
 					],
 					'headerOptions' => [
 						'id' => 'closed-issues-tab'.$uniqid
@@ -85,6 +94,27 @@ $baseModel = new Issues;
 						'data-id' => '#closed-issues'.$uniqid,
 						'data-url' => \Yii::$app->urlManager->createUrl(['/issue/issues/'.$parentType.'/'.$parentId.'/closed', '__format' => 'html', Issues::COMMENT_PARAM => $enableComments]),
 						'id' => 'closed-issues-link'.$uniqid
+					]
+				],
+				[
+					'label' => 'Duplicate '.Html::tag('span', $dataProviderDuplicate->getCount(), ['class' => 'badge']),
+					'content' => Html::tag('div', $issuesClosed,
+						[
+							'id' => 'duplicate-issues-content'.$uniqid,
+						]
+					),
+					'options' => [
+						'id' => 'duplicate-issues'.$uniqid,
+					],
+					'headerOptions' => [
+						'id' => 'duplicate-issues-tab'.$uniqid
+					],
+					'linkOptions' => [
+						'role' => 'dynamicValue',
+						'data-type' => 'html',
+						'data-id' => '#duplicate-issues'.$uniqid,
+						'data-url' => \Yii::$app->urlManager->createUrl(['/issue/issues/'.$parentType.'/'.$parentId.'/duplicate', '__format' => 'html', Issues::COMMENT_PARAM => $enableComments]),
+						'id' => 'duplicate-issues-link'.$uniqid
 					]
 				],
 				[
@@ -155,24 +185,3 @@ $nitm.onModuleLoad('tools', function () {
 }, 'issueTrackerIndex');
 <?php endif ?>
 </script>
-
-<?php 
-	function getIssues($dataProvider, $options=[])
-	{
-		global $uniqid;
-		return ListView::widget([
-			'options' => [
-				'id' => 'issues'.$uniqid,
-				'class' => 'col-md-12 col-lg-12'
-			],
-			'dataProvider' => $dataProvider,
-			'itemOptions' => ['class' => 'item'],
-			'itemView' => function ($model, $key, $index, $widget) use($options){
-				$viewOptions = array_merge(['model' => $model], $options);
-				return $widget->render('@nitm/views/issue/view', $viewOptions);
-			},
-			'pager' => ['class' => \kop\y2sp\ScrollPager::className()]
-		
-		]);
-	}
-?>

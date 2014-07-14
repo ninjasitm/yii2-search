@@ -1,5 +1,4 @@
 <?php
-
 namespace nitm\helpers;
 
 use yii\base\Behavior;
@@ -94,7 +93,7 @@ class Form extends Behavior
 					$data = (isset($options['dataProvider']) && !is_null($options['dataProvider']) && $model->hasProperty($options['dataProvider'])) ? $data->$dataProvider : $model;
 					switch(1)
 					{
-						case ($model->hasProperty(@$options['title'][0]) || $model->hasAttribute(@$options['title'][0])) && !empty($model->getAttribute($options['title'][0])):
+						case ($model->hasProperty(@$options['title'][0]) || $model->hasAttribute(@$options['title'][0])):
 						$title = $model->getAttribute($options['title'][0]);
 						break;
 						
@@ -102,9 +101,9 @@ class Form extends Behavior
 						$title = $options['title'];
 						break;
 						
-						/*case is_array($options['title']):
+						case is_array($options['title']):
 						$title = @$options['title'][1];
-						break;*/
+						break;
 						
 						default:
 						$title = ($model->getIsNewRecord() ? "Create" : "Update")." ".ucfirst($model->properName($model->isWhat()));
