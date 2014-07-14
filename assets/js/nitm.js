@@ -44,7 +44,7 @@ function Nitm ()
 		return false;
 	}	
 	
-	this.animateScroll = function (elem, parent, highlight, highlight_class)
+	this.animateScroll = function (elem, parent, highlight)
 	{
 		var element = $(this.getObj(elem).get(0));
 		var container = this.getObj(((!parent) ? element.parent().attr('id') : parent));
@@ -71,29 +71,60 @@ function Nitm ()
 		});
 	}
 	
-	this.animateSubmit = function (form, before)
+	this.animateSubmit = function (form, after)
 	{
-		var _form = getObj(form);
-		switch(1)
+		var $form = $nitm.getObj(form);
+		switch(true)
 		{				
-			case _form.find("[type='submit']").get(0) !== undefined:
-			var button = _form.find("button[type='submit']");
+			case $form.find("[type='image']").get(0) != undefined:
+			var $button = $form.find("[type='image']");
+			break;
+			
+			case $form.find("[type='submit']").get(0) != undefined:
+			var $button = $form.find("[type='submit']");
+			break;
+			
+			case $('body').find("[type='submit'][form='"+$form.attr('id')+"']").get(0) != undefined:
+			var $button = $('body').find("[type='submit'][form='"+$form.attr('id')+"']");
 			break;
 				
 			default:
-			var button = _form.find("input[type='image']");
+			var $button = $form;
 			break;
 		}
-		switch(before)
+		switch(after)
 		{
 			case true:
-			self.startSpinner(button.get(0));
-			break;
+			self.stopSpinner($button.get(0));
+			break
 				
 			default:
-			self.stopSpinner(button.get(0));
+			self.startSpinner($button.get(0));
 			break;
 		}
+	}
+	
+	this.getEvents = function(elem, type) {
+		var events = $._data(elem, "events");
+		var ret_val = {};
+		for(var i in events[type])
+		{
+			if(events[type][i].handler)
+			{
+				ret_val[i] = events[type][i].handler;
+			}
+		}
+		return ret_val;
+	}
+	
+	this.setEvents = function(elem, type, events) {
+		$(elem).off(type);
+		try {
+			for(var i in events)
+			{
+				$(elem).on(type, events[i]);
+			}
+		} catch (error) {}
 	}
 	
 	this.startSpinner = function (elem) {
@@ -103,6 +134,7 @@ function Nitm ()
 		element.html('');
 		element.append("<span class='spinner'><i class='fa fa-spin fa-spinner'></i></span>");
 		element.addClass('has-spinner active');
+		element.attr('disabled', true);
 	}
 	
 	this.stopSpinner = function (elem) {
@@ -110,27 +142,20 @@ function Nitm ()
 		element.html(element.data('old-contents'));
 		element.removeClass('has-spinner active');
 		element.data('old-contents', '');
+		element.removeAttr('disabled');
 	}
 	
 	this.notify = function (nMsg, nClass, nObj)
 	{
 		var nMessage = new String(nMsg);
-		var obj = $(null);
-		if(nMessage.length <= 5)
+		var obj = nObj instanceof jQuery ? nObj : this.getObj(this.responseSection);
+		if(obj instanceof jQuery)
 		{
-			return false;
-		}
-		else
-		{
-			var obj = this.getObj((nObj == undefined ? this.responseSection : nObj), null, false, false);
-			if(obj instanceof jQuery)
-			{
-				obj.fadeIn(function () {
-					obj.removeClass().addClass(nClass);
-					obj.html(nMessage);
-					obj.fadeOut(10000);
-				});
-			}
+			obj.fadeIn(function () {
+				obj.removeClass().addClass(nClass);
+				obj.html(nMessage);
+				obj.fadeOut(10000);
+			});
 		}
 		return obj;
 	}
@@ -210,69 +235,6 @@ function Nitm ()
 			default:
 			$(document).ready(func);
 			break;
-		}
-	}
-	
-	
-	//function to add elements to a parent element
-	/*
-	 p ar = the parent *element
-	 cData = the type of data to append. Can be an array or single element
-	 'events' = the events to be added to this element. Can be an array or single event
-	 'function' = the function to be handled by the event'
-	 'type' = the type of the event
-	 'listeners' = the listeners to be added to this element. Can be an array or single listener
-	 'function' = the function to be handled by this listener
-	 'type' = the type of the listener
-	 'type' = the type of the element
-	 '...' = any attribute which can be handled by this element
-	 '
-	 */
-	this.addChildrenTo = function (_parent, cData)
-	{
-		var par = this.getObj(_parent);
-		if(typeof(par) == 'object')
-		{
-			if(typeof(cData) == 'object')
-			{
-				var childElem = (typeof(cData['type']) != 'undefined') ? document.createElement(cData['type']) : false;
-				for(var attr in cData)
-				{
-					switch(attr)
-					{
-						case 'events':
-							for(event in cData[attr])
-							{
-								cData[attr][event] = (typeof(cData[attr][event]) == 'object') ? cData[attr][event] : new Object(cData[attr][event]);
-								for(subEvent in cData[attr][event])
-								{
-									$(childElem).on(cData[attr][event][subEvent]['type'], function(){
-										cData[attr][event][subEvent]['function']
-									});
-								}
-							}
-							break;
-							
-						case 'type':
-							break;
-							
-						default:
-							switch(typeof(cData[attr]))
-							{
-								
-								case 'object':
-									this.addChildrenTo(par, cData[attr]);
-									break;
-									
-								default:
-									childElem.setAttribute(attr, cData[attr]);
-									break;
-							}
-							break;
-					}
-				}
-				par.appendChild(childElem);
-			}
 		}
 	}
 	
@@ -509,73 +471,6 @@ function Nitm ()
 			output= rgbToHex(output);
 		} 
 		return output;
-	}
-	
-	this.createElementHierarchy = function (_hierarchy, chld_ins_pt, _parent)
-	{
-		if(!_hierarchy)
-		{
-			return false;
-		}
-		lastElem = false;
-		topElem = false;
-		parentElem = (this.getObj(_parent) === false) ? false : this.getObj(_parent).get(0);
-		switch(parentElem.tagName)
-		{
-			case 'TABLE':
-				//we need to start at tbody for tables....retarded yes
-				parentElem = $(parentElem).find('tbody').get(0);
-				break;
-		}
-		hierarchy = new Array();
-		ins_pt = new Array();
-		hierarchy = _hierarchy.split(',');
-		ins_pt = (typeof(chld_ins_pt) == 'string') ? chld_ins_pt.split(',') : false;
-		switch(typeof hierarchy)
-		{
-			case 'string':
-				hierarchy = new Array(hierarchy);
-				break;
-				
-			case 'object':
-				break;
-				
-			default:
-				alert("I need a string to create an element createElementHierarchy default:");
-				return false;
-				break;
-		}
-		for(i = 0; i < hierarchy.length; i++)
-		{
-			freq = new Array();
-			freq = hierarchy[i].split('-');
-			freq = (freq.length == 1) ? Array(freq[0], 1) : freq;
-			for(j = 0; j < freq[1]; j++)
-			{
-				switch(parentElem != undefined)
-				{
-					case false:
-						parentElem = document.createElement(freq[0]);
-						break;
-						
-					default:
-						lastElem = document.createElement(freq[0]);
-						parentElem.appendChild(lastElem);
-						parentElem = lastElem;
-						if(!topElem)
-						{
-							topElem = lastElem;
-						}
-						break;
-				}
-			}
-		}
-		var cur_time = new Date();
-		topElem.id = _parent+'_parent_'+cur_time.getTime();
-		ret = new Object();
-		ret.topElem = topElem;
-		ret.lastElem = lastElem;
-		return ret;
 	}
 	
 	this.visibility = function (id, pour, caller)
