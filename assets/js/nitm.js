@@ -154,8 +154,7 @@ function Nitm ()
 			obj.fadeIn(function () {
 				obj.removeClass().addClass(nClass);
 				obj.html(nMessage);
-				obj.fadeOut(10000);
-			});
+			}).delay(10000).fadeOut();
 		}
 		return obj;
 	}

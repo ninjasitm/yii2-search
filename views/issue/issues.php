@@ -28,6 +28,7 @@ echo $this->render('_search', [
 	'parentType' => $parentType,
 	'parentId' => $parentId
 ]);
+echo Html::tag('div', '', ['id' => 'issues-alerts-message']);
 echo ListView::widget([
 	'options' => [
 		'id' => 'issues-'.$filterType.'-list'.$uniqid,

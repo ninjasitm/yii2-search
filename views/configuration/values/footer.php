@@ -39,7 +39,7 @@ $model->setScenario('createValue');
 </div>
 
 <script language='javascript' type="text/javascript">
-$nitm.addOnLoadEvent(function () {
-	$nitm.configuration.prepareCreating("create_value_container");
+$nitm.onModuleLoad('configuration', function () {
+	$nitm.module('configuration').initCreating("create_value_container");
 });
 </script>

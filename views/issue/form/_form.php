@@ -19,7 +19,6 @@ $enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request
 <div class="issues-form row" id='issues-form<?=$uniqid?>'>
 	<div class="col-lg-12 col-md-12">
 		<?= \nitm\widgets\alert\Alert::widget(); ?>
-		<div id="alert"></div>
 	
 		<?php $form = ActiveForm::begin([
 			"type" => ActiveForm::TYPE_VERTICAL,

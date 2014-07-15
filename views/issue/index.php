@@ -38,6 +38,9 @@ $baseModel = new Issues;
 		'parentId' => $parentId
 	]);
 	$issuesClosed = Html::tag('div', '', ['id' => 'alert'.$parentId]).Html::tag('div', '', ['class' => 'issues']);
+	$issuesDuplicate = Html::tag('div', '', ['id' => 'alert'.$parentId]).Html::tag('div', '', ['class' => 'issues']);
+	$issuesResolved = Html::tag('div', '', ['id' => 'alert'.$parentId]).Html::tag('div', '', ['class' => 'issues']);
+	$issuesUnResolved = Html::tag('div', '', ['id' => 'alert'.$parentId]).Html::tag('div', '', ['class' => 'issues']);
 	$issuesForm =  $this->render('create', [
 		'model' => new Issues,
 		'parentId' => $parentId,
@@ -97,8 +100,50 @@ $baseModel = new Issues;
 					]
 				],
 				[
+					'label' => 'Resolved '.Html::tag('span', $dataProviderResolved->getCount(), ['class' => 'badge']),
+					'content' => Html::tag('div', $issuesResolved,
+						[
+							'id' => 'resolved-issues-content'.$uniqid,
+						]
+					),
+					'options' => [
+						'id' => 'resolved-issues'.$uniqid,
+					],
+					'headerOptions' => [
+						'id' => 'resolved-issues-tab'.$uniqid
+					],
+					'linkOptions' => [
+						'role' => 'dynamicValue',
+						'data-type' => 'html',
+						'data-id' => '#resolved-issues'.$uniqid,
+						'data-url' => \Yii::$app->urlManager->createUrl(['/issue/issues/'.$parentType.'/'.$parentId.'/resolved', '__format' => 'html', Issues::COMMENT_PARAM => $enableComments]),
+						'id' => 'resolved-issues-link'.$uniqid
+					]
+				],
+				[
+					'label' => 'Un-Resolved '.Html::tag('span', $dataProviderUnresolved->getCount(), ['class' => 'badge']),
+					'content' => Html::tag('div', $issuesUnResolved,
+						[
+							'id' => 'unresolved-issues-content'.$uniqid,
+						]
+					),
+					'options' => [
+						'id' => 'unresolved-issues'.$uniqid,
+					],
+					'headerOptions' => [
+						'id' => 'unresolved-issues-tab'.$uniqid
+					],
+					'linkOptions' => [
+						'role' => 'dynamicValue',
+						'data-type' => 'html',
+						'data-id' => '#unresolved-issues'.$uniqid,
+						'data-url' => \Yii::$app->urlManager->createUrl(['/issue/issues/'.$parentType.'/'.$parentId.'/unresolved', '__format' => 'html', Issues::COMMENT_PARAM => $enableComments]),
+						'id' => 'unresolved-issues-link'.$uniqid
+					]
+				],
+				[
 					'label' => 'Duplicate '.Html::tag('span', $dataProviderDuplicate->getCount(), ['class' => 'badge']),
-					'content' => Html::tag('div', $issuesClosed,
+					'content' => Html::tag('div', $issuesDuplicate,
 						[
 							'id' => 'duplicate-issues-content'.$uniqid,
 						]
@@ -154,20 +199,6 @@ $baseModel = new Issues;
 						'id' => 'issues-update-form-link'.$uniqid, 
 					]
 				],
-				[
-					'label' => Html::tag('div', '',
-						[
-							'id' => 'issues-alerts-message'.$uniqid,
-						]
-					),
-					'content' => '',
-					'headerOptions' => [
-						'id' => 'issues-alerts-tab'.$uniqid,
-					],
-					'linkOptions' => [
-						'id' => 'issues-alerts-link'.$uniqid, 
-					]
-				]
 			]
 		]);
 	?>

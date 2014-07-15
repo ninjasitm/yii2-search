@@ -37,10 +37,3 @@ $this->title = "Edit configration parameters";
             ?>
     </div>
 </div>
-
-<script language='javascript' type="text/javascript">
-$nitm.addOnLoadEvent(function () {
-	$nitm.configuration.prepareChanging();
-	$nitm.configuration.prepareUpdating();
-});
-</script>

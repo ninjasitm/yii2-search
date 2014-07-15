@@ -232,7 +232,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 				}
 				$ret_val["success"] = true;
 				$ret_val["section"] = $this->model->cfg_s;
-				switch($_REQUEST['__format'])
+				switch(@$_REQUEST['__format'])
 				{
 					case true:
 					$ret_val['data'] = $this->renderAjax('values/index', [

@@ -295,24 +295,32 @@ function Tools ()
 					wrapper.append(dom);
 					break;
 				}
+				var contents = $('<div>').append(wrapper);
 				//Execute basic init on new content
 				(function () {
 					return $.Deferred(function (deferred) {
-						//try {
-							callback($('<div>').append(wrapper).html());
-						//} catch (error) {};
+						try {
+							//Remove the scripts here so that they don't get run right away.
+							contents.find('script').remove();
+							callback(contents.html());
+						} catch (error) {console.log(error)};
 						deferred.resolve();
 					}).promise();
 				})().then(function () {
 					self.coreInit(wrapperId);
+					var scriptText = '';
+					/*
+					 *Now we can run the scripts that were not run.
+					 *We'll collect them and then execute them all at once
+					 */
 					scripts.each(function(){
 						if($(this).text()) {
-							//try {
-								eval($(this).text());
-							//} catch (error) {};
-							$(this).remove();
+							contents.append($(this));
+							scriptText += $(this).text();
 						}
 					});
+					eval(scriptText);
+					delete scripts;
 				});
 			});
 		}

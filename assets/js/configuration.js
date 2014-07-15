@@ -1,5 +1,5 @@
 
-function Configuration(items)
+function Configuration()
 {	
 	var self = this;
 	this.views = {
@@ -44,9 +44,21 @@ function Configuration(items)
 	this.iObj = "_input";
 	this.dm = 'configer';
 	this.fromSession = true;
+	this.defaultInit = [
+		'initChanging',
+	];
+
+	this.init = function (container) {
+		this.defaultInit.map(function (method, key) {
+			if(typeof self[method] == 'function')
+			{
+				self[method](container);
+			}
+		});
+	}
 	
 	//functions
-	this.prepareChanging = function () {
+	this.initChanging = function () {
 		this.dropdowns.submitOnChange.map(function (v) {
 			var form = $('#'+v);
 			switch(v)
@@ -65,7 +77,7 @@ function Configuration(items)
 		});
 	}
 	
-	this.prepareDeleting = function (containerId, result) {
+	this.initDeleting = function (containerId, result) {
 		var containerId = (containerId == undefined) ? 'body' : containerId;
 		var container = $nitm.getObj(containerId);
 		this.forms.confirmThese.map(function (v) {
@@ -112,7 +124,7 @@ function Configuration(items)
 		});
 	}
 	
-	this.prepareUpdating = function (containerId) {
+	this.initUpdating = function (containerId) {
 		var containerId = (containerId == undefined) ? 'body' : containerId;
 		var container = $nitm.getObj(containerId);
 		this.buttons.allowUpdate.map(function (v) {
@@ -133,7 +145,7 @@ function Configuration(items)
 		});
 	}
 	
-	this.prepareCreating = function (containerId) {
+	this.initCreating = function (containerId) {
 		var containerId = (containerId == undefined) ? 'body' : containerId;
 		var container = $nitm.getObj(containerId);
 		this.forms.allowCreate.map(function (v) {
@@ -141,13 +153,21 @@ function Configuration(items)
 			form.off('submit');
 			form.on('submit', function (e) {
 				e.preventDefault();
-				self.operation(this);
+				return self.operation(this);
 			});
 		});
 	}
 	
 	
 	this.operation = function (form) {
+		/*
+		 * This is to support yii active form validation and prevent multiple submitssions
+		 */
+		try {
+			$data = $(form).data('yiiActiveForm');
+			if(!$data.validated)
+				return false;
+		} catch (error) {}
 		data = $(form).serializeArray();
 		data.push({'name':'__format', 'value':'json'});
 		data.push({'name':'getHtml', 'value':true});
@@ -462,6 +482,5 @@ String.prototype.stripslashes = function () {
 }
 
 $nitm.addOnLoadEvent(function () {
-	$nitm.configuration = new Configuration();
-	$nitm.moduleLoaded('configuration');
+	$nitm.initModule('configuration', new Configuration());
 });

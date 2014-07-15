@@ -137,6 +137,16 @@ class IssueController extends WidgetController
 			$orderBy = ['id' => SORT_DESC];
 			break;
 			
+			case 'resolved':
+			$params = array_merge($params, ['resolved' => 1]);
+			$orderBy = ['resolved_at' => SORT_DESC];
+			break;
+			
+			case 'unresolved':
+			$params = array_merge($params, ['resolved' => 0]);
+			$orderBy = ['id' => SORT_DESC];
+			break;
+			
 			default:
 			$orderBy = [];
 			break;
