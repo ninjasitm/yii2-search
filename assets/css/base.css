@@ -305,3 +305,7 @@ a.list-group-item-transparent.active:focus {
   max-width: 50px; /* More than it will ever come, notice that this affects on animation duration */
 }
 
+.redactor_box .redactor_editor  {
+	box-shadow: inset 2px 2px 6px #999 !important;
+}
+

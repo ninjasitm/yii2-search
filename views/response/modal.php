@@ -32,7 +32,7 @@
 		}
 	}
 ?>
-<?= $this->beginPage(); ?>
+<?php if(!\Yii::$app->request->isAjax) echo $this->beginPage(); ?>
 <?php
 	//Header content
 	$headerClose = Html::button('&times;', [
@@ -56,17 +56,17 @@
 	$content = $header.$body.$footer;
 	
 	//And determine how we're rending it
-	switch(isset($modalOptions['contentOnly']) && ($modalOptions['contentOnly'] === true))
+	switch(\Yii::$app->request->get('__full') == 1)
 	{
 		case true:
-		$dialog = $content;
+		$dialog = Html::tag('div', Html::tag('div', $content, $options['content']), $options['dialog']);
 		break;
 		
 		default:
-		$dialog = Html::tag('div', Html::tag('div', $content, $options['content']), $options['dialog']);
+		$dialog = $header.$body.$footer;
 		break;
 	}
 	//Now render the modal
 	echo $dialog;
 ?>
-<?= $this->endPage(); ?>
+<?php if(!\Yii::$app->request->isAjax) echo $this->endPage(); ?>

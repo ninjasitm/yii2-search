@@ -128,7 +128,7 @@ function Nitm ()
 	}
 	
 	this.startSpinner = function (elem) {
-		var element = $(elem);
+		var element = this.getObj(elem);
 		var style = $(element).css(['font-size', 'line-height', 'width']);
 		element.data('old-contents', element.html());
 		element.html('');
@@ -138,7 +138,7 @@ function Nitm ()
 	}
 	
 	this.stopSpinner = function (elem) {
-		var element = $(elem);
+		var element = this.getObj(elem);
 		element.html(element.data('old-contents'));
 		element.removeClass('has-spinner active');
 		element.data('old-contents', '');

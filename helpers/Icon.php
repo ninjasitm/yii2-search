@@ -35,7 +35,7 @@ class Icon
 				break;
 				
 				case 'disable':
-				$icon = ($model->$attribute == 1) ?  'circle-o' : 'circle';
+				$icon = ($model->$attribute == 1) ?  'check-circle' : 'ban';
 				break;
 			}
 			break;
