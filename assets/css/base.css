@@ -200,6 +200,7 @@ a.list-group-item-transparent.active:focus {
 .tabs-below > .nav-tabs > li {
   margin-top: -1px;
   margin-bottom: 0;
+  text-align: center;
 }
 
 .tabs-below > .nav-tabs > li > a {
@@ -220,9 +221,14 @@ a.list-group-item-transparent.active:focus {
   border-color: transparent #ddd #ddd #ddd;
 }
 
-.tabs-left > .nav-tabs > li,
+.tabs-left > .nav-tabs > li {
+  float: none;
+  text-align: right;
+}
+
 .tabs-right > .nav-tabs > li {
   float: none;
+  text-align: right;
 }
 
 .tabs-left > .nav-tabs > li > a,
@@ -280,6 +286,34 @@ a.list-group-item-transparent.active:focus {
 .tabs-right > .nav-tabs .active > a:focus {
   border-color: #ddd #ddd #ddd transparent;
   *border-left-color: #ffffff;
+}
+
+.nav-tabs.nav-tabs-sm {
+	font-size: smaller;
+}
+
+.nav-tabs-sm li {
+    margin: 1px !important;
+    padding: 2px !important;
+}
+
+.nav-tabs-sm li > a{
+    margin: 1px !important;
+    padding: 6px !important;
+}
+
+.nav-tabs.nav-tabs-xs {
+	font-size: 10px;
+}
+
+.nav-tabs-xs li {
+    margin: 1px !important;
+    padding: 0px !important;
+}
+
+.nav-tabs-xs li > a{
+    margin: 1px !important;
+    padding: 4px !important;
 }
 
 /*
