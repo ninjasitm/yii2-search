@@ -2,11 +2,24 @@
 namespace nitm\traits;
 
 use nitm\helpers\Session;
+use nitm\helpers\Helper;
 
  /**
   * Configuration traits that can be shared
   */
 trait Configer {
+	
+	public static $settings;
+	
+	/**
+	 * Get a setting value 
+	 * @param string $setting the locator for the setting
+	 */
+	public function setting($setting)
+	{
+		@eval("\$ret_val = static::\$settings['".Helper::splitf(explode('.', $setting), "']['")."'];");
+		return $ret_val;
+	}
 	
 	/*
 	 * Initialize configuration
@@ -24,23 +37,27 @@ trait Configer {
 			$module->setDir($module->configOptions['dir']);
 			break;
 		}
-		switch(Session::isRegistered(Session::current.'.'.$container))
+		switch(1)
 		{
-			case true:
+			case Session::isRegistered(Session::current.'.'.$container):
 			static::$settings[$container] = Session::getval(Session::current.'.'.$container);
 			break;
 			
 			default:
-			$config = $module->config->getConfig($module->configOptions['engine'], $container, true);
-			switch($container)
+			switch(1)
 			{
-				case $module->configOptions['container']:
+				case ($container == $module->configOptions['container']) && (!Session::isRegistered(Session::settings)):
+				$config = $module->config->getConfig($module->configOptions['engine'], $container, true);
 				Session::set(Session::settings, $config);
 				break;
 				
 				default:
-				static::$settings[$container] = $config;
-				Session::set(Session::current.'.'.$container, $config);
+				if(!isset(static::$settings[$container]))
+				{
+					$config = $module->config->getConfig($module->configOptions['engine'], $container, true);
+					static::$settings[$container] = $config;
+					Session::set(Session::current.'.'.$container, $config);
+				}
 				break;
 			}
 			break;

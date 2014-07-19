@@ -10,6 +10,7 @@ function Tools ()
 	this.defaultInit = [
 		'initVisibility',
 		'initRemoveParent',
+		'initCloneParent',
 		'initBsMultipleModal',
 		'initDynamicDropdown',
 		'initDynamicValue',
@@ -360,15 +361,57 @@ function Tools ()
 	/**
 	 * Remove the parent element up to a certain depth
 	 */
-	this.removeParent = function (elem, levels)
-	{	
-		var levels = ($(elem).data('depth') == undefined) ? ((levels == undefined) ? 1 : levels): $(elem).data('depth');
-		var parent = $(elem).parent();
-		for(i = 0; i<levels; i++)
+	this.initCloneParent = function (containerId) {
+		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
+		//enable hide/unhide functionality
+		container.find("[role~='cloneParent']").map(function(e) {
+			$(this).on('click', function (e) {
+				e.preventDefault();
+				self.cloneParent(this);
+				return false;
+			});
+		});
+	}
+	
+	/**
+	 * Remove the parent element up to a certain depth
+	 */
+	this.removeParent = function (elem)
+	{
+		var levels = ($(elem).data('depth') == undefined) ? 0 : $(elem).data('depth');
+		switch($(elem).data('parent') != undefined)
 		{
-			parent = parent.parent();
+			case true:
+			var parent = $(elem).parents($(elem).data('parent')).eq(levels);
+			break;
 		}
+		console.log(parent);
 		parent.remove();
+	}
+	
+	/**
+	 * Remove the parent element up to a certain depth
+	 */
+	this.cloneParent = function (elem)
+	{
+		var $element = $(elem);
+		var clone = $($element.data('clone')).clone();
+		console.log(clone);
+		clone.find('input').not(':hidden').each(function (){$(this).val('')});
+		clone.attr('id', clone.attr('id')+Date.now());
+		var to = $nitm.getObj($element.data('to'));
+		if($element.data('after') != undefined) {
+			clone.insertAfter(to.find($element.data('after')));
+		}
+		else if($element.data('before') != undefined)  {
+			clone.insertBefore(to.find($element.data('before')));
+		} else {
+			to.append(clone);
+		}
+		eval("var afterClone = "+$element.data('after-clone'));
+		if(typeof afterClone == 'function'){
+			afterClone(clone, to, elem);
+		}
 	}
 	
 	/**

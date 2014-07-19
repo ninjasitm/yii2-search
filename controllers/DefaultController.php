@@ -14,10 +14,7 @@ class DefaultController extends Controller
 	use \nitm\traits\Configer, \nitm\traits\Controller;
 	
 	public $model;
-	public $settings;
 	public $metaTags = array();
-	
-	protected $responseFormat;
 
 	private $_cssFiles = array();
 	private $_jsFiles = array();
