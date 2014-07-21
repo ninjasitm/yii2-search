@@ -319,12 +319,6 @@ class Session extends Model
 		return true;
 // 		echo "Cleared $cIdx<br>";
 	}
-	
-	public static final function cleanup()
-	{
-		self::close();
-		self::destroy();
-	}
 
 	public static final function getVal($cIdx, $bool=false)
 	{
@@ -436,6 +430,30 @@ class Session extends Model
 // 		echo "Returning $ret_val for is_registrered($cIdx)<br>";
 // 		pr($ret_val);
 		return $ret_val;
+	}
+	
+	/*
+	 * Destroy the session
+	 */
+	public static final function destroy()
+	{
+		if(isset($_SESSION[static::sessionName()]))
+		{
+			foreach($_SESSION[static::sessionName()] as $member=>$val)
+			{
+				switch($member)
+				{
+// 					case self::helper:
+// 					continue;
+// 					break;
+					
+					default:
+					self::unregister($member);
+					break;
+				}
+			}
+			$_SESSION[static::sessionName()] = array();
+		}
 	}
 	
 	/*---------------------
@@ -557,30 +575,6 @@ class Session extends Model
 	/*---------------------
 		Private Functions
 	---------------------*/
-	
-	/*
-	 * Destroy the session
-	 */
-	private static final function destroy()
-	{
-		if(isset($_SESSION[static::sessionName()]))
-		{
-			foreach($_SESSION[static::sessionName()] as $member=>$val)
-			{
-				switch($member)
-				{
-// 					case self::helper:
-// 					continue;
-// 					break;
-					
-					default:
-					self::unregister($member);
-					break;
-				}
-			}
-			$_SESSION[static::sessionName()] = array();
-		}
-	}
 	
 	/*
 	 * Using dot notation register this path

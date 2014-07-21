@@ -11,7 +11,7 @@ use nitm\models\Configer;
 
 class DefaultController extends Controller
 {
-	use \nitm\traits\Configer, \nitm\traits\Controller;
+	use \nitm\traits\Configer, \nitm\traits\Controller, \nitm\traits\ControllerActions;
 	
 	public $model;
 	public $metaTags = array();
@@ -247,7 +247,7 @@ class DefaultController extends Controller
 					{
 						case "sub":
 						$priority = isset($val['priority']) ? $val['priority'] : sizeof($ret_val);
-						$ret_val[$priorities[$name]."_".$name][$property][$property_name] = $val;
+						@$ret_val[$priorities[$name]."_".$name][$property][$property_name] = $val;
 						break;
 						
 						//this is a mainlink

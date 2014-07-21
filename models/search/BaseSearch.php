@@ -14,6 +14,7 @@ class BaseSearch extends \nitm\models\Data
     public $id;
 	public $text;
 	public $filter = [];
+	public $expand = 'all';
 	
 	public $primaryModel;
 	
@@ -151,11 +152,11 @@ class BaseSearch extends \nitm\models\Data
 				switch($this->inclusiveSearch)
 				{
 					case true:
-					$query->orWhere(['like', "LOWER(".$attribute.")", strtolower($value)]);
+					$query->orWhere(['like', "LOWER(".$attribute.")", $this->expand($value), false]);
 					break;
 					
 					default:
-					$query->andWhere(['like', "LOWER(".$attribute.")", strtolower($value)]);
+					$query->andWhere(['like', "LOWER(".$attribute.")", $this->expand($value), false]);
 					break;
 				}
 				break;
@@ -171,6 +172,25 @@ class BaseSearch extends \nitm\models\Data
 	public function getModelClass($class)
 	{
 		return "\\nitm\models\\".array_pop(explode('\\', $class));
+	}
+	
+	public function expand($value)
+	{
+		switch($this->expand)
+		{
+			case 'right':
+			$value = $value."%";
+			break;
+			
+			case 'left':
+			$value = "%".$value;
+			break;
+			
+			default:
+			$value = "%".$value."%";
+			break;
+		}
+		return $value;
 	}
 	
 	private function setProperties($names=[], $values=[])

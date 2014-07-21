@@ -184,56 +184,6 @@ class IssueController extends WidgetController
             'model' => $this->findModel(Issues::className(), $id),
         ]);
     }
-	
-	/*
-	 * Get the forms associated with this controller
-	 * @param string $param What are we getting this form for?
-	 * @param int $unique The id to load data for
-	 * @return string | json
-	 */
-	public function actionForm($type=null, $id=null)
-	{
-		//Response::$viewOptions['args']['content'] = $ret_val['data'];
-		$force = false;
-		$options = [
-			'param' => $type,
-			'title' => ['title', 'Create Issue'],
-			'scenario' => 'create',
-			'view' => $type,
-			'viewArgs' => [
-				'parentId' => $id,
-				'parentType' => $type
-			],
-			'args' => [],
-			'modelClass' => Issues::className(),
-			'force' => true
-		];
-		
-		switch($type)
-		{	
-			//This is for generating the form for updating and creating a request
-			case 'update':
-			$options['id'] = $id;
-			$options['title'] = ['title', 'Update Issue'];
-			break;
-		}
-		
-		$modalOptions = [
-			'contentOnly' => true,
-			'body' => [
-				'class' => ''
-			],
-			'content' => [
-				'class' => 'modal-content'
-			],
-			'dialog' => [
-				'class' => 'modal-dialog'
-			],
-		];
-		$format = Response::formatSpecified() ? $this->getResponseFormat() : 'html';
-		$this->setResponseFormat($format);
-		return $this->renderResponse($this->getFormVariables($this->model, $options, $modalOptions), Response::$viewOptions, \Yii::$app->request->isAjax);
-	}
 
     /**
      * Creates a new Issues model.

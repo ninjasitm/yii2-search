@@ -14,7 +14,6 @@ class DefaultApiController extends Controller
 	use \nitm\traits\Configer, \nitm\traits\Controller;
 	
 	public $model;
-	public $settings;
 	
 	public function behaviors()
 	{ 

@@ -176,6 +176,7 @@ function Configuration()
 		switch(!$(form).attr('action'))
 		{
 			case false:
+			$nitm.animateSubmit(form);
 			var request = $nitm.doRequest($(form).attr('action'), 
 					data,
 					function (result) {

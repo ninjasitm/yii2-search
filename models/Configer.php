@@ -193,7 +193,7 @@ class Configer extends Model
 			switch($this->container == \Yii::$app->getModule('nitm')->configOptions['container'])
 			{
 				case true:
-				Session::set($this->correctKey($this->event['data']['key']), (is_null($decoded = json_decode($this->event['data']['value'], true)) ? $this->event['data']['value'] : $decoded));
+				Session::set($this->correctKey($this->event['data']['key']), (is_null($decoded = json_decode(trim($this->event['data']['value']), true)) ? $this->event['data']['value'] : $decoded));
 				break;
 				
 				default:
@@ -210,7 +210,7 @@ class Configer extends Model
 			switch($this->container == @Yii::$app->getModule('nitm')->configOptions['container'])
 			{
 				case true:
-				Session::set($this->correctKey($this->event['data']['key']), (is_null($decoded = json_decode($this->event['data']['value'], true)) ? $this->event['data']['value'] : $decoded));
+				Session::set($this->correctKey($this->event['data']['key']), (is_null($decoded = json_decode(trim($this->event['data']['value']), true)) ? $this->event['data']['value'] : $decoded));
 				break;
 				
 				default:
@@ -951,7 +951,7 @@ class Configer extends Model
 							switch(1)
 							{
 								case ((@$v[0] == "{") && ($v[strlen($v)-1] == "}")) && ($updateing === false):
-								$v = ((!is_null($data = json_decode($v, true))) ? $data : $v);
+								$v = ((!is_null($data = json_decode(trim($v), true))) ? $data : $v);
 								break;
 								
 								case substr($v, 0, strlen(self::NO_DEC)) == self::NO_DEC:
