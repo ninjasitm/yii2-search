@@ -29,6 +29,7 @@ class BaseSearch extends \nitm\models\Data
 	 * Should the or clause be used?
 	 */
 	public $inclusiveSearch;
+	public $mergeInclusive;
 	
 	const SEARCH_PARAM = '__searchType';
 	const SEARCH_PARAM_BOOL = '__searchIncl';
@@ -38,6 +39,8 @@ class BaseSearch extends \nitm\models\Data
 	protected $primaryModelAttributes;
 	protected $primaryModelFormName;
 	protected $primaryModelTableName;
+	protected $dataProvider;
+	protected $conditions = [];
 	
 	public function init()
 	{
@@ -89,15 +92,14 @@ class BaseSearch extends \nitm\models\Data
 
     public function search($params=[])
     {
-        $query = $this->primaryModel->find();
+        $query = $this->primaryModel->find($this);
 		$params = $this->filterParams($params, $query);
-		$query->with($this->withThese);
-        $dataProvider = new ActiveDataProvider([
+        $this->dataProvider = new ActiveDataProvider([
             'query' => $query,
         ]);
         if (!($this->load($params[$this->primaryModelFormName], false) && $this->validate())) {
 			$this->addQueryOptions($query);
-            return $dataProvider;
+            return $this->dataProvider;
         }
 		foreach($params[$this->primaryModelFormName] as $attr=>$value)
 		{
@@ -115,9 +117,29 @@ class BaseSearch extends \nitm\models\Data
 				break;
 			}
 		}
+		$this->addConditions($query);
 		$this->addQueryOptions($query);
-        return $dataProvider;
+        return $this->dataProvider;
     }
+	
+	protected function addConditions($query)
+	{
+		foreach($this->conditions as $type=>$condition)
+		{
+			switch($this->mergeInclusive)
+			{
+				case true:
+				array_unshift($condition,( $this->inclusiveSearch ? 'or' : 'and'));
+				$query->orWhere($condition);
+				break;
+				
+				default:
+				array_unshift($condition,( $this->inclusiveSearch ? 'or' : 'and'));
+				$query->andWhere($condition);
+				break;
+			}
+		}
+	}
 
     protected function addCondition($query, $attribute, $value, $partialMatch=false)
     {
@@ -136,11 +158,11 @@ class BaseSearch extends \nitm\models\Data
             switch($this->inclusiveSearch)
 			{
 				case true:
-				$query->orWhere([$attribute => $value]);
+				$this->conditions['or'][] = [$attribute => $value];
 				break;
 				
 				default:
-				$query->andWhere([$attribute => $value]);
+				$this->conditions['and'][] = [$attribute => $value];
 				break;
 			}
 			break;
@@ -149,20 +171,22 @@ class BaseSearch extends \nitm\models\Data
 			switch($partialMatch) 
 			{
 				case true:
+				$attribute = "LOWER(".$attribute.")";
+				$value = $this->expand($value);
 				switch($this->inclusiveSearch)
 				{
 					case true:
-					$query->orWhere(['like', "LOWER(".$attribute.")", $this->expand($value)]);
+					$this->conditions['or'][] = ['or like', $attribute, $value, false];
 					break;
 					
 					default:
-					$query->andWhere(['like', "LOWER(".$attribute.")", $this->expand($value)]);
+					$this->conditions['and'][] = ['like', $attribute, $value, false];
 					break;
 				}
 				break;
 				
 				default:
-            	$query->andWhere([$attribute => $value]);
+            	$this->conditions['and'][] = [$attribute => $value];
 				break;
 			}
 			break;
@@ -174,7 +198,66 @@ class BaseSearch extends \nitm\models\Data
 		return "\\nitm\models\\".array_pop(explode('\\', $class));
 	}
 	
-	public function expand($value)
+	public function getJsonList($labelField='name')
+	{
+		$ret_val = [];
+		$with = explode(',', \Yii::$app->request->get('with'));
+		foreach($this->dataProvider->getModels() as $item)
+		{
+			$_ = [
+				"id" => $item->getId(),
+				"value" => $item->getId(), 
+				"text" =>  $item->$labelField, 
+				"label" => $item->$labelField
+			];
+			foreach($with as $attribute)
+			{
+				switch($attribute)
+				{
+					case 'htmlView':
+					$view = isset($options['view']['file']) ? $options['view']['file'] : "/".$item->isWhat()."/view";
+					$viewOptions = isset($options['view']['options']) ? $options['view']['options'] : ["model" => $item];
+					$_['html'] = \Yii::$app->getView()->renderAjax($view, $viewOptions);
+					break;
+					
+					case 'icon':
+					/*$_['label'] = \lab1\widgets\Thumbnail::widget([
+						"model" => $item->getIcon()->one(), 
+						"htmlIcon" => $item->html_icon,
+						"size" => "tiny",
+						"options" => [
+							"class" => "thumbnail text-center",
+						]
+					]).$_['label'];*/
+					break;
+				}
+			}
+			$ret_val[] = $_;
+		}
+		return (sizeof(array_filter($ret_val)) >= 1) ? $ret_val : [['id' => 0, 'text' => "No ".$this->properName($this->isWhat())." Found"]];
+	}
+	
+	public function getList($label='name')
+	{
+		$ret_val = [];
+		$items = $this->dataProvider->getModels();
+		switch(empty($items))
+		{
+			case false:
+			foreach($items as $item)
+			{
+				$ret_val[$item->getId()] = $item->$label;
+			}
+			break;
+			
+			default:
+			$ret_val[] = ["No ".static::isWhat()." found"];
+			break;
+		}
+		return $ret_val;
+	}
+	
+	protected function expand($value)
 	{
 		switch($this->expand)
 		{

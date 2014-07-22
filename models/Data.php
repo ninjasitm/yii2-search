@@ -129,13 +129,13 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 					$behaviors["blamable"] = [
 					'class' => \yii\behaviors\BlameableBehavior::className(),
 						'attributes' => [
-							ActiveRecord::EVENT_BEFORE_INSERT => 'author',
+							ActiveRecord::EVENT_BEFORE_INSERT => 'author_id',
 						],
 					];
-					switch($this->hasProperty('editor') || $this->hasAttribute('editor'))
+					switch($this->hasProperty('editor_id') || $this->hasAttribute('editor_id'))
 					{
 						case true:
-						$behaviors['blamable']['attributes'][ActiveRecord::EVENT_BEFORE_UPDATE] = 'editor';
+						$behaviors['blamable']['attributes'][ActiveRecord::EVENT_BEFORE_UPDATE] = 'editor_id';
 						break;
 					}
 					break;
@@ -438,6 +438,32 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	{
 		return $this->success === true;
 	}
+	
+	public function addWith($with)
+	{
+		$with = is_array($with) ? $with : [$with];
+		$this->withThese = array_merge($this->withThese, $with);
+	}
+	
+	/**
+	 * Overriding default find function
+	 */
+	public static function find($model=null, $options=null)
+	{
+		$query = parent::find($options);
+		static::aliasColumns($query);
+		if($model)
+		{
+			static::applyFilters($query, $model->queryFilters);
+			switch(empty($model->withThese))
+			{
+				case false:
+				$query->with($model->withThese);
+				break;
+			}
+		}
+		return $query;
+	}
 
 	/*
 	 * Get the array of arrays
@@ -445,17 +471,51 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	 */
 	public function getArrays()
 	{
-		switch($this->getScenario() == null)
-		{
-			case true:
-			$this->setScenario('default');
-			break;
-		}
-		$query = $this->find();
-		static::aliasColumns($query);
-		static::applyFilters($query, $this->queryFilters);
+		$query = $this->find($this);
 		$ret_val = $query->asArray()->all();
 		$this->success = (sizeof($ret_val) >= 1) ? true : false;
+		return $ret_val;
+	}
+	
+	public function getList($label='name')
+	{
+		$ret_val = [];
+		$items = $this->getModels();
+		switch(empty($items))
+		{
+			case false:
+			foreach($items as $item)
+			{
+				$ret_val[$item->getId()] = $item->$label;
+			}
+			break;
+			
+			default:
+			$ret_val[] = ["No ".static::isWhat()." found"];
+			break;
+		}
+		return $ret_val;
+	}
+	
+	public function getJsonList($labelField='name')
+	{
+		$ret_val = [];
+		$items = $this->getModels();
+		switch(is_array($items))
+		{
+			case true:
+			foreach($items as $item)
+			{
+				$_ = [
+					"id" => $item->getId(),
+					"value" => $item->getId(), 
+					"text" =>  $item->$labelField, 
+					"label" => $item->$labelField
+				];
+				$ret_val[] = $_;
+				break;
+			}
+		}
 		return $ret_val;
 	}
 
@@ -465,21 +525,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	 */
 	public function getModels()
 	{
-		switch($this->getScenario() == null)
-		{
-			case true:
-			$this->setScenario('default');
-			break;
-		}
-		$query = $this->find();
-		switch(empty($this->withThese))
-		{
-			case false:
-			$query->with($this->withThese);
-			break;
-		}
-		static::aliasColumns($query);
-		static::applyFilters($query, $this->queryFilters);
+		$query = $this->find($this);
 		$ret_val = $query->all();
 		$this->success = (sizeof($ret_val) >= 1) ? true : false;
 		return $ret_val;
@@ -490,15 +536,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	 */
 	public function getOne()
 	{
-		switch($this->getScenario() == null)
-		{
-			case true:
-			$this->setScenario('default');
-			break;
-		}
-		$query = $this->find();
-		static::aliasColumns($query);
-		static::applyFilters($query, $this->queryFilters);
+		$query = $this->find($this);
 		$ret_val = $query->one();
 		$this->success = (!is_null($ret_val)) ? true : false;
 		return $ret_val;

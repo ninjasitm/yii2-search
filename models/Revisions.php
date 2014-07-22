@@ -6,7 +6,7 @@ namespace nitm\models;
  * This is the model class for table "revisions".
  *
  * @property integer $id
- * @property integer $author
+ * @property integer $author_id
  * @property string $created_at
  * @property string $data
  * @property string $parent_type
@@ -53,11 +53,11 @@ class Revisions extends BaseWidget
     {
         return [
             [['data', 'parent_type', 'parent_id'], 'required'],
-            [['id', 'author', 'parent_id'], 'integer'],
+            [['id', 'author_id', 'parent_id'], 'integer'],
             [['created_at'], 'safe'],
             [['data'], 'string'],
             [['parent_type'], 'string', 'max' => 64],
-            [['author', 'parent_type', 'parent_id'], 'unique', 'targetAttribute' => ['author', 'parent_type', 'parent_id'], 'message' => 'The combination of User ID, Parent Type and Parent ID has already been taken.']
+            [['author_id', 'parent_type', 'parent_id'], 'unique', 'targetAttribute' => ['author_id', 'parent_type', 'parent_id'], 'message' => 'The combination of User ID, Parent Type and Parent ID has already been taken.']
         ];
     }
 
@@ -68,7 +68,7 @@ class Revisions extends BaseWidget
     {
         return [
             'id' => 'ID',
-            'author' => 'User ID',
+            'author_id' => 'User ID',
             'created_at' => 'Created At',
             'data' => 'Data',
             'parent_type' => 'Remote Type',

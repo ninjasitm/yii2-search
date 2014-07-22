@@ -27,7 +27,7 @@ class Replies extends BaseWidget
 		'critical' => 'error'
 	];
 	
-	protected $authorIdKey = 'author';
+	protected $author_idIdKey = 'author_id';
 	protected static $is = 'replies';
 	
 	const LAST_ACTIVITY = '___lastActivity';
@@ -46,7 +46,7 @@ class Replies extends BaseWidget
 			'replyToId' => [
 				'class' => \yii\behaviors\AttributeBehavior::className(),
 				'attributes' => [
-					\yii\db\ActiveRecord::EVENT_BEFORE_INSERT => ['reply_to_author'],
+					\yii\db\ActiveRecord::EVENT_BEFORE_INSERT => ['reply_to_author_id'],
 				],
 				'value' => function ($event) {
 					return $event->sender->replyToAuthorId();
@@ -69,8 +69,8 @@ class Replies extends BaseWidget
 			'updates' => null,
 			'hidden' => null,
 			'deleted' => null,
-			'author' => null,
-			'editor' => null,
+			'author_id' => null,
+			'editor_id' => null,
 		];
 		return array_merge(parent::has(), $has);
 	}
@@ -78,7 +78,7 @@ class Replies extends BaseWidget
 	public function rules()
 	{
 		return [
-			[['parent_id', 'parent_type', 'author', 'message', 'ip_addr', 'cookie_hash'], 'required', 'on' => ['create']],
+			[['parent_id', 'parent_type', 'author_id', 'message', 'ip_addr', 'cookie_hash'], 'required', 'on' => ['create']],
 			[['message','parent_type'],'required','on' => ['validateNew']],
 			['message', 'isTooLong', 'message' => 'This message is too long'],
 		];
@@ -97,7 +97,7 @@ class Replies extends BaseWidget
 				'ip_host',
 				'cookie_hash',
 				'reply_to', 
-				'reply_to_author',
+				'reply_to_author_id',
 				'title',
 			],
 			'update' => [
@@ -185,23 +185,23 @@ class Replies extends BaseWidget
 	}
 	
 	/**
-	 * Return the reply author information
+	 * Return the reply author_id information
 	 * @param string $what The property to return
 	 */
 	public function getReplyTo()
 	{
-		return $this->hasOne(Replies::className(), ['id' => 'reply_to'])->with(['authorUser']);
+		return $this->hasOne(Replies::className(), ['id' => 'reply_to'])->with(['author']);
 	}
 
 	/**
-	* Get the userID for the reply_to author
+	* Get the userID for the reply_to author_id
 	*/
 	public function replyToAuthorId()
 	{
 		switch(empty($this->reply_to))
 		{
 			case false:
-			$this->reply_to_author = Replies::find()->select([$this->authorIdKey])->where([static::primaryKey()[0] => $this->reply_to])->one()->author;
+			$this->reply_to_author_id = Replies::find()->select([$this->author_idIdKey])->where([static::primaryKey()[0] => $this->reply_to])->one()->author_id;
 			break;
 		}
 	}

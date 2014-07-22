@@ -18,6 +18,10 @@ class Network extends Behavior
 	public $ip;
 	public $host;
 	public $coords;
+	const IP_REGEX = '/^(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/';
+	const DOMAIN_REGEX = '/^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$/';
+	const URL_REGEX = '/[-a-zA-Z0-9@:%_\+.~#?&\/\/=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)?/i';
+	const IP_URL_REGEX = '/[-a-zA-Z0-9@:%_\+.~#?&\/\/=]{2,256}(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/i';
 	
 	public function behaviors()
 	{
@@ -108,6 +112,31 @@ class Network extends Behavior
 			break;
 		}
 		return $ret_val;
+	}
+	
+	public static function isValidHost($url)
+	{
+		return (bool) (preg_match(self::IP_REGEX, $url) || preg_match(self::DOMAIN_REGEX, $url) || preg_match(self::URL_REGEX, $url) || preg_match(self::IP_URL_REGEX, $url));
+	}
+	
+	public static function isValidIp($url)
+	{
+		return (bool) preg_match(self::IP_REGEX, $url);
+	}
+	
+	public static function isValidDomain($url)
+	{
+		return (bool) preg_match(self::DOMAIN_REGEX, $url);
+	}
+	
+	public static function isValidUrl($url)
+	{
+		return (bool) preg_match(self::URL_REGEX, $url);
+	}
+	
+	public static function isValidIpUrl($url)
+	{
+		return (bool) preg_match(self::IP_URL_REGEX, $url);
 	}
 	
 	

@@ -12,7 +12,6 @@ use kartik\icons\Icon;
 //$this->title = $model->title;
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
-$authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\User;
 $localUniqid = uniqid();
 $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 ?>
@@ -26,11 +25,11 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 		}
 	?>
 	<div class="message-avatar">
-		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar avatar-small" alt="<? $authorUser->username; ?>" src="<?= $authorUser->avatar(); ?>" />
+		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar avatar-small" alt="<? $model->author()->username; ?>" src="<?= $model->author()->avatar(); ?>" />
 	</div>
 	<div id="messageHeader<?= $localUniqid ?>" class="message-header">
 		<?php if($model->replyTo != null): ?>
-			<a class="reply-to-author" href="#message<?= $model->replyTo->id ?>">@<?= $model->replyTo->authorUser->username ?></a><span class="reply-to-author"><?= $model->replyTo->title ?></span>
+			<a class="reply-to-author" href="#message<?= $model->replyTo->id ?>">@<?= $model->replyTo->author()->username ?></a><span class="reply-to-author"><?= $model->replyTo->title ?></span>
 		<?php endif; ?>
 	</div>
 	<div id="messageBody<?= $localUniqid ?>" class="message-body">
@@ -38,7 +37,7 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 	</div>
 	<div id="messageFooter<?= $localUniqid ?>" class="message-footer">
 		<div id="messageMeta<?= $localUniqid ?>" class="message-meta">
-			Posted on <?= $model->created_at ?> by<a class="author" href="#" role="usernameLink"><?= $authorUser->username ?></a>
+			Posted on <?= $model->created_at ?> by<a class="author" href="#" role="usernameLink"><?= $model->author()->username ?></a>
 		</div>
 		<div id="messageActions<?= $localUniqid ?>" class="message-actions">
 		<?php
@@ -60,7 +59,7 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 				'role' => 'replyTo',
 				'data-parent' => $uniqid,
 				'data-reply-to' => $model->getId(),
-				'data-author' => $authorUser->username,
+				'data-author' => $model->author()->username,
 				'data-title' => $model->title
 			]);
 			echo Html::a('quote', \Yii::$app->urlManager->createUrl(['/reply/quote/'.$model->getId()]), [
@@ -70,7 +69,7 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 				'role' => 'quoteReply',
 				'data-parent' => $uniqid,
 				'data-reply-to' => $model->getId(),
-				'data-author' => $authorUser->username,
+				'data-author' => $model->author()->username,
 				'data-title' => $model->title
 			]);
 		?>

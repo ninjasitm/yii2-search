@@ -95,6 +95,7 @@ class Configer extends Model
 	];
 	private $supported = ["file" => "File", "db" => "Database"];
 	private $event;
+	private static $hasNew;
 	
 	public function __construct()
 	{
@@ -246,7 +247,7 @@ class Configer extends Model
 	}
 	
 	/*
-     * Prepare the config info for updateing
+     * Prepare the config info for updating
 	 * @param string $engine
 	 * @param string $container
 	 * @param boolean $get_values
@@ -556,7 +557,7 @@ class Configer extends Model
 					$container = $containerid[$pri['containers']];
 					break;
 				}
-				$section = ['author' => \Yii::$app->user->getId(), "containerid" => $container];
+				$section = ['author_id' => \Yii::$app->user->getId(), "containerid" => $container];
 				$message = "";
 				$result = 'failure';
 				$action = ["success" => "Create Config", "failure" => "Create Config Fail"];
@@ -700,113 +701,11 @@ class Configer extends Model
 				/*
 				 * We ned to use activity states here to determine when to load form the database
 				 */
-				$this->select("1", true, [
-					"key" => ['1000'], 
-					"data" => [DB::PDO_NOBIND."NOW()-updated_at"],
-					"operand" => ">="
-				]);
-				$new_change = $this->rows();
-				switch($force || $new_change)
+				switch($force || self::hasNew())
 				{
 					case true:
-					$this->setTable($this->configTables['containers']);
-					$pri['containers'] = [
-						'key' => $this->configTables['containers'].'.'.$this->getCurPri(),
-						'name' => $this->getCurPri()
-					];
-					$sel_fields = [$pri['containers']['name'], 'name'];
-					$this->select($sel_fields, true, [
-						"key" => ['name', $pri['containers']['name']], 
-						"data" => [$container, $container],
-						"xor" => ["OR"]
-					]);
-					switch($this->successful() && ($this->rows() >= 1))
-					{
-						case true:
-						$this->config['current']['sections'] = [];
-						$containerid = $this->result(DB::R_ASS);
-						$this->setTable($this->configTables['sections']);
-						$pri['sections'] = [
-							'key' => $this->configTables['sections'].'.'.$this->getCurPri(),
-							'name' => $this->getCurPri()
-						];
-						$sel_fields = ['name', $pri['containers']['name']];
-						$this->select($sel_fields,
-							true, 
-							[
-								"key" => [
-									'containerid'
-								], 
-								"data" => [
-									$containerid[$pri['containers']['name']]
-								]
-							], 
-							["orderby" => "name"],
-							true
-						);
-						switch($this->rows())
-						{
-							case true:
-							$this->config['current']['sections'] = ['' => "Select section..."];
-							$result = $this->result(DB::R_ASS, true);
-							$ret_val = [];
-							foreach($result as $value)
-							{
-								switch(isset($this->config['current']['sections'][$value['name']]))
-								{
-									case false:
-									$this->config['current']['sections'][$value['name']] = $value['name'];
-									$this->config['sections'][$value['name']] = $value;
-									break;
-								}
-							}
-							
-							/*
-							 * Now get the values
-							 */
-							$this->setTable($this->configTables['values']);
-							$sel_fields = [
-								$pri['values']['name'],
-								$pri['values']['name']." AS `unique`",
-								'sectionid',
-								'containerid', 
-								'name',
-								'value',
-								'comment',
-								'author',
-								'editor',
-								'created_at',
-								'updated_at',
-								"CONCAT((SELECT `name` FROM `".$this->configTables['sections']."` WHERE ".$this->configTables['sections'].".id=sectionid), '.', name) AS unique_id", 
-								"'".$pri['sections']['name']."' AS unique_name", 
-								"(SELECT `name` FROM `".$this->configTables['sections']."` WHERE ".$this->configTables['sections'].".id=sectionid) AS 'section_name'", 
-								"(SELECT `name` FROM `".$this->configTables['containers']."` WHERE ".$this->configTables['containers'].".id=containerid) AS 'container_name'"
-							];
-							$this->select($sel_fields,
-								true, 
-								[
-									"key" => [
-										'containerid'
-									], 
-									"data" => [
-										$containerid[$pri['containers']['name']]
-									]
-								], 
-								["orderby" => "name"],
-								true
-							);
-							break;
-						}
-						switch($this->successful())
-						{
-							case true:
-							//$this->config['current']['sections'] = ['' => "Select section..."];
-							$result = $this->result(DB::R_ASS, true);
-							$ret_val = $result;
-							break;
-						}
-						break;
-					}
+					$result = $container->configValues;
+					$ret_val = $result;
 					break;
 				}
 				break;
@@ -822,11 +721,11 @@ class Configer extends Model
 	 * @param mixed $contents
 	 * @param string $commentchar
 	 * @param string $decode
-	 * @param boolean $updateing
+	 * @param boolean $updating
 	 * @param string $engine
 	 * @return mixed $ret_val
 	 */
-	public function readFrom($contents=null, $commentchar=';', $decode='json', $updateing=false, $engine='db') 
+	public function readFrom($contents=null, $commentchar=';', $decode='json', $updating=false, $engine='db') 
 	{
 		$ret_val = [];
 		$decode = is_array($decode) ? $decode : [$decode];
@@ -840,7 +739,7 @@ class Configer extends Model
 				foreach($contents as $idx=>$data) 
 				{
 					//is the section already set?
-					switch($updateing)
+					switch($updating)
 					{
 						case true:
 						$section = $data['section_name'];
@@ -907,14 +806,14 @@ class Configer extends Model
 										$value = substr($value, 1, -1); 
 									}
 									//$ret_val[$section][$key] = stripslashes($value);
-									//we may return comments if we're updateing
-									$ret_val[$section][$key] = ($updateing == false) ? $value : ["value" => $value, "comment" => @$comment, 'section' => $section, "name" => $key, "unique" => "$section.$key"];
+									//we may return comments if we're updating
+									$ret_val[$section][$key] = ($updating == false) ? $value : ["value" => $value, "comment" => @$comment, 'section' => $section, "name" => $key, "unique" => "$section.$key"];
 								}
 								else
 								{
-									//we may return comments if we're updateing
+									//we may return comments if we're updating
 									//...without a value
-									$ret_val[$section][trim($dataline)] = ($updateing === false) ? $value : ["value" => '', "comment" => @$comment, 'section' => $section, "name" => $key, "unique" => "$section.$key"];
+									$ret_val[$section][trim($dataline)] = ($updating === false) ? $value : ["value" => '', "comment" => @$comment, 'section' => $section, "name" => $key, "unique" => "$section.$key"];
 								}
 							}
 						}
@@ -941,8 +840,8 @@ class Configer extends Model
 					switch($dec)
 					{
 						case 'json':
-						array_walk_recursive($ret_val, function (&$v) use ($updateing) {
-							switch($updateing)
+						array_walk_recursive($ret_val, function (&$v) use ($updating) {
+							switch($updating)
 							{
 								case false:
 								$v = is_array($v) ? $v['value'] : $v;
@@ -950,7 +849,7 @@ class Configer extends Model
 							}
 							switch(1)
 							{
-								case ((@$v[0] == "{") && ($v[strlen($v)-1] == "}")) && ($updateing === false):
+								case ((@$v[0] == "{") && ($v[strlen($v)-1] == "}")) && ($updating === false):
 								$v = ((!is_null($data = json_decode(trim($v), true))) ? $data : $v);
 								break;
 								
@@ -963,13 +862,13 @@ class Configer extends Model
 						
 						case 'csv':
 						array_walk_recursive($ret_val, function (&$v) {
-							switch($updateing)
+							switch($updating)
 							{
 								case false:
 								$v = $v['value'];
 								break;
 							}
-							switch((@$v[0] == "{") && ($v[strlen($v)-1] == "}") && ($updateing === false))
+							switch((@$v[0] == "{") && ($v[strlen($v)-1] == "}") && ($updating === false))
 							{
 								case true:
 								$v = explode(',', $v);
@@ -1142,7 +1041,7 @@ class Configer extends Model
 				break;
 				
 				default:
-				//use sed for updateing
+				//use sed for updating
 				$ret_val = array_merge($ret_val, $this->_update($container, $key, $value));
 				$sess_member = (empty($sess_member)) ? Session::settings : $sess_member.'.'.$this->container;
 				switch($ret_val['success'])
@@ -1259,45 +1158,30 @@ class Configer extends Model
 		switch($this->location)
 		{
 			case 'db':
-			$data = ["containers" => ['author' => \Yii::$app->user->getId()]];
-			$message = "";
-			$result = 'failure';
-			$action = ["success" => "Create Container", "failure" => "Create Container Fail"];
-			$this->setTable($this->configTables['containers']);
-			$pri['containers'] = $this->getCurPri();
-			$data['containers']['name'] = $name;
-			//first we chec the container info
-			$cond = [
-				"key" => ['name', $this->getCurPri()], 
-				"data" => [$name, $name],
-				"xor" => ["OR"]
-			];
-			$containerid = $this->check($cond['key'], $cond['data'], null, null, '=', $cond['xor'], true, $this->getCurPri());
-			switch(empty($containerid))
+			$model = new ConfigContainer([
+				'name' => $name
+			]);
+			$message = '';
+			switch($model->save())
 			{
 				case true:
-				switch($this->insert(array_keys($data['containers']), array_values($data['containers'])))
-				{
-					case true:
-					$message .= "created container for $in";
-					$container_id = $this->last_id['insert'];
-					$data["sections"][$pri['containers']] = $container_id;; 
-					$data["sections"]['name'] = 'global';
-					$this->setTable($this->configTables['sections']);
-					$this->event['data'] = [
-						'table' => 'config',
-						'db' => $this->configDb,
-						'action' => $action[$result],
-						'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." ".$message
-					];
-					$this->trigger('afterCreate');
-					$ret_val['class'] = $this->classes['success'];
-					break;
-				}
+				$message .= "created container for $in";
+				$container_id = $this->last_id['insert'];
+				$data["sections"][$pri['containers']] = $container_id;; 
+				$data["sections"]['name'] = 'global';
+				$this->setTable($this->configTables['sections']);
+				$this->event['data'] = [
+					'table' => 'config',
+					'db' => $this->configDb,
+					'action' => $action[$result],
+					'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." ".$message
+				];
+				$this->trigger('afterCreate');
+				$ret_val['class'] = $this->classes['success'];
 				break;
-					
+				
 				default:
-				$message = "was unable to create a new configuration container for $name becuase it already exists";
+				$message ."Counldn't create container $name";
 				break;
 			}
 			$ret_val['message'] = "The system ".$message;
@@ -1349,7 +1233,7 @@ class Configer extends Model
 	 * @param boolean $get_values
      * @return mixed $config
      */
-	public function getConfig($engine=null, $container=null, $get_values=false, $updateing=false)
+	public function getConfig($engine=null, $container=null, $get_values=false, $updating=false)
 	{
 		//$directory, $apppath=false, $match=null, $group=false, $empty=false, $skipthese=null, $parent=null
 		$this->container = !empty($container) ? $container : $this->container;
@@ -1367,13 +1251,13 @@ class Configer extends Model
 			
 			case 'file':
 			$ret_val = $this->readFrom($this->loadFrom($this->config['current']['path'], false, true), 
-				null, 'json', $updateing, $engine);
+				null, 'json', $updating, $engine);
 			break;
 			
 			
 			case 'db':
 			$ret_val = $this->readFrom($this->loadFrom($this->config['current']['container'], false, true), 
-				null, 'json', $updateing, $engine);
+				null, 'json', $updating, $engine);
 			break;
 				
 			default:
@@ -1444,57 +1328,36 @@ class Configer extends Model
 				//We're createing a section
 				case 4:
 				case 2:
-				$section = [
-					'author' => \Yii::$app->user->getId(), 
-					"containerid" => $container,
-					'name' => $sectionName,
-				];
-				$this->setTable($this->configTables['sections']);
-				$check = ['name', 'containerid'];
-				switch($this->check($check, array_intersect_key($section, array_flip($check))))
-				{
-					case false:
-					switch($this->insert(array_keys($section), array_values($section)))
-					{
-						case true:
-						$ret_val['value'] = [];
-						$ret_val['success'] = true;
-						$ret_val['message'] = "Added section ".$sectionName;
-						break;
-					}
-					break;
-				}
+				$model = new ConfigValues([
+					'containerid' => $container,
+					'name' => $sectionName
+				]);
+				$message = "Added section ".$sectionName;
 				break;
 				
 				case 5:
 				case 3:
-				$val = [];
-				$val['author'] = \Yii::$app->user->getId();
-				$val['name'] = $name;
-				$val['value'] = $value;
-				$val['containerid'] = $container;
-				$val['sectionid'] = $this->getSectionId($container, $sectionName);
-				//write the values
-				$this->setTable($this->configTables['values']);
-				$check = array_intersect_key($val, array_flip(['containerid', 'sectionid', 'name']));
-				switch($this->check(array_keys($check), array_values($check)))
-				{
-					case false:
-					switch($this->insert(array_keys($val), array_values($val)))
-					{
-						case true:
-						$ret_val['value'] = rawurlencode($value);
-						$ret_val['unique'] = $this->last_id['insert'];
-						$ret_val['container_name'] = $ret_val['container'];
-						$ret_val['unique_id'] = $key;
-						$ret_val['section_name'] = $sectionName;
-						$ret_val = array_merge($ret_val, $val);
-						$ret_val['success'] = true;
-						$ret_val['message'] = "Added $name to section $sectionName";
-						break;
-					}
-					break;
-				}
+				$model = new ConfigValues([
+					'containerid' => $container,
+					'sectionid' => $this->getSectionId($container, $sectionName)
+					'value' => $value,
+					'name' => $name
+				]);
+				$message = "Added $name to section $sectionName";
+				break;
+			}
+			$model->setScenario('create');
+			switch($model->save())
+			{
+				case true:
+				$ret_val['value'] = rawurlencode($value);
+				$ret_val['unique'] = $model->id;
+				$ret_val['container_name'] = $ret_val['container'];
+				$ret_val['unique_id'] = $key;
+				$ret_val['section_name'] = $sectionName;
+				$ret_val = array_merge($ret_val, $val);
+				$ret_val['success'] = true;
+				$ret_val['message'] = $message;
 				break;
 			}
 			break;
@@ -1522,7 +1385,7 @@ class Configer extends Model
 			}
 			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).' "'.$container.'.'.$this->types[$this->location].'"';
 			exec($args['command'], $output, $cmd_ret_val);
-			//sed should return an empty value for success when updateing files
+			//sed should return an empty value for success when updating files
 			switch($cmd_ret_val)
 			{
 				case 0:
@@ -1542,7 +1405,7 @@ class Configer extends Model
 	}
 	
 	/*
-	 * Handled updateing in DB or in file to simplify update function
+	 * Handled updating in DB or in file to simplify update function
 	 * @param string|int $container
 	 * @param string|int $key
 	 * @return mixed
@@ -1568,44 +1431,29 @@ class Configer extends Model
 			case 'db':
 			switch(sizeof($hierarchy))
 			{
-				//we're updateing a section
+				//we're updating a section
 				case 4:
 				case 2:
-				$update['editor'] = \Yii::$app->user->getId();
-				$update['updated_at'] = time();
-				$update['table'] = $this->configTables['sections'];
-				$update['keys'] = ['name'];
-				$update['values'] = [$value];
 				$message = "Updated the section name to $value";
-				$update['condition'] = [
-					'key' => ['id'], 
-					'data' => [$this->cfg_id]
-				];
-				$update['process'] = true;
+				$values = ['value' => $value];
+				$model = ConfigSections::findOne($this->cfg_id);
 				break;
 			
-				//we're updateing a value
+				//we're updating a value
 				case 5:
 				case 3:
-				$update['editor'] = \Yii::$app->user->getId();
-				$update['updated_at'] = time();
-				$update['table'] = $this->configTables['values'];
-				$update['keys'] = ['value'];
-				$update['values'] = [$value];
 				$message = "Updated the value [$key] from ".@$old_value['value']." to ".$value;
-				$update['condition'] = [
-					'key' => ['id'], 
-					'data' => [$this->cfg_id]
-				];
-				$update['process'] = true;
+				$values = ['value' => $value];
 				$ret_val['name'] = $name;
+				$model = ConfigValues::findOne($this->cfg_id);
 				break;
 			}
-			switch($update['process'])
+			switch(is_object($model))
 			{
 				case true:
-				$this->setTable($update['table']);
-				switch(parent::update($update['keys'], $update['values'], $update['condition']))
+				$model->setScenario('update');
+				$model->load($values);
+				switch($model->save())
 				{
 					case true:
 					$ret_val['success'] = true;
@@ -1621,7 +1469,7 @@ class Configer extends Model
 			$container = $this->resolveDir($this->config['current']['path']);
 			switch(sizeof($hierarchy))
 			{
-				//we're updateing a section
+				//we're updating a section
 				case 4:
 				case 2:
 				$args['command'] = 'sed -i -e "s/^\[%s\]/%s/" ';	
@@ -1629,7 +1477,7 @@ class Configer extends Model
 				$message = "Updated the section name from ".$name." to $value";
 				break;
 			
-				//no support for updateing section names as of yet
+				//no support for updating section names as of yet
 				case 5: 
 				case 3:    
 				$args['command'] = 'sed -i -e "/^\[%s\]/,/^$/{s/%s =.*/%s = %s/}" ';
@@ -1639,7 +1487,7 @@ class Configer extends Model
 			}
 			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).'"'.$container.'.'.$this->types[$this->location].'"';
 			exec($args['command'], $output, $cmd_ret_val);
-			//sed should return an empty value for success when updateing files
+			//sed should return an empty value for success when updating files
 			switch($cmd_ret_val)
 			{
 				case 0:
@@ -1682,9 +1530,7 @@ class Configer extends Model
 				//we're deleting a section
 				case 4:
 				case 2:
-				$delete['table'] = $this->configTables['sections'];
-				$delete['keys'] = ['id'];
-				$delete['values'] = [$this->getSectionId($this->getContainerId($container), $sectionName)];
+				$model = ConfigSections::findOne($this->cfg_id);
 				$message = "Deleted the section: $key";
 				$delete['process'] = true;
 				break;
@@ -1693,24 +1539,15 @@ class Configer extends Model
 				case 5:
 				case 3:
 				$ret_val['name'] = $name;
-				$delete['table'] = $this->configTables['values'];
-				$delete['keys'] = ['id'];
-				$delete['values'] = [$this->cfg_id];
 				$message = "Deleted the value: $key";
-				$delete['process'] = true;
+				$model = ConfigValues::findOne($this->cfg_id);
 				break;
 			}
-			switch($delete['process'])
+			switch(is_object($model) && $model->delete())
 			{
 				case true:
-				$this->setTable($delete['table']);
-				switch($this->remove($delete['keys'], $delete['values']))
-				{
-					case true:
-					$ret_val['success'] = true;
-					$ret_val['message'] = $message;
-					break;
-				}
+				$ret_val['success'] = true;
+				$ret_val['message'] = $message;
 				break;
 			}
 			break;
@@ -1745,7 +1582,7 @@ class Configer extends Model
 			}
 			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).' "'.$container.'.'.$this->types[$this->location].'"';
 			exec($args['command'], $output, $cmd_ret_val);
-			//sed should return an empty value for success when updateing files
+			//sed should return an empty value for success when updating files
 			switch($cmd_ret_val)
 			{
 				case 0:
@@ -1793,13 +1630,9 @@ class Configer extends Model
 		switch($this->location)
 		{
 			case 'db':
-			$this->setDb($this->configDb, $this->configTables['containers']);
-			$pri = $this->getCurPri();
-			$sel_fields = ["name"];
-			$this->select(array_merge($sel_fields, ["$pri AS `unique`", "'$pri' AS unique_name"]), true, null, null, true);
-			$result = $this->result(DB::R_ASS, true);
+			$result = ConfigContainers::find()->select(["id AS `unique`", "'id' AS unique_name", 'name'])->all();
 			array_walk($result, function ($val, $key) use(&$ret_val) {
-				$ret_val[$val['name']] = $val['name'];
+				$ret_val[$val->name] = $val->name;
 			});
 			$this->config['containers'] = $ret_val;
 			$this->config['load']['containers'] = true;
@@ -1871,34 +1704,23 @@ class Configer extends Model
 		switch($this->location)
 		{
 			case 'db':
-			//delete all config settings with $in $name $ext Just set the deleted key to deleted instead of actually deleting the value, for backup purposes
-			$data = ["keys" => ['deleted', 'author'], "values" => [1, Yii::$app->user->getId()]];
-			$cond = ["key" => [$pri['containers']], "data" => [$name]];
-			$message = "";
-			$action = ["success" => "Deleted Config", "failure" => "Delete Config Fail"];
-			foreach($this->configTables as $table)
+			switch(ConfigSections::updateAll(['deleted' => 1], ['containerid' => $name]))
 			{
-				$this->setTable($table);
-				$ret_val['success'] = $ret_val['success'] and $this->update($data['keys'], $data['values'], $cond);
-				switch($ret_val)
-				{
-					case true:
-					$message .= "deleted config for $name in $table\n\n";
-					$result = "success";
-					$this->trigger('afterDelete', new Event($this, [
-							'table' => 'config',
-							'db' => $this->configDb,
-							'action' => $action[$result],
-							'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." ".$message
-						])
-					);
-					break;
-					
-					default:
-					$message .= "couldn't delete config for $name in $table\n\n";
-					$result = "failure";
-					break;
-				}
+				case true:
+				$ret_val['success'] = true;
+				$message .= "deleted config for $name in $name\n\n";
+				$this->trigger('afterDelete', new Event($this, [
+						'table' => 'config',
+						'db' => $this->configDb,
+						'action' => $action[$result],
+						'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." ".$message
+					])
+				);
+				break;
+				
+				default;
+				$message .= "couldn't delete config for $name\n\n";
+				break;
 			}
 			$ret_val['message'] = "I ".$message;
 			break;
@@ -2047,14 +1869,10 @@ class Configer extends Model
 			break;
 			
 			case 'db':
-			$this->setTable($this->configTables['containers']);
-			$pri = $this->getCurPri();
-			$cond = [
-				"key" => ['name', $pri],
-				"data" => [$container, $container],
-				"xor" => ["OR"]
-			];
-			$containerid = $this->check($cond['key'], $cond['data'], null, null, '=', $cond['xor'], [$pri]);
+			$model = ConfigContainers::find()
+			->where(['or', 'name' => $container, 'id' => $container])
+			->one();
+			$containerid = $model instanceof ConfigContainers ? [$model->id] : null;
 			break;
 		}
 		$this->containerId = is_array($containerid) ? $containerid[0] : null;
@@ -2069,22 +1887,22 @@ class Configer extends Model
 	  */
 	 private function getSectionId($container, $section)
 	 {
-		$this->setTable($this->configTables['sections']);
-		$pri = $this->getCurPri();
-		$cond = [
-			"key" => [
-				DB::FLAG_ASIS."(`name`='$section' OR `$pri`='$section')", 'containerid'
-			], 
-			"data" => [
-				DB::FLAG_NULL, $container
-			],
-			"xor" => [
-				 'AND'
-			]
-		];
-		$sectionid = $this->check($cond['key'], $cond['data'], null, null, '=', $cond['xor'], [$pri]);
-		$this->sectionId = is_array($sectionid) ? $sectionid[0] : null;
+		$section = ConfigSections::find()
+		->where(['or', 'name' => $section, 'id' => $section])
+		->andWhere(['containerid' => $container])->one();
+		$this->sectionId = $section instanceof ConfigSections ? $section->id : null;
 		return $this->sectionId;
+	 }
+	 
+	 private static function hasNew()
+	 {
+		 switch(isset(self::$hasNew))
+		 {
+			case false:
+			self::$hasNew = (static::find()->where(new \yii\db\Expression("SELECT 1 FROM ".$this->configTables['containers']." WHERE NOW()-MAX(updated_at) >= 10000"))->count() >=1) ? true : false;
+			break;
+		 }
+		 return self::$hasNew;
 	 }
 }
 ?>

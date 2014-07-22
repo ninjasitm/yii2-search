@@ -6,7 +6,7 @@ namespace nitm\models;
  * This is the model class for table "rating".
  *
  * @property integer $id
- * @property integer $author
+ * @property integer $author_id
  * @property string $created_at
  * @property string $rating
  * @property string $parent_type
@@ -41,8 +41,8 @@ class Rating extends BaseWidget
     public function rules()
     {
         return [
-            [['id', 'author', 'created_at', 'rating', 'parent_type', 'parent_id'], 'required'],
-            [['id', 'author', 'parent_id'], 'integer'],
+            [['id', 'author_id', 'created_at', 'rating', 'parent_type', 'parent_id'], 'required'],
+            [['id', 'author_id', 'parent_id'], 'integer'],
             [['created_at'], 'safe'],
             [['rating'], 'string'],
             [['parent_type'], 'string', 'max' => 64],
@@ -58,7 +58,7 @@ class Rating extends BaseWidget
     {
         return [
             'id' => 'ID',
-            'author' => 'Author',
+            'author_id' => 'Author',
             'created_at' => 'Created At',
             'rating' => 'Rating',
             'parent_type' => 'parent Type',

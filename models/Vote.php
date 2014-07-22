@@ -6,7 +6,7 @@ namespace nitm\models;
  * This is the model class for table "vote".
  *
  * @property integer $id
- * @property integer $author
+ * @property integer $author_id
  * @property string $created_at
  * @property string $parent_type
  * @property integer $parent_id
@@ -35,21 +35,21 @@ class Vote extends BaseWidget
     public function rules()
     {
         return [
-            [['author', 'parent_type', 'parent_id'], 'required', 'on' => ['update', 'create']],
+            [['author_id', 'parent_type', 'parent_id'], 'required', 'on' => ['update', 'create']],
 			[['value'], 'required', 'on' => ['update']],
-            [['author', 'parent_id'], 'integer'],
+            [['author_id', 'parent_id'], 'integer'],
             [['created_at'], 'safe'],
             [['parent_type'], 'string', 'max' => 64],
-            [['author', 'parent_type', 'parent_id'], 'unique', 'targetAttribute' => ['author', 'parent_type', 'parent_id'], 'message' => 'The combination of User ID, parent Type and parent ID has already been taken.']
+            [['author_id', 'parent_type', 'parent_id'], 'unique', 'targetAttribute' => ['author_id', 'parent_type', 'parent_id'], 'message' => 'The combination of User ID, parent Type and parent ID has already been taken.']
         ];
     }
 	
 	public function scenarios()
 	{
 		$scenarios = [
-			'default' => ['author', 'parent_type', 'parent_id', 'value'],
-			'update' => ['author', 'parent_type', 'parent_id', 'value'],
-			'create' => ['author', 'parent_type', 'parent_id'],
+			'default' => ['author_id', 'parent_type', 'parent_id', 'value'],
+			'update' => ['author_id', 'parent_type', 'parent_id', 'value'],
+			'create' => ['author_id', 'parent_type', 'parent_id'],
 		];
 		
 		return array_merge(parent::scenarios(), $scenarios);
@@ -62,7 +62,7 @@ class Vote extends BaseWidget
     {
         return [
             'id' => 'ID',
-            'author' => 'User ID',
+            'author_id' => 'User ID',
             'created_at' => 'Created At',
             'parent_type' => 'parent Type',
             'parent_id' => 'parent ID',
@@ -145,7 +145,7 @@ class Vote extends BaseWidget
 		switch($this->allowMultiple())
 		{
 			case false:
-			$this->queryFilters['author'] = \Yii::$app->user->getId();
+			$this->queryFilters['author_id'] = \Yii::$app->user->getId();
 			$vote = $this->getOne();
 			switch($vote instanceof Vote)
 			{

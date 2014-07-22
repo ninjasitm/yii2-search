@@ -19,6 +19,8 @@ use nitm\interfaces\DataInterface;
 
 class BaseWidget extends Data implements DataInterface
 {
+	use \nitm\traits\Nitm;
+	
 	public $count;
 	public $hasAny;
 	public $hasNew;
@@ -33,8 +35,8 @@ class BaseWidget extends Data implements DataInterface
 	];
 	
 	protected $userLastActive;
-	protected $authorIdKey = 'author';
-	protected $editorIdKey = 'editor';
+	protected $authorIdKey = 'author_id';
+	protected $editorIdKey = 'editor_id';
 	
 	private $_dateFormat = "D M d Y h:iA";
 	
@@ -42,6 +44,7 @@ class BaseWidget extends Data implements DataInterface
 	{
 		$this->setConstraints($this->constrain);
 		parent::init();
+		$this->addWith(['author']);
 	}
 	
 	public function scenarios()
@@ -187,7 +190,7 @@ class BaseWidget extends Data implements DataInterface
 				 $andWhere = ['and', 'value>=1'];
 				 break;
 			 }
-			 $ret_val = $this->find()->select("SUM(value) AS value")->where($this->queryFilters)->andWhere($andWhere)->asArray()->all();
+			 $ret_val = $this->find($this)->select("SUM(value) AS value")->andWhere($andWhere)->asArray()->all();
 			 $ret_val = $ret_val[0]['value'];
 			 switch(is_null($valueFilter))
 			 {
@@ -210,13 +213,12 @@ class BaseWidget extends Data implements DataInterface
 		$class = static::className();
 		$model = new $class;
 		$model->setConstraints($constrain);
-		$ret_val = $model->find()
-		 	->with([
-				'last' => function ($query) use ($model) {
-					$query->andWhere($model->queryFilters);
-				}
-			])
-			->where($model->queryFilters)
+		$model->addWith([
+			'last' => function ($query) use ($model) {
+				$query->andWhere($model->queryFilters);
+			}
+		]);
+		$ret_val = $model->find($model)
 			->one();
 		switch(is_a($ret_val, static::className()))
 		{
@@ -282,16 +284,21 @@ class BaseWidget extends Data implements DataInterface
 				'id' => 'id',
 			])
 			->orderBy([array_shift($this->primaryKey()) => SORT_DESC])
-			->with('authorUser');
+			->with('author');
 		return $ret_val;
 	}
 	
+	public function getStatus()
+	{
+		$ret_val = '';
+		return $ret_val;
+	}
 	
 	/*
 	 * Get the author for this object
 	 * @return mixed user array
 	 */
-	public function getAuthorUser()
+	public function getAuthor()
 	{
 		 return $this->hasOne(User::className(), ['id' => $this->authorIdKey]);
 	}
@@ -301,15 +308,9 @@ class BaseWidget extends Data implements DataInterface
 	 * Get the author for this object
 	 * @return mixed user array
 	 */
-	public function getEditorUser()
+	public function getEditor()
 	{
 		return $this->hasOne(User::className(), ['id' => $this->editorIdKey]);
-	}
-	
-	public function getStatus()
-	{
-		$ret_val = '';
-		return $ret_val;
 	}
 }
 ?>

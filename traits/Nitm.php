@@ -52,16 +52,6 @@ trait Nitm
 		];
 	}
 	
-	public static function getAccountInfo($ccid)
-	{
-		return \nitm\models\Lab1::getAccountInfo($ccid);
-	}
-	
-	public static function getTicketInfo($id)
-	{
-		return \nitm\models\Lab1::getTicketInfo($id);
-	}
-	
 	public function getStatus()
 	{
 		$ret_val = 'default';
@@ -142,7 +132,7 @@ trait Nitm
      */
     public function getAuthor()
     {
-        return $this->hasOne(User::className(), ['id' => 'author']);
+        return $this->hasOne(User::className(), ['id' => 'author_id']);
     }
 	
 	public function author()
@@ -155,7 +145,7 @@ trait Nitm
      */
     public function getEditor()
     {
-        return $this->hasOne(User::className(), ['id' => 'editor']);
+        return $this->hasOne(User::className(), ['id' => 'editor_id']);
     }
 	
 	public function editor()
@@ -235,12 +225,15 @@ trait Nitm
      */
     public static function getCategoryList($type)
     {
-		return Category::getList('name', [
-			'where' => [
-				'parent_ids' => new \yii\db\Expression("(SELECT id FROM ".Category::tableName()." WHERE slug='".$type."' LIMIT 1)")
-			],
-			'orderBy' => ['name' => SORT_ASC]
+		$model = new Category([
+			'queryFilters' => [
+				'where' => [
+					'parent_ids' => new \yii\db\Expression("(SELECT id FROM ".Category::tableName()." WHERE slug='".$type."' LIMIT 1)")
+				],
+				'orderBy' => ['name' => SORT_ASC]
+			]
 		]);
+		return $model->getList('name');
     }
 
     /**
@@ -268,69 +261,6 @@ trait Nitm
 	{
 		return $this->category instanceof Category ? $this->category : new Category();
 	}
-	
-	/**
-	 * Get items for use in an HTML element
-	 * @param string $label The attribute housin the label
-	 * @param array $otptions Some Options for the query
-     * @return array
-     */
-    public static function getList($label='name', $options=[], $print=false)
-    {
-		$label = empty($label) ? 'name' : $label;
-		$ret_val = [];
-		$query = static::find();
-		foreach($options as $type=>$params)
-		{
-			switch(strtolower($type))
-			{
-				case 'where':
-				case 'andwhere':
-				case 'orwhere':
-				case 'limit':
-				case 'with':
-				case 'orderby':
-				case 'indexby':
-				case 'groupby':
-				case 'addgroupby':
-				case 'join':
-				case 'leftjoin':
-				case 'rightjoin':
-				case 'innerjoin':
-				case 'having':
-				case 'andhaving':
-				case 'orhaving':
-				case 'union':
-				call_user_func_array([$query, $type], [$params]);
-				break;
-			}
-		}
-		$id = static::primaryKey();
-		$optionKeys = array_map('strtolower', array_keys($options));
-		switch(1)
-		{
-			case in_array('orderby', $optionKeys):
-			$query->orderBy($id[0]);
-			case in_array('indexby', $optionKeys):
-			$query->indexby($id[0]);
-			break;
-		}
-		$items = $query->all();
-		switch(empty($items))
-		{
-			case false:
-			foreach($items as $item)
-			{
-				$ret_val[$item->$id[0]] = $item->$label;
-			}
-			break;
-			
-			default:
-			$ret_val[] = ["No ".static::isWhat()." found"];
-			break;
-		}
-		return $ret_val;
-    }
 	
 	/*
 	 * Return a string imploded with ucfirst characters

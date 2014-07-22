@@ -12,7 +12,6 @@ use kartik\icons\Icon;
 //$this->title = $model->title;
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
-$authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\User;
 ?>
 <div id="message<?= $model->getId() ?>" class="message <?= $model->hidden ? 'message-hidden' : '';?> <?= \nitm\helpers\Statuses::getIndicator($model->getStatus()) ?>">
 	<?php
@@ -24,11 +23,11 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 		}
 	?>
 	<div id="messageAvatar<?= $model->getId() ?>" class="message-avatar">
-		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar-small" alt="<? $authorUser->username; ?>" src="<?= $authorUser->avatar(); ?>" />
+		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar-small" alt="<? $model->author()->username; ?>" src="<?= $model->author()->avatar(); ?>" />
 	</div>
 	<div id="messageHeader<?= $model->getId() ?>" class="message-header">
 		<?php if($model->replyTo != null): ?>
-			<a class="reply-to-author" href="#message<?= $model->replyTo->id ?>">@<?= $model->replyTo->authorUser->username ?></a><span class="reply-to-author"><?= $model->replyTo->title ?></span>
+			<a class="reply-to-author" href="#message<?= $model->replyTo->id ?>">@<?= $model->replyTo->author()->username ?></a><span class="reply-to-author"><?= $model->replyTo->title ?></span>
 		<?php endif; ?>
 		<span class="title"><?= $model->title ?><span>
 	</div>
@@ -37,7 +36,7 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 	</div>
 	<div id="messageFooter<?= $model->getId() ?>" class="message-footer">
 		<div id="messageMeta<?= $model->getId() ?>" class="message-meta">
-			Posted on <?= $model->created_at ?> by <a class="author" href="#" role="usernameLink"><?= $authorUser->username ?></a>
+			Posted on <?= $model->created_at ?> by <a class="author" href="#" role="usernameLink"><?= $model->author()->username ?></a>
 		</div>
 		<div id="messageActions<?= $model->getId() ?>" class="message-actions">
 		<?php
@@ -59,7 +58,7 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 				'role' => 'replyTo',
 				'data-parent' => 0,
 				'data-reply-to' => $model->getId(),
-				'data-author' => $authorUser->username,
+				'data-author' => $model->author()->username,
 				'data-title' => $model->title
 			]);
 			echo Html::a('quote', \Yii::$app->urlManager->createUrl(['/reply/quote/'.$model->getId()]), [
@@ -69,7 +68,7 @@ $authorUser = isset($model->authorUser) ? $model->authorUser : new \nitm\models\
 				'role' => 'quoteReply',
 				'data-parent' => 0,
 				'data-reply-to' => $model->getId(),
-				'data-author' => $authorUser->username,
+				'data-author' => $model->author()->username,
 				'data-title' => $model->title
 			]);
 		?>

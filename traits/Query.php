@@ -90,6 +90,14 @@ trait Query {
 					break;
 				}
 			}
+			foreach($filters as $type=>$args)
+			{
+				try {
+					$query->$type($args);
+					unset($filters[$type]);
+				} catch (\Exception $e) {
+				}
+			}
 			//now search for conditional filters
 			$filters = array_filter($filters, 'strlen');
 			switch(is_array($filters) && (sizeof($filters) >= 1))
@@ -245,29 +253,6 @@ trait Query {
 					case 1:
 					$property = $special[0];
 					$column = $property;
-					break;
-				}
-				switch($property)
-				{
-					case 'author':
-					case 'editor':
-					switch(isset(\Yii::$app->getDb()->getTableSchema(static::TableName())->columns[$column]))
-					{
-						case true:
-						$columns[] = "(SELECT username FROM ".\nitm\models\User::tableName()." WHERE [[id]]=[[$property]] LIMIT 1) AS ".$column."_hr";
-						break;
-					}
-					break;
-					
-					case 'added':
-					case 'edited':
-					case 'date':
-					switch(isset(\Yii::$app->getDb()->getTableSchema(static::TableName())->columns[$column]))
-					{
-						case true:
-						$columns[] = "DATE_FORMAT(`$column`, '".\nitm\helpers\DateFormatter::getFormat(\nitm\helpers\DateFormatter::FORMAT_MYSQL_HR)."') AS ".$column."_hr";
-						break;
-					}
 					break;
 				}
 			}
