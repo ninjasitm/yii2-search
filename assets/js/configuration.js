@@ -238,9 +238,9 @@ function Configuration()
 					$(this).data('action', fn);
 				})
 			});
-			self.prepareDeleting('#'+self.views.containers.configuration, result);
-			//self.prepareCreateing('#'+self.views.containers.section);
-			//self.prepareUpdating('#'+self.views.containers.section);
+			self.initDeleting('#'+self.views.containers.configuration, result);
+			self.initCreating('#'+self.views.containers.section);
+			//self.initUpdating('#'+self.views.containers.section);
 		}
 		else
 		{
@@ -275,8 +275,8 @@ function Configuration()
 			
 			default:
 			$nitm.getObj('#'+self.views.containers.createValue).before($(result.data));
-			self.prepareDeleting('#'+'value_'+result.unique_id);
-			self.prepareUpdating('#'+'value_'+result.unique_id);
+			self.initDeleting('#'+'value_'+result.unique_id);
+			self.initUpdating('#'+'value_'+result.unique_id);
 			break;
 		}
 		form.reset();

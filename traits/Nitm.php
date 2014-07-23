@@ -14,10 +14,7 @@ use nitm\models\Category;
  */
 
 trait Nitm
-{	
-	public $replies;
-	public $issues;
-	public $revisions;
+{
 	
 	public function url($attribute='id', $text=null, $url=null) 
 	{
@@ -125,84 +122,6 @@ trait Nitm
 			break;
 		}
 		return $ret_val;
-	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getAuthor()
-    {
-        return $this->hasOne(User::className(), ['id' => 'author_id']);
-    }
-	
-	public function author()
-	{
-		return $this->author instanceof User ? $this->author : new User();
-	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getEditor()
-    {
-        return $this->hasOne(User::className(), ['id' => 'editor_id']);
-    }
-	
-	public function editor()
-	{
-		return $this->editor instanceof User ? $this->editor : new User();
-	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getCompletedBy()
-    {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'completed_by']);
-    }
-	
-	public function completedBy()
-	{
-		return $this->completedBy instanceof User ? $this->completedBy : new User();
-	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getResolvedBy()
-    {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'resolved_by']);
-    }
-	
-	public function resolvedBy()
-	{
-		return $this->resolvedBy instanceof User ? $this->resolvedBy : new User();
-	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getClosedBy()
-    {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'closed_by']);
-    }
-	
-	public function closedBy()
-	{
-		return $this->closedBy instanceof User ? $this->closedBy : new User();
-	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getDisabledBy()
-    {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'disabled_by']);
-    }
-	
-	public function disabledBy()
-	{
-		return $this->disabledBy instanceof User ? $this->disabledBy : new User();
 	}	
 
     /**
@@ -235,32 +154,6 @@ trait Nitm
 		]);
 		return $model->getList('name');
     }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getType()
-    {
-        return $this->hasOne(Category::className(), ['id' => 'type_id']);
-    }
-	
-	public function type()
-	{
-		return $this->type instanceof Category ? $this->type : new Category();
-	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getCategory()
-    {
-        return $this->hasOne(Category::className(), ['id' => 'category_id']);
-    }
-	
-	public function category()
-	{
-		return $this->category instanceof Category ? $this->category : new Category();
-	}
 	
 	/*
 	 * Return a string imploded with ucfirst characters

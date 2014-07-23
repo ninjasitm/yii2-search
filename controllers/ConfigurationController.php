@@ -340,15 +340,11 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		}
 		return $this->finalAction();
 	}
-	
-	/*---------------------
-	  Private functions
-	 --------------------*/
 	/*
 	 * Where do we go after an action?
 	 * @params mixed $params
 	 */
-	private function finalAction($params=null)
+	protected function finalAction($params=null)
 	{
 		\Yii::$app->getSession()->setFlash(
 			@$this->model->config['current']['action']['class'],
@@ -372,6 +368,10 @@ class ConfigurationController extends DefaultController implements DefaultContro
 			break;
 		}
 	}
+	
+	/*---------------------
+	  Private functions
+	 --------------------*/
 	
 };
 

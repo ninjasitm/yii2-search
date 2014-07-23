@@ -19,7 +19,7 @@ use nitm\interfaces\DataInterface;
 
 class BaseWidget extends Data implements DataInterface
 {
-	use \nitm\traits\Nitm;
+	use \nitm\traits\Nitm, \nitm\traits\Relations;
 	
 	public $count;
 	public $hasAny;
@@ -33,18 +33,19 @@ class BaseWidget extends Data implements DataInterface
 		'important' => 'info',
 		'critical' => 'error'
 	];
+	public $initSearchClass = true;
 	
-	protected $userLastActive;
-	protected $authorIdKey = 'author_id';
-	protected $editorIdKey = 'editor_id';
+	protected static $userLastActive;
 	
-	private $_dateFormat = "D M d Y h:iA";
+	private static $_dateFormat = "D M d Y h:iA";
 	
 	public function init()
 	{
 		$this->setConstraints($this->constrain);
 		parent::init();
 		$this->addWith(['author']);
+		if($this->initSearchClass)
+			static::initCache($this->constrain);
 	}
 	
 	public function scenarios()
@@ -129,18 +130,19 @@ class BaseWidget extends Data implements DataInterface
 	 * Get the count for the current parameters
 	 * @return int count
 	 */
-	 public function getCount()
+	 public static function getCount()
 	 {
+		 $model = clone static::$cache->get('base-widget-search.'.static::isWhat());
 		 $ret_val = 0;
-		 $this->setScenario('count');
-		 switch($this->validate())
+		 $model->setScenario('count');
+		 switch($model->validate())
 		 {
 			 case true:
-			 switch(isset($this->queryFilters['value']))
+			 switch(isset($model->queryFilters['value']))
 			 {
 				 case true:
 				 $andWhere = ['and'];
-				 switch($this->queryFilters['value'])
+				 switch($model->queryFilters['value'])
 				 {
 					 case -1:
 					 $andWhere[] = '`value`<=0';
@@ -150,18 +152,18 @@ class BaseWidget extends Data implements DataInterface
 					 $andWhere[] = '`value`>=1';
 					 break;
 				 }
-				 unset($this->queryFilters['value']);
+				 unset($model->queryFilters['value']);
 				 break;
 				 
 				 default:
 				 $andWhere = [];
 				 break;
 			 }
-			 $ret_val = $this->find()->where($andWhere)->andWhere($this->queryFilters)->count();
+			 $ret_val = $model->find()->where($andWhere)->andWhere($model->queryFilters)->count();
 			 break;
 			 
 			 default:
-			 throw new Exception("Error validating for count.\n".var_export($this->getErrors(), true));
+			 throw new Exception("Error validating for count.\n".var_export($model->getErrors(), true));
 			 break;
 		 }
 		 return $ret_val;
@@ -201,33 +203,41 @@ class BaseWidget extends Data implements DataInterface
 			 break;
 		 }
 		 return $ret_val;
-	 }
+	}
 	
+	protected static function initCache($constrain)
+	{
+		if(!static::$cache->exists('base-widget-search.'.static::isWhat()))
+		{
+			$class = static::className();
+			$model = new $class(['initSearchClass' => false]);
+			$model->setConstraints($constrain);
+			static::$cache->set('base-widget-search.'.static::isWhat(), $model);
+		}
+	}
 	
 	/**
-	 * Get the count for the current parameters
-	 * @return int count
+	 * Find a model
 	 */
 	 public static function findModel($constrain=null)
 	 {
-		$class = static::className();
-		$model = new $class;
+		static::initCache($constrain);
+		$model = clone static::$cache->get('base-widget-search.'.static::isWhat());
 		$model->setConstraints($constrain);
 		$model->addWith([
-			'last' => function ($query) use ($model) {
+			'last' => function ($query) {
 				$query->andWhere($model->queryFilters);
 			}
 		]);
-		$ret_val = $model->find($model)
-			->one();
+		$ret_val = $model->find()->one();
 		switch(is_a($ret_val, static::className()))
 		{
 			case true:
-			$ret_val->queryFilters = $model->queryFilters;
-			$ret_val->count = $model->getCount();
-			$ret_val->hasNew = $model->hasNew();
-			$ret_val->hasAny = $model->hasAny();
+			$ret_val->queryFilters = $ret_val->queryFilters;
 			$ret_val->constraints = $model->constraints;
+			$ret_val->count = static::getCount();
+			$ret_val->hasNew = static::hasNew();
+			$ret_val->hasAny = static::hasAny();
 			break;
 			
 			default:
@@ -241,17 +251,15 @@ class BaseWidget extends Data implements DataInterface
 	 * Check for new data by last activity of logged in user
 	 * @return mixed user array
 	 */
-	public function hasNew()
+	public static function hasNew()
 	{
-		$queryFilters = is_array($this->queryFilters) ? $this->queryFilters : null;
+		$model = clone static::$cache->get('base-widget-search.'.static::isWhat());
 		$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.\Yii::$app->user->identity->lastActive()];
-		$ret_val = $this->find()
-			->where($queryFilters)
-			->orderBy([array_shift($this->primaryKey()) => SORT_DESC])
+		$ret_val = $model->find()->orderBy(['id' => SORT_DESC])
 			->andWhere($andWhere)
 			->count();
 		\Yii::$app->user->identity->updateActivity();
-		return $ret_val;
+		return $ret_val >= 1;
 	}
 	
 	/*
@@ -260,17 +268,18 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function isNew()
 	{
-		$this->userLastActive = is_null($this->userLastActive) ? \Yii::$app->user->identity->lastActive() : $this->userLastActive;
-		return strtotime($this->created_at) > $this->userLastActive;
+		static::$userLastActive = is_null(static::$userLastActive) ? \Yii::$app->user->identity->lastActive() : static::$userLastActive;
+		return strtotime($this->created_at) > static::$userLastActive;
 	}
 	
 	/*
 	 * Get the author for this object
 	 * @return boolean
 	 */
-	public function hasAny()
+	public static function hasAny()
 	{
-		return $this->find()->count() >= 1;
+		$model = clone static::$cache->get('base-widget-search.'.static::isWhat());
+		return $model->find()->count() >= 1;
 	}
 	
 	
@@ -300,7 +309,7 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function getAuthor()
 	{
-		 return $this->hasOne(User::className(), ['id' => $this->authorIdKey]);
+		 return $this->hasOne(User::className(), ['id' => 'author_id']);
 	}
 	
 	
@@ -310,7 +319,7 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function getEditor()
 	{
-		return $this->hasOne(User::className(), ['id' => $this->editorIdKey]);
+		return $this->hasOne(User::className(), ['id' => 'editor_id']);
 	}
 }
 ?>

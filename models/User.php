@@ -194,6 +194,7 @@ class User extends \dektrium\user\models\User
 			$url = "http://gravatar.com/avatar/$key";
 			break;
 		}
+		$this->avatar = $url;
 		return $url;
 	}
 	

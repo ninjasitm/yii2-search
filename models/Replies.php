@@ -190,7 +190,7 @@ class Replies extends BaseWidget
 	 */
 	public function getReplyTo()
 	{
-		return $this->hasOne(Replies::className(), ['id' => 'reply_to'])->with(['author']);
+		return $this->hasOne(Replies::className(), ['id' => 'reply_to'])->with('author');
 	}
 
 	/**
