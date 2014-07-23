@@ -13,7 +13,7 @@ use yii\widgets\ActiveForm;
 	$_engines = [];
 	array_walk($model->config['supported'], function ($k, $v) use(&$_engines, $model) {
 		$url = \Yii::$app->urlManager->createUrl('configuration/load/'.$v."/");
-		switch($model->cfg_e)
+		switch($model->engine)
 		{
 			case $v:
 			$model->config['current']['engine_url'] = $url;
@@ -22,7 +22,7 @@ use yii\widgets\ActiveForm;
 		$_engines[$url] = $k;
 	});
 	echo Html::label(
-		("Current engine: ".$model->cfg_e)
+		("Current engine: ".$model->engine)
 	);
 	echo Html::dropDownList(
 		'engine',
@@ -52,15 +52,6 @@ use yii\widgets\ActiveForm;
 	switch(@$model->config['load']['containers'])
 	{
 		case true:
-		switch ($model->config['current']['type'])
-		{
-			case 'file':
-			case 'db':
-			echo $this->render('actions',
-					   array("model" => $model)
-					);
-			break;
-		}
 		break;
 
 		default:
@@ -70,6 +61,16 @@ use yii\widgets\ActiveForm;
 					array('class' => "alert alert-danger")), 
 				array('class' => 'control-label')
 			);
+		break;
+	}
+	
+	switch ($model->config['current']['type'])
+	{
+		case 'file':
+		case 'db':
+		echo $this->render('actions',
+				   array("model" => $model)
+				);
 		break;
 	}
 ?>

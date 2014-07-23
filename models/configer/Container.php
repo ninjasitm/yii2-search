@@ -15,10 +15,10 @@ use Yii;
  * @property string $updated_at
  * @property integer $deleted
  *
- * @property ConfigSections[] $configSections
- * @property ConfigValues[] $configValues
+ * @property Section[] $sections
+ * @property Value[] $values
  */
-class ConfigContainers extends \nitm\models\Data
+class Container extends BaseConfiger
 {
     /**
      * @inheritdoc
@@ -38,9 +38,19 @@ class ConfigContainers extends \nitm\models\Data
             [['author_id', 'editor_id', 'deleted'], 'integer'],
             [['created_at', 'updated_at'], 'safe'],
             [['name'], 'string', 'max' => 255],
-            [['name'], 'unique']
+            [['name'], 'unique'],
+            [['name'], 'unique', 'targetAttribute' => ['name'], 'message' => 'This container already exists'],
         ];
     }
+	
+	public function scenarios()
+	{
+		return [
+			'create' => ['name'],
+			'update' => ['name'],
+			'delete' => ['deleted']
+		];
+	}
 
     /**
      * @inheritdoc
@@ -61,22 +71,26 @@ class ConfigContainers extends \nitm\models\Data
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getConfigSections()
+    public function getSections()
     {
-        return $this->hasMany(ConfigSections::className(), ['containerid' => 'id'])->orderBy(['name', SORT_ASC]);
+        return $this->hasMany(Section::className(), ['containerid' => 'id'])->orderBy(['name' => SORT_ASC])
+		->indexBy('name');
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getConfigValues()
+    public function getValues()
     {
-        return $this->hasMany(ConfigValues::className(), ['containerid' => 'id'])->select([
+        return $this->hasMany(Value::className(), ['containerid' => 'id'])
+		->select([
 			'*',
-			"CONCAT((SELECT `name` FROM `".ConfigSections::tableName()."` WHERE id=sectionid), '.', name) AS unique_id", 
+			"CONCAT((SELECT `name` FROM `".Section::tableName()."` WHERE id=sectionid), '.', name) AS unique_id", 
 			"name AS unique_name", 
-			"(SELECT `name` FROM `".ConfigSections::tableName()."` WHERE id=sectionid) AS 'section_name'", 
-			"(SELECT `name` FROM `".ConfigContainers::tableName()."` WHERE id=containerid) AS 'container_name'"
-		])->orderBy(['name', SORT_ASC]);
+			"(SELECT `name` FROM `".Section::tableName()."` WHERE id=sectionid) AS 'section_name'", 
+			"(SELECT `name` FROM `".Container::tableName()."` WHERE id=containerid) AS 'container_name'"
+		])
+		->orderBy(['name' => SORT_ASC])
+		->indexBy('name');
 	}
 }

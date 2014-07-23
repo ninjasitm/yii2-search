@@ -11,7 +11,7 @@ use nitm\helpers\Response;
 /**
  * RequestController implements the CRUD actions for Request model.
  */
-class RequestsController extends DefaultModuleController
+class RequestsController extends DefaultController
 {	
 	public $legend = [
 		'success' => 'Closed and Completed',

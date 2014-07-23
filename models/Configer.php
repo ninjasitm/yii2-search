@@ -7,23 +7,25 @@ use yii\web\Application;
 use yii\base\Event;
 use yii\base\Model;
 use nitm\helpers\Session;
-use nitm\helpers\Directory;
+use nitm\models\configer\Container;
+use nitm\models\configer\Section;
+use nitm\models\configer\Value;
+use nitm\models\configer\File;
 
 /**
  * Class Configer
  * @package nitm\models
  *
- * @property integer $cfg_id
- * @property string $cfg_n
- * @property string $cfg_v
- * @property string $cfg_s
- * @property string $cfg_c
- * @property string $cfg_w
- * @property string $cfg_e
- * @property string $cfg_comment
- * @property string $get_values
+ * @property integer $id
+ * @property string $name
+ * @property string $value
+ * @property string $section
+ * @property string $container
+ * @property string $what
+ * @property string $engine
+ * @property string $comment
+ * @property string $getValues
  */
-
 
 class Configer extends Model
 {
@@ -31,44 +33,26 @@ class Configer extends Model
 	public $backups = true;
 	public $backupExtention = '.cfg.bak';
 	public $dir = ["default" => 'config/ini/', "config" => null];
-	public $container = 'default';
-	public $config = [
-		'containers' => [],
-		'from' => [
-			"default" => [
-				'desc' => "Config",
-				'base' => '',
-				"types" => [
-					'ini',
-					'cfg',
-					null
-				]
-			],
-			"xml" => [
-				'desc' => "XML",
-				'types' => 'xml'
-			]
-		]
-	];
+	public $config = [];
 	
-	public $configDb = null;
+	public $configDb = 'null';
+	public $container = 'globals';
 	
 	//Form variables
-	public $cfg_id;	//The id of the value
-	public $cfg_n;	//The name of a key/value pair
-	public $cfg_v;	//The value
-	public $cfg_s;	//Current value section
-	public $cfg_c;	//The container
-	public $cfg_w;	//What is being done
-	public $cfg_e;	//Current engine
-	public $cfg_comment;	//The comment
-	public $cfg_convert;	//Convert
-	public $cfg_to;	//Convert to what engine?
-	public $get_values;	//Should we try to get values as well?
+	public $id;	//The id of the value
+	public $name;	//The name of a key/value pair
+	public $value;	//The value
+	public $section;	//Current value section
+	public $what;	//What is being done
+	public $engine;	//Current engine
+	public $comment;	//The comment
+	public $convert;	//Convert
+	public $convertTo;	//Convert to what engine?
+	public $getValues;	//Should we try to get values as well?
 	
 	//protected data
-	protected $containerId;
-	protected $sectionId;
+	protected $containerModel;
+	protected $sectionModel;
 	protected $contents = null;
 	protected $sections = [];
 	protected $containers = [];
@@ -83,9 +67,7 @@ class Configer extends Model
 	const NO_DEC = 'nodec:';
 	
 	//private data
-	private $_o;
-	private $filemode = 0775;
-	private $handle = false;
+	private $_objects = [];
 	private $types = ['ini' => 'cfg', 'xml' => 'xml', 'file' => 'cfg'];
 	private $location = "file";
 	private $configTables = [
@@ -115,12 +97,6 @@ class Configer extends Model
 	public function behaviors()
 	{ 
 		$behaviors = [
-			"Behavior" => [
-				"class" => \yii\base\Behavior::className(),
-			],
-			"DB" => [
-				"class" => \nitm\models\DB::className(),
-			],
 		];
 		return array_merge(parent::behaviors(), $behaviors);
 	}
@@ -128,47 +104,47 @@ class Configer extends Model
 	public function rules()
 	{
 		return [
-			[['cfg_w', 'cfg_v', 'cfg_s', 'cfg_n', 'cfg_c'], 'required', 'on' => ['createValue']],
-			[['cfg_w', 'cfg_v', 'cfg_c'], 'required', 'on' => ['createSection']],
-			[['cfg_w', 'cfg_v'], 'required', 'on' => ['createContainer']],
-			[['cfg_w', 'cfg_v', 'cfg_n', 'cfg_c', 'cfg_id'], 'required', 'on' => ['updateValue']],
-			[['cfg_w', 'cfg_v', 'cfg_s', 'cfg_c'], 'required', 'on' => ['updateSection']],
-			[['cfg_w', 'cfg_v', 'cfg_c'], 'required', 'on' => ['updateContainer']],
-			[['cfg_w', 'cfg_n', 'cfg_c', 'cfg_id'], 'required', 'on' => ['deleteValue']],
-			[['cfg_w', 'cfg_v', 'cfg_c'], 'required', 'on' => ['deleteSection']],
-			[['cfg_w', 'cfg_v'], 'required', 'on' => ['deleteContainer']],
-			[['cfg_w', 'cfg_c', 'cfg_s'], 'required', 'on' => ['getSection']],
-			[['cfg_convert'], 'required', 'on' => ['convert']],
-			[['cfg_e'], 'safe'],
+			[['what', 'value', 'section', 'name', 'container'], 'required', 'on' => ['createValue']],
+			[['what', 'value', 'container'], 'required', 'on' => ['createSection']],
+			[['what', 'value'], 'required', 'on' => ['createContainer']],
+			[['what', 'value', 'name', 'container', 'id'], 'required', 'on' => ['updateValue']],
+			[['what', 'value', 'section', 'container'], 'required', 'on' => ['updateSection']],
+			[['what', 'value', 'container'], 'required', 'on' => ['updateContainer']],
+			[['what', 'name', 'container', 'id'], 'required', 'on' => ['deleteValue']],
+			[['what', 'value', 'container'], 'required', 'on' => ['deleteSection']],
+			[['what', 'value'], 'required', 'on' => ['deleteContainer']],
+			[['what', 'container', 'section'], 'required', 'on' => ['getSection']],
+			[['convert'], 'required', 'on' => ['convert']],
+			[['engine'], 'safe'],
 		];
 	}
 	
 	public function scenarios()
 	{
 		return [
-			'default' => ['cfg_v', 'cfg_c', 'cfg_s', 'cfg_w', 'cfg_e', 'get_values',],
-			'createValue' => ['cfg_v', 'cfg_n', 'cfg_c', 'cfg_s', 'cfg_w'],
-			'createSection' => ['cfg_v', 'cfg_c', 'cfg_w'],
-			'createContainer' => ['cfg_v', 'cfg_w'],
-			'updateValue' => ['cfg_v', 'cfg_n', 'cfg_s', 'cfg_c', 'cfg_w', 'cfg_id'],
-			'updateSection' => ['cfg_v', 'cfg_c', 'cfg_w', 'cfg_id'],
-			'deleteValue' => ['cfg_s', 'cfg_n', 'cfg_w', 'cfg_id'],
-			'deleteSection' => ['cfg_n', 'cfg_c', 'cfg_w', 'cfg_id'],
-			'deleteContainer' => ['cfg_v', 'cfg_w', 'cfg_id'],
-			'getSection' => ['cfg_w', 'cfg_c', 'cfg_s', 'get_values'],
-			'convert' => ['cfg_convert', 'cfg_e']
+			'default' => ['value', 'container', 'section', 'what', 'engine', 'getValues',],
+			'createValue' => ['value', 'name', 'container', 'section', 'what'],
+			'createSection' => ['value', 'container', 'what'],
+			'createContainer' => ['value', 'what'],
+			'updateValue' => ['value', 'name', 'section', 'container', 'what', 'id'],
+			'updateSection' => ['value', 'container', 'what', 'id'],
+			'deleteValue' => ['section', 'name', 'what', 'id'],
+			'deleteSection' => ['name', 'container', 'what', 'id'],
+			'deleteContainer' => ['value', 'what', 'id'],
+			'getSection' => ['what', 'container', 'section', 'getValues'],
+			'convert' => ['convert', 'engine']
 		 ];
 	}
 	
 	public function attributeLabels()
 	{
 		return [
-		    'cfg_v' => 'Value',
-		    'cfg_n' => 'Name',
-		    'cfg_c' => 'Container',
-		    'cfg_e' => 'Engine',
-		    'cfg_s' => 'Section',
-		    'cfg_w' => 'Action',
+		    'value' => 'Value',
+		    'name' => 'Name',
+		    'container' => 'Container',
+		    'engine' => 'Engine',
+		    'section' => 'Section',
+		    'what' => 'Action',
 		];
 	}
 	
@@ -180,8 +156,8 @@ class Configer extends Model
 	protected function initLogger($db=null, $table='logs')
 	{
 		defined("DB_DEFAULT") or define("DB_DEFAULT", null);
-		$this->configDb = is_null($db) ? DB::$active['db']['name'] : $db;
-		$this->_o['logger'] = new Logger(null, null, null, Logger::LT_DB, $this->configDb, $table);
+		$this->configDb = is_null($db) ? "current" : $db;
+		$this->_objects['logger'] = new Logger(null, null, null, Logger::LT_DB, $this->configDb, $table);
 	}
 	
 	/*
@@ -201,7 +177,7 @@ class Configer extends Model
 				Session::set($this->correctKey($this->event['data']['key']), $this->event['data']);
 				break;
 			}
-			$this->_o['logger']->addTrans($this->event['data']['db'],
+			$this->_objects['logger']->addTrans($this->event['data']['db'],
 					  $this->event['data']['table'],
 					  $this->event['data']['action'],
 					  $this->event['data']['message']);
@@ -218,7 +194,7 @@ class Configer extends Model
 				Session::set($this->correctKey($this->event['data']['key'].'.value'), $this->event['data']['value']);
 				break;
 			}
-			$this->_o['logger']->addTrans($this->event['data']['db'],
+			$this->_objects['logger']->addTrans($this->event['data']['db'],
 					  $this->event['data']['table'],
 					  $this->event['data']['action'],
 					  $this->event['data']['message']);
@@ -239,7 +215,7 @@ class Configer extends Model
 				Session::del($this->event['data']['key']);
 				break;
 			}
-			$this->_o['logger']->addTrans($this->event['data']['db'],
+			$this->_objects['logger']->addTrans($this->event['data']['db'],
 					  $this->event['data']['table'],
 					  $this->event['data']['action'],
 					  $this->event['data']['message']);
@@ -250,10 +226,10 @@ class Configer extends Model
      * Prepare the config info for updating
 	 * @param string $engine
 	 * @param string $container
-	 * @param boolean $get_values
+	 * @param boolean $getValues
      * @return mixed $config
      */
-	public function prepareConfig($engine='file', $container='config', $get_values=false)
+	public function prepareConfig($engine='file', $container='config', $getValues=false)
 	{
 		$engine = empty($engine) ? (empty($this->engine) ? 'file' : $this->engine) : $engine;
 		$container = empty($container) ? 'global' : $container;
@@ -276,8 +252,9 @@ class Configer extends Model
 			//if the selected config is not loaded then load it
 			if((Session::getVal(self::dm.'.current.config') != $this->location.'.'.$container) || (Session::getVal(self::dm.'.current.engine') != $this->location))
 			{
-				$this->config['current']['config'] = $this->getConfig($engine, $container, $get_values, true);
+				$this->config['current']['config'] = $this->getConfig($engine, $container, $getValues, true);
 				Session::set(self::dm.'.'.$this->location.'.config', $this->config['current']['config']);
+				$this->config['current']['sections'] = array_merge(["" => "Select section..."], array_combine(array_keys($this->config['current']['config']), array_keys($this->config['current']['config'])));
 			}
 			//otherwise just get the current loaded config
 			else
@@ -286,7 +263,7 @@ class Configer extends Model
 				$config = is_array($this->config['current']['config']) ? $this->config['current']['config'] : [];
 				$this->config['current']['sections'] = array_merge(["" => "Select section..."], array_combine(array_keys($config), array_keys($config)));
 			}
-			switch($get_values)
+			switch($getValues)
 			{
 				case false:
 				$this->config['current']['config'] = null;
@@ -322,7 +299,7 @@ class Configer extends Model
 		@$this->config['containers'][$container]['selected'] = "selected='selected'";
 		$this->config['current']['selected_text'] = "selected='selected'";
 		$this->config['load']['types'] = !is_array($this->supported) ? false : true;
-		$this->getContainers();
+		$this->config['containers'] = $this->getContainers();
 		switch(isset($this->config['from'][$from]))
 		{
 			case true:
@@ -360,7 +337,7 @@ class Configer extends Model
 	}
 	
 	/*
-		Set the stroage engine
+		Set the storage engine
 		@param string $loc Either file or database
 	*/
 	public function setEngine($loc)
@@ -372,12 +349,11 @@ class Configer extends Model
 			{
 				case 'db':
 				$this->location = 'db';
-				$this->setDb($this->configDb);
 				break;
 				
 				case 'file':
+				$this->_objects['file'] = new File();
 				$this->location = 'file';
-				$this->_o['directory'] = new Directory();
 				break;
 			}
 			break;
@@ -491,43 +467,7 @@ class Configer extends Model
 			break;
 			
 			case 'file':
-			$write = false;
-			array_multisort($data, SORT_ASC);
-			$container = stripslashes($container);
-			if((file_exists($container)) && (sizeof($data) > 0))
-			{
-				foreach ($data as $key => $item)
-				{
-					if (is_array($item))
-					{
-						$sections .= "\n[{$key}]\n";
-						foreach ($item as $key2 => $item2)
-						{
-							if (is_numeric($item2) || is_bool($item2))
-							{
-								$sections .= "{$key2} = {$item2}\n";
-							}
-							else
-							{
-								$sections .= "{$key2} = {$item2}\n";
-							}
-						}     
-					}
-					else
-					{
-						if(is_numeric($item) || is_bool($item))
-						{
-							$content .= "{$key} = {$item}\n";
-						}
-						else
-						{
-							$content .= "{$key} = {$item}\n";
-						}
-					}
-				}
-				$content .= $sections;
-				$write = true;
-			}
+			$write = $this->_objects['file']->prepare($data);
 			break;
 				
 			case 'db':
@@ -541,60 +481,45 @@ class Configer extends Model
 			switch($this->location)
 			{
 				case 'db':
-				$this->setTable($this->configTables['containers']);
-				$pri['containers'] = $this->getCurPri();
-				$cond = [
-					"key" => ['name', $pri['containers']], 
-					"data" => [$container, $container],
-					"xor" => ["OR"]
-				];
-				$containerid = $this->check($cond['key'], $cond['data'], null, null, '=', $cond['xor'], [$this->getCurPri()]);
-				switch($containerid)
+				$this->container($cotnainer);
+				switch(!$this->container($container))
 				{
-					case false:
+					case true:
 					$this->createContainer($container, null, $this->location);
-					$containerid = ["containerid" => $this->last_id['insert']];
-					$container = $containerid[$pri['containers']];
+					$container = $this->container()->name;
 					break;
 				}
-				$section = ['author_id' => \Yii::$app->user->getId(), "containerid" => $container];
 				$message = "";
 				$result = 'failure';
 				$action = ["success" => "Create Config", "failure" => "Create Config Fail"];
-				$this->setTable($this->configTables['sections']);
-				$pri['sections'] = $this->getCurPri();
 				//write the sections
 				foreach($data as $name=>$values)
 				{
-					
-					$sections[$name]['data'][$pri['sections']] = $this->check([$pri['containers'], 'name'], [$container, $name]);
-					$sections[$name]['data'][$pri['containers']] = $container;
-					switch($sections[$name]['data'][$pri['sections']])
+					$model = new Section(['scenario' => 'create']);
+					$section->name = $name;
+					$model->containerid = $this->container()->id;
+					switch($model->validate())
 					{
-						case false:
-						$section['name'] = $name;
-						$section[$pri['containers']] = $container;
+						case true:
+						$model->save();
 						$this->insert(array_keys($section), array_values($section));
-						$sections[$name]['data'][$pri['sections']] = $this->last_id['insert'];
-						$sections[$name]['data'] = array_merge($sections[$name]['data'], $section);
+						$sections[$name] = ['model' => $model, 'values' => $values];
 						break;
 					}
 				}
 				//write the values
-				$this->setTable($this->configTables['values']);
-				foreach($data as $name=>$values)
+				foreach($sections as $name=>$values)
 				{
-					foreach($values as $k=>$v)
+					foreach($values['values'] as $k=>$v)
 					{
-						switch($this->check([$pri['containers'], $pri['sections'], 'name'], [$container, $sections[$name]['data'][$pri['sections']], $v['name']]))
+						$model = new Value(['scenario' => 'create']);
+						$model->load($v);
+						$model->containerid = $this->container()->id;
+						$model->sectionid = $values['model']->id;
+						switch($model->validate())
 						{
-							case false:
-							$value = [];
-							$value['name'] = $v['name'];
-							$value['value'] = $v['value'];
-							$value['comment'] = $v['comment'];
-							$value = array_merge($sections[$name]['data'], $value);
-							$this->insert(array_keys($value), array_values($value));
+							case true:
+							$model->save();
 							break;
 						}
 					}
@@ -603,29 +528,7 @@ class Configer extends Model
 				
 				case 'file':
 				$container = ($container[0] == '@') ? $this->dir['default'].substr($container, 1, strlen($container)) : $container;
-				if(is_resource($this->open($container, 'write')))
-				{
-					fwrite($this->handle, stripslashes($content));
-					$ret_val = true;
-				}
-				$this->close();
-				if($this->backups && !empty($content))
-				{
-					$backup_dir = "/backup/".date("F-j-Y")."/";
-					$container_backup = ($container[0] == '@') ? $this->dir['default'].$backup_dir.substr($container, 1, strlen($container)) : dirname($container).$backup_dir.basename($container);
-					$container_backup .= '.'.date("D_M_d_H_Y", strtotime('now')).$this->backupExtention;
-					if(!is_dir(dirname($container_backup)))
-					{
-						mkdir(dirname($container_backup), $this->filemode, true);
-					}
-					fopen($container_backup, 'c');
-					chmod($container_backup, $this->filemode);
-					if(is_resource($this->open($container_backup, 'write')))
-					{
-						fwrite($this->handle, stripslashes($content));
-					}	
-					$this->close();
-				}
+				$this->_objects['file']->write($container, $this->backups);
 				/*
 					After a change has ben made and commited remove the current values in index $this->container
 					to save memory/space and to not allow any new changes to be made
@@ -642,6 +545,74 @@ class Configer extends Model
 			break;
 		}
 		return $ret_val;
+	}
+	
+	/*
+     * Get the configuration information depending on container and location and store it in $this->config
+	 * @param string $engine
+	 * @param string $container
+	 * @param boolean $getValues
+     * @return mixed $config
+     */
+	public function getConfig($engine=null, $container=null, $getValues=false, $updating=false)
+	{
+		$this->container = !empty($container) ? $container : $this->container;
+		$engine = !empty($engine) ? $engine : $this->location;
+		$ret_val = null;
+		switch($engine)
+		{
+			case 'xml':
+			$xml_files = $this->_objects['directory']->getFilesMatching($this->config['current']['path'].$this->method['in'], false, ['.xml'], true, false, null, $this->config['current']['path']);
+			foreach($xml_files[$this->method['in']] as $container)
+			{
+				$ret_val = [$container => '"'.file_get_contents($this->config['path'].$this->method['in'].DIRECTORY_SEPARATOR.$container).'"'];
+			}
+			break;
+			
+			case 'file':
+			$ret_val = $this->readFrom($this->loadFrom($this->config['current']['path'], false, true), 
+				null, 'json', $updating, $engine);
+			break;
+			
+			
+			case 'db':
+			$ret_val = $this->readFrom($this->loadFrom($this->config['current']['container'], false, true), 
+				null, 'json', $updating, $engine);
+			break;
+				
+			default:
+			break;
+		}
+		return $ret_val;
+	}	
+	
+	/*
+	 * Convert configuration betwen formats
+	 * @param string $container
+	 * @param string $from
+	 * @param string $to
+	 */
+	public function convert($container, $from, $to)
+	{
+		$ret_val = [
+			"success" => false, 
+			"message" => "Unable to convert $container from $from to $to"
+		];
+		switch($this->isSupported($from) && $this->isSupported($to))
+		{
+			case true:
+			$old_engine = $this->location;
+			$this->setEngine($from);
+			$config = $this->getConfig($from, $container, true, true);
+			$this->setEngine($to);
+			$this->writeTo($container, $config, $to);
+			$ret_val['message'] = "Converted $container from $from to $to";
+			$ret_val['success'] = true;
+			$ret_val['action'] = 'convert';
+			$this->config['current']['action'] = $ret_val;
+			$this->setEngine($old_engine);
+			break;
+		}
 	} 
 	
 	/*
@@ -670,41 +641,17 @@ class Configer extends Model
 				$this->setBase($container);
 				$container = $this->resolveDir($this->config['current']['path']);
 				$container = $container.'.'.$this->types[$this->location];
-				switch(file_exists($container))
-				{
-					case true:
-					switch((filemtime($container) >= fileatime($container)) || ($force === true))
-					{
-						case true: 
-						if(is_resource($this->open($container, 'read')))
-						{
-							$this->contents = file($container, 1);
-							$this->close();
-							$ret_val = $this->contents;
-						}
-						break;
-					}
-					break;
-				}
+				$ret_val = $this->_objects['file']->load($container, $force);
 				break;
 				
 				case 'db':
-				/*
-				 * Now get the container ID
-				 */
-				$pri = [];
-				$this->setTable($this->configTables['values']);
-				$pri['values'] = [
-					'key' => $this->configTables['values'].'.'.$this->getCurPri(),
-					'name' => $this->getCurPri()
-				];
 				/*
 				 * We ned to use activity states here to determine when to load form the database
 				 */
 				switch($force || self::hasNew())
 				{
 					case true:
-					$result = $container->configValues;
+					$result = !$this->container($container) ? [] : $this->container($container)->values;
 					$ret_val = $result;
 					break;
 				}
@@ -733,25 +680,19 @@ class Configer extends Model
 		{
 			case 'db':
 			//convert the raw config to the proper hierarchy;
+			switch(!is_array($contents))
+			{
+				case true:
+				$contents = !$this->container($contents) ? [] : $this->container($contents)->getValues()->all();
+				break;
+			}
 			switch(is_array($contents))
 			{
 				case true:
 				foreach($contents as $idx=>$data) 
 				{
-					//is the section already set?
-					switch($updating)
-					{
-						case true:
-						$section = $data['section_name'];
-						$val_key = $data['name'];
-						break;
-						
-						default:
-						$section = $data['section_name'];
-						$val_key = $data['name'];
-						$data = $data['value'];
-						break;
-					}
+					$section = $data->section_name;
+					$val_key = $data->name;
 					switch(isset($ret_val[$section]))
 					{
 						case false:
@@ -762,6 +703,10 @@ class Configer extends Model
 					$ret_val[$section][$val_key] = $data;
 				}
 				break;
+				
+				default:
+				$ret_val= [];
+				break;
 			}
 			break;
 			
@@ -769,59 +714,7 @@ class Configer extends Model
 			break;
 			
 			case 'file':
-			switch(!empty($contents))
-			{
-				case true:
-				$section = '';
-				$contents = array_filter((is_null($contents)) ? $this->contents : $contents);
-				$commentchar = is_null($commentchar) ? ';' : $commentchar;
-				$this->config['current']['sections'] = ['' => "Select section"];
-				if(is_array($contents) && (sizeof($contents) > 0))
-				{
-					foreach($contents as $filedata) 
-					{
-						$dataline = trim($filedata);
-						$firstchar = substr($dataline, 0, 1);
-						if($firstchar!= $commentchar && $dataline != '') 
-						{
-							//It's an entry (not a comment and not a blank line)
-							if($firstchar == '[' && substr($dataline, -1, 1) == ']') 
-							{
-								//It's a section
-								$section = substr($dataline, 1, -1);
-								$this->config['current']['sections'][$section] = $section;
-								$ret_val[$section] = [];
-							}
-							else
-							{
-								//It's a key...
-								$delimiter = strpos($dataline, '=');
-								if($delimiter > 0) 
-								{
-									//...with a value
-									$key = trim(substr($dataline, 0, $delimiter));
-									$value = trim(substr($dataline, $delimiter + 1));
-									if(substr($value, 1, 1) == '"' && substr($value, -1, 1) == '"') 
-									{ 
-										$value = substr($value, 1, -1); 
-									}
-									//$ret_val[$section][$key] = stripslashes($value);
-									//we may return comments if we're updating
-									$ret_val[$section][$key] = ($updating == false) ? $value : ["value" => $value, "comment" => @$comment, 'section' => $section, "name" => $key, "unique" => "$section.$key"];
-								}
-								else
-								{
-									//we may return comments if we're updating
-									//...without a value
-									$ret_val[$section][trim($dataline)] = ($updating === false) ? $value : ["value" => '', "comment" => @$comment, 'section' => $section, "name" => $key, "unique" => "$section.$key"];
-								}
-							}
-						}
-					}
-				}
-				break;
-			}
-
+			$ret_val = $this->_objects['file']->read($contents);
 			break;
 		}
 		switch($this->location)
@@ -831,8 +724,7 @@ class Configer extends Model
 			
 			case 'db':
 			case 'file':
-			array_walk($ret_val, function (&$member) {ksort($member, SORT_STRING);});
-			switch(is_array($decode))
+			switch(is_array($ret_val) && is_array($decode))
 			{
 				case true:
 				foreach($decode as $dec)
@@ -841,20 +733,35 @@ class Configer extends Model
 					{
 						case 'json':
 						array_walk_recursive($ret_val, function (&$v) use ($updating) {
+							switch(1)
+							{
+								case is_array($v->value):
+								continue;
+								break;
+								
+								case substr($v->value, 0, strlen(self::NO_DEC)) == self::NO_DEC:
+								$v->value = substr($v->value, strlen(self::NO_DEC), strlen($v->value));
+								break;
+								
+								case((@$v->value[0] == "{") && ($v->value[strlen($v->value)-1] == "}")) && ($updating === false):
+								$v->value = ((!is_null($data = json_decode(trim($v->value), true))) ? $data : $v->value);
+								break;
+							}
 							switch($updating)
 							{
 								case false:
-								$v = is_array($v) ? $v['value'] : $v;
-								break;
-							}
-							switch(1)
-							{
-								case ((@$v[0] == "{") && ($v[strlen($v)-1] == "}")) && ($updating === false):
-								$v = ((!is_null($data = json_decode(trim($v), true))) ? $data : $v);
+								$v = $v->value;
 								break;
 								
-								case substr($v, 0, strlen(self::NO_DEC)) == self::NO_DEC:
-								$v = substr($v, strlen(self::NO_DEC), strlen($v));
+								default:
+								$model = $v;
+								$v = array_merge($model->getAttributes(), array_intersect_key(get_object_vars($model), array_flip([
+										'section_name',
+										'container_name',
+										'unique_id',
+										'unique_name'
+									])
+								));
 								break;
 							}
 						});
@@ -862,16 +769,10 @@ class Configer extends Model
 						
 						case 'csv':
 						array_walk_recursive($ret_val, function (&$v) {
-							switch($updating)
-							{
-								case false:
-								$v = $v['value'];
-								break;
-							}
-							switch((@$v[0] == "{") && ($v[strlen($v)-1] == "}") && ($updating === false))
+							switch((@$v->value[0] == "{") && ($v->value[strlen($v->value)-1] == "}") && ($updating === false))
 							{
 								case true:
-								$v = explode(',', $v);
+								$v->value = explode(',', $v->value);
 								break;
 							}
 						});
@@ -928,7 +829,7 @@ class Configer extends Model
 			Session::setCsdm(self::dm.'.'.$this->location);
 			switch(sizeof($hierarchy))
 			{
-				///we might be createing a container
+				///we might be creating a container
 				case 1:
 				switch(empty($contaienr))
 				{
@@ -1004,7 +905,6 @@ class Configer extends Model
 		];
 		$this->setEngine($engine);
 		$this->setBase($container);
-		$container = $this->resolveDir($this->config['current']['path']);
 		$key = stripslashes ($key);
 		$value = stripslashes(rawurldecode($value));
 		switch($this->location)
@@ -1029,6 +929,7 @@ class Configer extends Model
 			break;
 			
 			case 'file':
+			$container = $this->resolveDir($this->config['current']['path']);
 			switch(1)
 			{
 				case !$container:
@@ -1158,18 +1059,16 @@ class Configer extends Model
 		switch($this->location)
 		{
 			case 'db':
-			$model = new ConfigContainer([
+			$this->containerModel = new ConfigContainer([
 				'name' => $name
 			]);
 			$message = '';
-			switch($model->save())
+			switch($this->containerModel->save())
 			{
 				case true:
 				$message .= "created container for $in";
-				$container_id = $this->last_id['insert'];
-				$data["sections"][$pri['containers']] = $container_id;; 
+				$data["sections"]['containerid'] = $this->containerModel->id; 
 				$data["sections"]['name'] = 'global';
-				$this->setTable($this->configTables['sections']);
 				$this->event['data'] = [
 					'table' => 'config',
 					'db' => $this->configDb,
@@ -1190,35 +1089,24 @@ class Configer extends Model
 			case 'file':
 			$in = (!is_dir($in)) ? $this->dir['config'] : $in;
 			$new_config_file = $in.$name.'.'.$this->types[$this->location];
-			switch(empty($name))
+			switch($this->_objects['file']->createFile($new_config_file))
 			{
-				case false:
-				switch(file_exists($new_config_file))
-				{
-					case false:
-					switch(fopen($new_config_file, 'c'))
-					{
-						case true:
-						chmod($new_config_file, $filemode);
-						$ret_val['success'] = true;
-						$ret_val['message'] = "The system was able to create the config file".basename($new_config_file);
-						$e = new Event;
-						$this->event['data'] = [
-							'table' => 'NULL',
-							'db' => 'NULL',
-							'action' => 'Create Config File',
-							'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." created a new config file: ".basename($new_config_file)
-						];
-						$this->trigger('afterCreate');
-						$ret_val['class'] = $this->classes['success'];
-						break;
-					}
-					break;
+				case true:
+				$ret_val['success'] = true;
+				$ret_val['message'] = "The system was able to create the config file".basename($new_config_file);
+				$e = new Event;
+				$this->event['data'] = [
+					'table' => 'NULL',
+					'db' => 'NULL',
+					'action' => 'Create Config File',
+					'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." created a new config file: ".basename($new_config_file)
+				];
+				$this->trigger('afterCreate');
+				$ret_val['class'] = $this->classes['success'];
+				break;
 					
-					default:
-					$ret_val['message'] = "The system was unable to create the config file because ".basename($new_config_file)." already exists";
-					break;
-				}
+				default:
+				$ret_val['message'] = "The system was unable to create the config file because ".basename($new_config_file)." already exists";
 				break;
 			}
 			break;
@@ -1226,81 +1114,12 @@ class Configer extends Model
 		$this->config['current']['action'] = $ret_val;
 	}
 	
-	/*
-     * Get the configuration information depending on container and location and store it in $this->config
-	 * @param string $engine
-	 * @param string $container
-	 * @param boolean $get_values
-     * @return mixed $config
-     */
-	public function getConfig($engine=null, $container=null, $get_values=false, $updating=false)
-	{
-		//$directory, $apppath=false, $match=null, $group=false, $empty=false, $skipthese=null, $parent=null
-		$this->container = !empty($container) ? $container : $this->container;
-		$engine = !empty($engine) ? $engine : $this->location;
-		$ret_val = null;
-		switch($engine)
-		{
-			case 'xml':
-			$xml_files = $this->_o['directory']->getFilesMatching($this->config['current']['path'].$this->method['in'], false, ['.xml'], true, false, null, $this->config['current']['path']);
-			foreach($xml_files[$this->method['in']] as $container)
-			{
-				$ret_val = [$container => '"'.file_get_contents($this->config['path'].$this->method['in'].DIRECTORY_SEPARATOR.$container).'"'];
-			}
-			break;
-			
-			case 'file':
-			$ret_val = $this->readFrom($this->loadFrom($this->config['current']['path'], false, true), 
-				null, 'json', $updating, $engine);
-			break;
-			
-			
-			case 'db':
-			$ret_val = $this->readFrom($this->loadFrom($this->config['current']['container'], false, true), 
-				null, 'json', $updating, $engine);
-			break;
-				
-			default:
-			break;
-		}
-		return $ret_val;
-	}	
-	
-	/*
-	 * Convert configuration betwen formats
-	 * @param string $container
-	 * @param string $from
-	 * @param string $to
-	 */
-	public function convert($container, $from, $to)
-	{
-		$ret_val = [
-			"success" => false, 
-			"message" => "Unable to convert $container from $from to $to"
-		];
-		switch($this->isSupported($from) && $this->isSupported($to))
-		{
-			case true:
-			$old_engine = $this->location;
-			$this->setEngine($from);
-			$config = $this->getConfig($from, $container, true, true);
-			$this->setEngine($to);
-			$this->writeTo($container, $config, $to);
-			$ret_val['message'] = "Converted $container from $from to $to";
-			$ret_val['success'] = true;
-			$ret_val['action'] = 'convert';
-			$this->config['current']['action'] = $ret_val;
-			$this->setEngine($old_engine);
-			break;
-		}
-	}
-	
 	/*---------------------
 		Protected Functions
 	---------------------*/
 	
 	/*
-	 * Handle createing to DB or to file to simplify create function
+	 * Handle creating to DB or to file to simplify create function
 	 * @param string|int $container
 	 * @param string|int $key
 	 * @return mixed
@@ -1325,10 +1144,10 @@ class Configer extends Model
 			case 'db':
 			switch(sizeof($hierarchy))
 			{
-				//We're createing a section
+				//We're creating a section
 				case 4:
 				case 2:
-				$model = new ConfigValues([
+				$model = new Value([
 					'containerid' => $container,
 					'name' => $sectionName
 				]);
@@ -1337,9 +1156,9 @@ class Configer extends Model
 				
 				case 5:
 				case 3:
-				$model = new ConfigValues([
+				$model = new Value([
 					'containerid' => $container,
-					'sectionid' => $this->getSectionId($container, $sectionName)
+					'sectionid' => $this->getSectionId($container, $sectionName),
 					'value' => $value,
 					'name' => $name
 				]);
@@ -1366,27 +1185,23 @@ class Configer extends Model
 			$args = [];
 			switch(sizeof($hierarchy))
 			{
-				//we're createing a section
+				//we're creating a section
 				case 5:
 				case 2:
-				$args['command'] = "sed -i '\$a\\\n\\n[%s]' ";
-				$args['args'] = [$name];
+				$success = $this->_objects['file']->createSection($name);
 				$message = "Added new section [".$sectionName."] to ".$container;
 				break;
 				
 	
-				//we're createing a value
+				//we're creating a value
 				case 6:
 				case 3:
-				$args['command'] = "sed -i '/\[%s\]/a %s = %s' ";
-				$args['args'] = [$sectionName, $name, $value];
+				$sucess = $this->_objects['file']->createValue($sectionName, $name, $value);
 				$message = "Added new config option [".$name."] to ".$sectionName;
 				break;
 			}
-			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).' "'.$container.'.'.$this->types[$this->location].'"';
-			exec($args['command'], $output, $cmd_ret_val);
 			//sed should return an empty value for success when updating files
-			switch($cmd_ret_val)
+			switch($success)
 			{
 				case 0:
 				$ret_val['unique'] = $sectionName.'.'.$name;
@@ -1436,7 +1251,7 @@ class Configer extends Model
 				case 2:
 				$message = "Updated the section name to $value";
 				$values = ['value' => $value];
-				$model = ConfigSections::findOne($this->cfg_id);
+				$model = Section::findOne($this->id);
 				break;
 			
 				//we're updating a value
@@ -1445,7 +1260,7 @@ class Configer extends Model
 				$message = "Updated the value [$key] from ".@$old_value['value']." to ".$value;
 				$values = ['value' => $value];
 				$ret_val['name'] = $name;
-				$model = ConfigValues::findOne($this->cfg_id);
+				$model = Value::findOne($this->id);
 				break;
 			}
 			switch(is_object($model))
@@ -1472,23 +1287,19 @@ class Configer extends Model
 				//we're updating a section
 				case 4:
 				case 2:
-				$args['command'] = 'sed -i -e "s/^\[%s\]/%s/" ';	
-				$args['args'] = [$sectionName, $value];
+				$success = $this->_objects['file']->updateSection($sectionName, $value);
 				$message = "Updated the section name from ".$name." to $value";
 				break;
 			
 				//no support for updating section names as of yet
 				case 5: 
 				case 3:    
-				$args['command'] = 'sed -i -e "/^\[%s\]/,/^$/{s/%s =.*/%s = %s/}" ';
-				$args['args'] = [$sectionName, $name, $name, $value];
+				$success = $this->_objects['file']->updateValue($sectionName, $name, $name, $value);
 				$message = "Updated the value name from ".$name." to $value";
 				break;
 			}
-			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).'"'.$container.'.'.$this->types[$this->location].'"';
-			exec($args['command'], $output, $cmd_ret_val);
 			//sed should return an empty value for success when updating files
-			switch($cmd_ret_val)
+			switch($success)
 			{
 				case 0:
 				$ret_val['message'] = $message;
@@ -1530,7 +1341,7 @@ class Configer extends Model
 				//we're deleting a section
 				case 4:
 				case 2:
-				$model = ConfigSections::findOne($this->cfg_id);
+				$model = Section::findOne($this->id);
 				$message = "Deleted the section: $key";
 				$delete['process'] = true;
 				break;
@@ -1540,10 +1351,10 @@ class Configer extends Model
 				case 3:
 				$ret_val['name'] = $name;
 				$message = "Deleted the value: $key";
-				$model = ConfigValues::findOne($this->cfg_id);
+				$model = Value::findOne($this->id);
 				break;
 			}
-			switch(is_object($model) && $model->delete())
+			switch(is_objectsbject($model) && $model->delete())
 			{
 				case true:
 				$ret_val['success'] = true;
@@ -1560,30 +1371,27 @@ class Configer extends Model
 				//are we deleting a value/line?
 				case 6:
 				case 3:
-				$args['command'] = "sed -i '/^\[%s\]/,/^$/{/^%s =.*/d}' ";
-				$args['args'] =[$name, $sectionName];
+				$success = $this->_objects['file']->deleteValue($name, $sectionName);
 				$message = "Deleted value ".$hierarchy." in ".$sectionName;
 				break;
 				
 				//we're deleting a section
 				case 5:
 				case 2:
+				$success = $this->_objects['file']->deleteSection($sectionName);
 				$args['command'] = "sed -i '/^\[%s\]/,/^$/d' ";
 				$args['args'] = [$name];
 				$message = "Deleted the section ".$name;
 				break;
 				
 				//we're deleting a container
-				case 2:
-				$args['command'] = "rm -f '%s'";
-				$args['args'] = [$container];
+				case 1:
+				$success = $this->_objects['file']->deletefile($container);
 				$message = "Deleted the file ".$container;
 				break;
 			}
-			$args['command'] = vsprintf($args['command'], array_map(function ($v) {return preg_quote($v, DIRECTORY_SEPARATOR);}, $args['args'])).' "'.$container.'.'.$this->types[$this->location].'"';
-			exec($args['command'], $output, $cmd_ret_val);
 			//sed should return an empty value for success when updating files
-			switch($cmd_ret_val)
+			switch($success)
 			{
 				case 0:
 				$ret_val['message'] = $message;
@@ -1620,17 +1428,17 @@ class Configer extends Model
 	 * Get the configuration containers: file or database
 	 * @param string $in
 	 * @param boolean $multi
-	 * @param boolean $containers_only
+	 * @param boolean $containers_objectsnly
 	 * @return mixed
 	 */
-	protected function getContainers($in=null, $multi=false, $containers_only=false)
+	protected function getContainers($in=null, $objectsOnly=false)
 	{
 		$in = ($in == null) ? $this->dir['config'] : $in;
 		$ret_val = [];
 		switch($this->location)
 		{
 			case 'db':
-			$result = ConfigContainers::find()->select(["id AS `unique`", "'id' AS unique_name", 'name'])->all();
+			$result = Container::find()->select(['id', 'name'])->all();
 			array_walk($result, function ($val, $key) use(&$ret_val) {
 				$ret_val[$val->name] = $val->name;
 			});
@@ -1639,56 +1447,38 @@ class Configer extends Model
 			break;
 			
 			case 'file':
-			switch(is_dir($in))
-			{
-				case true:
-				foreach(scandir($in) as $container)
-				{
-					switch($containers_only)
-					{
-						case true:
-						switch(is_dir($in.$container))
-						{
-							case true:
-							$ret_val[$container] = $container;
-							break;
-						}
-						break;
-						
-						default:
-						switch(1)
-						{
-							case is_dir($in.$container):
-							switch($multi)
-							{
-								case true:
-								$ret_val[$container] = $this->_o['directory']->getFilesMatching($in.$container, $multi, $containers_only);
-								break;
-							}
-							break;
-							
-							case $container == '..':
-							case $container == '.':
-							break;
-							
-							default:
-							$info = pathinfo($in.$container);
-							switch(1)
-							{
-								case true:
-								$label = str_replace(['-', '_'], ' ', $info['filename']);
-								$ret_val[$info['filename']] = $label;
-								break;
-							}
-							break;
-						}
-						break;
-					}
-				}
-				$this->config['containers'] = $ret_val;
-				$this->config['load']['containers'] = true;
-				break;
-			}
+			$this->config['containers'] = $this->_objects['file']->getFiles($in, $objectsOnly);
+			$this->config['load']['containers'] = !empty($this->config['containers']);
+			break;
+		}
+		return $ret_val;
+	}
+	
+	/*
+	 * Get the configuration containers: file or database
+	 * @param string $in
+	 * @param boolean $multi
+	 * @param boolean $containers_objectsnly
+	 * @return mixed
+	 */
+	protected function getSections($in)
+	{
+		$ret_val = [];
+		switch($this->location)
+		{
+			case 'db':
+			$result = $this->container($in)->getSections()->select(['id', 'name'])->all();
+			array_walk($result, function ($val, $key) use(&$ret_val) {
+				$ret_val[$val->name] = $val->name;
+			});
+			$this->config['sections'] = $ret_val;
+			$this->config['load']['sections'] = true;
+			break;
+			
+			case 'file':
+			$in = ($in == null) ? $this->dir['config'] : $in;
+			$this->config['sections'] = $this->_objects['file']->getNames($in);
+			$this->config['load']['sections'] = !empty($this->config['sections']);
 			break;
 		}
 		return $ret_val;
@@ -1704,7 +1494,7 @@ class Configer extends Model
 		switch($this->location)
 		{
 			case 'db':
-			switch(ConfigSections::updateAll(['deleted' => 1], ['containerid' => $name]))
+			switch(Section::updateAll(['deleted' => 1], ['containerid' => $name]))
 			{
 				case true:
 				$ret_val['success'] = true;
@@ -1731,118 +1521,23 @@ class Configer extends Model
 			switch(empty($name))
 			{
 				case false:
-				switch(file_exists($config_file))
+				if($this->_objects['file']->deleteFile($config_file))
 				{
-					case false:
-					switch(@unlink($config_file))
-					{
-						case true:
-						$this->trigger('afterDelete', new Event($this, [
-								'table' => 'NULL',
-								'db' => "NULL",
-								'action' => "Delete Config File",
-								'message' => $action[$result], "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." deleted config file: ".basename($config_file)
-							])
-						);
-						$ret_val['success'] = @unlink($config_file);
-						$ret_val['message'] = 'I was able to delete the config file '.basename($config_file);
-						break;
-					}
-					break;
+					$this->trigger('afterDelete', new Event($this, [
+							'table' => 'NULL',
+							'db' => "NULL",
+							'action' => "Delete Config File",
+							'message' => $action[$result], "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." deleted config file: ".basename($config_file)
+						])
+					);
+					$ret_val['success'] = true;
+					$ret_val['message'] = 'I was able to delete the config file '.basename($config_file);
 				}
 				break;
 			}
 			break;
 		}
 		return $ret_val;
-	}
-	
-	private function open($container, $rw='read')
-	{
-		if(!$container)
-		{
-			die("Attempting to open an empty file\n$this->open($container, $rw, $mode) (2);");
-		}
-		//the handle that neds to be returned if successful
-		$ret_val = false;
-		$continue = false;
-		$flmode = null;
-		switch($rw)
-		{
-			case 'write':
-			$mode = 'w';
-			switch(file_exists($container))
-			{
-				case true:
-				$this->handle = @fopen($container, $mode);
-				switch(is_resource($this->handle))
-				{
-					case true:
-					$continue = true;
-					$flmode = LOCK_EX;
-					break;
-					
-					default:
-					@chmod($container, $this->filemode);
-					$this->handle = @fopen($container, $mode);
-					switch(is_resource($this->handle))
-					{
-						case true:
-						$continue = true;
-						$flmode = LOCK_EX;
-						break;
-						
-						default:
-						break;
-					}
-					break;
-				}
-				break;
-			}
-			switch(is_resource($this->handle))
-			{
-				case false:
-				die("Cannot open $container for writing\n$this->open($container, $rw) (2);");
-				break;
-			}
-			break;
-		
-			default:
-			$mode = 'r';
-			$this->handle = @fopen($container, $mode);
-			switch(is_resource($this->handle))
-			{
-				case true:
-				$continue = true;
-				$flmode = LOCK_SH;
-				break;
-				
-				default:
-				//die("Cannot open $container for reading\n<br>$this->open($container, $rw) (2);");
-				break;
-			}
-			break;
-		}
-		if($continue)
-		{
-			$interval = 10;
-			while(flock($this->handle, $flmode) === false)
-			{
-				//slep a little longer each time (in microseconds)
-				uslep($interval+10);
-			}
-			$ret_val = $this->handle;
-		}
-		return $ret_val;
-	}
-	
-	private function close()
-	{
-		if(is_resource($this->handle))
-		{
-			flock($this->handle, LOCK_UN);
-			fclose($this->handle);
-		}
 	}
 	
 	/*
@@ -1856,53 +1551,60 @@ class Configer extends Model
 	 }
 	 
 	 /*
-	  * Get the container id for a given value
+	  * Get the container for a given value
 	  * @param string|int $container
 	  * @return int containerid
 	  */
-	 private function getContainerId($container)
+	 private function container($container=null)
 	 {
 		 switch($this->location)
 		 {
 			case 'file':
-			$containerid = [$this->resolveDir($this->config['current']['path'])];
+			$ret_val = [$this->resolveDir($this->config['current']['path'])];
 			break;
 			
 			case 'db':
-			$model = ConfigContainers::find()
-			->where(['or', 'name' => $container, 'id' => $container])
-			->one();
-			$containerid = $model instanceof ConfigContainers ? [$model->id] : null;
+			if(!$this->containerModel instanceof Container)
+			{
+				$model = Container::find()
+					->where(['or', "name='$container'", "id='$container'"])
+					->one();
+				$this->containerModel = $model instanceof Container ? $model : null;
+			}
+			$ret_val = $this->containerModel;
 			break;
 		}
-		$this->containerId = is_array($containerid) ? $containerid[0] : null;
-		return $this->containerId;
+		return $ret_val;
 	 }
 	 
-	 /*
-	  * Get the section id for a given value
-	  * @param string|int $container
-	  * @param string|int $section
-	  * @return int containerid
-	  */
-	 private function getSectionId($container, $section)
-	 {
-		$section = ConfigSections::find()
-		->where(['or', 'name' => $section, 'id' => $section])
-		->andWhere(['containerid' => $container])->one();
-		$this->sectionId = $section instanceof ConfigSections ? $section->id : null;
-		return $this->sectionId;
-	 }
+	/*
+	 * Get the section id for a given value
+	 * @param string|int $container
+	 * @param string|int $section
+	 * @return int containerid
+	 */
+	private function section($section)
+	{
+		$ret_Val = null;
+		if(!$this->sectionModel instanceof Section)
+		{
+			$section = $this->containerModel->getSection()
+				->where(['or', "name='$section'", "id='$section'"])
+				->one();
+			$this->sectionModel = $section instanceof Section ? $section : null;
+		}
+		return $ret_val;
+	}
 	 
-	 private static function hasNew()
-	 {
-		 switch(isset(self::$hasNew))
-		 {
+	private static function hasNew()
+	{
+		switch(isset(self::$hasNew))
+		{
 			case false:
 			self::$hasNew = (static::find()->where(new \yii\db\Expression("SELECT 1 FROM ".$this->configTables['containers']." WHERE NOW()-MAX(updated_at) >= 10000"))->count() >=1) ? true : false;
 			break;
-		 }
-		 return self::$hasNew;
-	 }
+		}
+		return self::$hasNew;
+	}
 }
 ?>

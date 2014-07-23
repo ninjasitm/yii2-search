@@ -68,8 +68,6 @@ class Logger extends DB
 	
 	public function __destruct()
 	{
-// 		pr(debug_backtrace());
-// 		echo "Destroying Logger()<br>";
 		unset($this->handle, $this);
 	}
 	

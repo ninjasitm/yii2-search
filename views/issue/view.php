@@ -28,20 +28,20 @@ $uniqid = uniqid();
 					<?php if(isset($isNew) && ($isNew === true) || $model->isNew()) echo ActivityIndicator::widget();?>
 					<?= $model->title; ?>&nbsp;<span class="badge"><?= $model->status ?></span>
 				</h4>
-				<h4 class="col-md-5 col-lg-5 text-right"><small>by <b><?= $model->authorUser->fullName(true) ?></b> on <?= $model->created_at ?></small></h4>
+				<h4 class="col-md-5 col-lg-5 text-right"><small>by <b><?= $model->author()->fullName(true) ?></b> on <?= $model->created_at ?></small></h4>
 			</div>
 			<p><?= $model->notes; ?></p>
 		</div>
 		<div class="col-md-8 col-lg-8 text-left">
 			<div class="pull-left">
 			<?php if($model->edits) :?>
-				<i class="small  text-right">Edited by <b><?= $model->authorUser->fullName(true) ?></b> on <?= $model->created_at ?></i>&nbsp;
+				<i class="small  text-right">Edited by <b><?= $model->author()->fullName(true) ?></b> on <?= $model->created_at ?></i>&nbsp;
 			<?php endif; ?>
 			<?php if($model->resolved) :?>
-				<i class="small  text-right">Resolved by <b><?= $model->resolveUser->fullName(true) ?></b> on <?= $model->resolved_at ?></i>&nbsp;
+				<i class="small  text-right">Resolved by <b><?= $model->resolvedBy()->fullName(true) ?></b> on <?= $model->resolved_at ?></i>&nbsp;
 			<?php endif; ?>
 			<?php if($model->closed) :?>
-				<i class="small  text-right">Closed by <b><?= $model->closeUser->fullName(true) ?></b> on <?= $model->closed_at ?></i>
+				<i class="small  text-right">Closed by <b><?= $model->closedBy()->fullName(true) ?></b> on <?= $model->closed_at ?></i>
 			<?php endif; ?>
 			</div>
 		</div>

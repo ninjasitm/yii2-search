@@ -9,7 +9,7 @@ use nitm\helpers\Helper;
   */
 trait Configer {
 	
-	public static $settings;
+	public static $settings = [];
 	
 	/**
 	 * Get a setting value 
@@ -55,13 +55,10 @@ trait Configer {
 					Session::set(Session::settings, $config);
 					break;
 					
-					default:
-					if(!isset(static::$settings[$container]))
-					{
-						$config = $module->config->getConfig($module->configOptions['engine'], $container, true);
-						static::$settings[$container] = $config;
-						Session::set(Session::current.'.'.$container, $config);
-					}
+					case !isset(static::$settings[$container]):
+					$config = $module->config->getConfig($module->configOptions['engine'], $container, true);
+					static::$settings[$container] = $config;
+					Session::set(Session::current.'.'.$container, $config);
 					break;
 				}
 				break;

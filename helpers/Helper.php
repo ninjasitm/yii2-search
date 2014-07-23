@@ -295,6 +295,15 @@ class Helper extends Model
 		return ereg_replace("[[:alpha:]]+://[^<>[:space:]]+[[:alnum:]/]","<a href=\"\\0\">\\0</a>", $str); 
 	}
 	
+	public static function printBacktrace($lines=0)
+	{
+		$debug = array_slice(debug_backtrace(), 0, $lines);
+		foreach($debug as $line)
+		{
+ 			echo "Called ".@$line['class'].@$line['type'].@$line['function']." from line ".@$line['line']." in ".@$line['file']." with arguments <br>\n";
+		}
+	}
+	
 	/*---------------------
 		Protected Functions
 	---------------------*/

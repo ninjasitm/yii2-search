@@ -1,8 +1,6 @@
 <?php
 
 namespace nitm\helpers;
-
-use yii\db\ActiveRecord;
 use yii\base\Model;
 
 //class that sets up and retrieves, deletes and handles modifying of contact data
@@ -63,7 +61,7 @@ class Session extends Model
 			if(!isset($_SESSION[static::sessionName()][self::variables][self::reg_vars]))
 			{
 				$_SESSION[static::sessionName()][self::variables][self::reg_vars] = array();
-				$_SESSION[static::sessionName()][self::variables][self::reg_vars][self::object] = NULL;
+				$_SESSION[static::sessionName()][self::variables][self::reg_vars][self::object] = null;
 			}
 		}
 		if(!is_null($dm))
@@ -73,11 +71,6 @@ class Session extends Model
 			$_SESSION[static::sessionName()][self::variables][self::$lock] = $dm;
 			self::register($dm);
 		}
-		/*if(!@is_object($_SESSION[static::sessionName()][self::variables][self::reg_vars][self::object]))
-		{
-// 			pr(var_dump($this));
-			$_SESSION[static::sessionName()][self::variables][self::reg_vars][self::object] = serialize($this);
-		}*/
 		if($compare == true)
 		{
 			self::register(self::comparer);
@@ -104,7 +97,6 @@ class Session extends Model
 	
 	public static final function setCsdm($dm, $compare=false)
 	{
-// 		echo "Setting Helper csdm for $dm <br>";
 		self::$compare = $compare;
 		$_SESSION[static::sessionName()][self::variables][self::csdm_var] = $dm;
 		$_SESSION[static::sessionName()][self::variables][self::$lock] = $dm;
@@ -115,9 +107,7 @@ class Session extends Model
 	public static final function getCsdm()
 	{
 		if(isset($_SESSION[static::sessionName()][self::variables][self::csdm_var]))
-		{
 			return $_SESSION[static::sessionName()][self::variables][self::csdm_var];
-		}
 		return null;
 	}
 	
@@ -128,20 +118,12 @@ class Session extends Model
 	
 	public static function set($cIdx, $data, $compare=false, $array=false)
 	{		
-// 		echo "Setting $cIdx to $data<br>";
-// 		pr(debug_backtrace());
 		$ret_val = false;
 		if(is_array($cIdx) && (sizeof($data) < sizeof($cIdx)))
 		{
 			return false;
 		}
 		$csdm = ($compare === true) ? self::comparer : @static::getCsdm();
-// 		pr($_SESSION[static::sessionName()]);
-// 		echo "End here<br>";
-// 		pr($_SESSION[static::sessionName()][self::variables]);
-// 		echo "\nHelper string called by ".get_class($this)." == ".static::sessionName().".".self::variables.".".self::csdm_var."<br>";
-//		var_dump(debug_backtrace());
-//		exit;
 		$cIdx = (is_null($cIdx)) ? $csdm : $cIdx;
 		$cIdx = (is_array($cIdx)) ? $cIdx : array($cIdx);
 		self::$compare = $compare;
@@ -156,9 +138,7 @@ class Session extends Model
 				
 				default:
 				if($hier[0] != $csdm)
-				{
 					array_unshift($hier, $csdm);
-				}
 				break;
 			}
 			$hierarchy[] = $dx;
@@ -181,7 +161,6 @@ class Session extends Model
 				array_unshift($member, $csdm);
 				break;
 			}
-// 			echo "Member == $member && value == $data<br>";
 			switch(isset($data[$idx]) && is_array($data[$idx]))
 			{
 				case true:
@@ -189,43 +168,27 @@ class Session extends Model
 				{
 					if(self::inSession($member_str, $jvalue) === false)
 					{
-						switch($array)
-						{
-							case true:
+						if($array)
 							eval("\$_SESSION['".static::sessionName()."']['".Helper::splitf($member, "']['")."'][] = \$jvalue;");
-							break;
-							
-							default:
+						else
 							eval("\$_SESSION['".static::sessionName()."']['".Helper::splitf($member, "']['")."'] = \$jvalue;");
-							break;
-						}
 					}
 				}
 				break;
 				
 				default:
-// 				pr($data);
 				if(self::inSession($member_str, $data) === false)
 				{
-					switch($array)
-					{
-						case true:
+					if($array)
 						eval("\$_SESSION['".static::sessionName()."']['".Helper::splitf($member, "']['")."'][] = \$data;");
-						break;
-						
-						default:
-// 						echo "Setting here $member to $data<br>";
+					else
 						eval("\$_SESSION['".static::sessionName()."']['".Helper::splitf($member, "']['")."'] = \$data;");
-						break;
-					}
 				}
 				break;
 			}
 			
 		}
-// 		pr($_SESSION);
 		$ret_val = $data;
-// 		echo self::getVal($cIdx);
 		return $ret_val;
 	}
 	
@@ -243,12 +206,8 @@ class Session extends Model
 		$csdm = ($cIdx === false) ? self::batch : $cIdx;
 		$cIdx = ($cIdx === false) ? $csdm : $cIdx;
 		self::setCsdm($csdm);
-		switch($clear)
-		{
-			case true:
+		if($clear === true)
 			self::del($cIdx);
-			break;
-		}
 		self::app($cIdx, $cID, true);
 		return $cID;
 	}
@@ -257,34 +216,22 @@ class Session extends Model
 	public final function voidBatch($cID, $cIdx=false)
 	{
 		$ret_val = $cID;
-		switch($cIdx)
-		{
-			case false:
+		if($cIdx === false)
 			$cIdx = self::batch;
-			break;
-		}
 		if(!self::isRegistered($cIdx))
-		{	
 			$ret_val = false;
-		}
 		else
 		{
 			if(($key = @array_search($cID, self::getVal($cIdx))) !== false)
-			{
 				self::del("$cIdx.$key");
-			}
 		}
 		return $ret_val;
 	}
 
 	public static final function del($cIdx)
 	{
- 		//echo "deleting $cIdx<br>";
 		$value = self::getVal($cIdx);
 		$ret_val = self::unregister($cIdx);
-		$debug = debug_backtrace();
-		$line = $debug[0];
- 		//echo "\ndel: Returning ".$cIdx/*." value ".print_r($ret_val)*/." called from ".$line['line']." ".$line['file']."<br>\n";
 		return array("item"=> $cIdx , "value" => $value, "ret_val" => $ret_val);
 	}
 	
@@ -296,10 +243,7 @@ class Session extends Model
 			array_unshift($array, array_shift($array));
 			return $array;
 		}
-		else 
-		{
-			return false;
-		}
+		return false;
 	}
 	
 	public static final function clear($cIdx)
@@ -317,25 +261,15 @@ class Session extends Model
 			break;
 		}
 		return true;
-// 		echo "Cleared $cIdx<br>";
 	}
 
 	public static final function getVal($cIdx, $bool=false)
 	{
-// 		echo "Getting $cIdx<br>\n";
-//		echo "<pre>";
-//			print_r(debug_backtrace());
-//		echo "</pre";
 		$ret_val = null;
 		if(self::isRegistered($cIdx) !== false)
 		{
 			if(($ret_val = self::get($cIdx)) !== false)
 			{
-// 				pr($ret_val);
-// 				if(is_array($ret_val['value']))
-// 				{
-// 					ksort($ret_val['value']);
-// 				}
 				$value = ($bool == true) ? self::boolVal($ret_val['value']) : $ret_val['value'];
 				$type = gettype($value);
 				switch($type)
@@ -351,40 +285,24 @@ class Session extends Model
 				$ret_val = $value;
 			}
 		}
-		else
-		{
-//			echo "$cIdx is not regsitered\n";
-		}
-		$debug = debug_backtrace();
-		$line = $debug[0];
- 		//echo "\nReturning ".$cIdx/*." value ".print_r($ret_val)*/." called from ".$line['line']." ".$line['file']."<br>\n";
 		return $ret_val;
 	}
 
 	public static final function size($item, $size_only=true)
 	{
 		if(!self::isRegistered($item))
-		{	
 			return 0;
-		}	
 		else
 		{
-			//$ret_val = self::getVal($item);
 			$hierarchy = explode('.', $item);
 			$access_str = "['".Helper::splitf($hierarchy, "']['")."']";
 			$csdm = @static::getCsdm();;
 			$access_str = ($csdm != null) ? (($csdm == $hierarchy[0]) ? $access_str : ((!in_array($hierarchy[0], self::$no_q)) ? $csdm.$access_str : $access_str)) : $access_str;
 			eval("\$size = sizeof(\$_SESSION['".static::sessionName()."']".$access_str.");");
-			switch($size_only)
-			{
-				case false:
+			if(!$size_only)
 				$ret_val = array('value' => self::getVal($item), 'size' => $size, 'idx' => $item);
-				break;
-				
-				default:
+			else
 				$ret_val = $size;
-				break;
-			}
 			return $ret_val = (!$ret_val) ? 0 : $ret_val;
 		}
 	}/*
@@ -415,20 +333,9 @@ class Session extends Model
 				array_unshift($hierarchy, @static::getCsdm());
 				break;
 			}
-// 			if($csdm == 'securer')
-// 			{
-// 				echo "csdm == $csdm<br>";
-// 				pr($_SESSION);
-// 				pr($session);
-// 			}
 			eval("\$ret_val = isset(\$_SESSION['".static::sessionName()."']['".Helper::splitf($hierarchy, "']['")."']);");
-// 			self::pr("['static::sessionName()']['".Helper::splitf($hierarchy, "']['")."']");
-// 			eval("echo \$_SESSION['".static::sessionName()."']['".Helper::splitf($hierarchy, "']['")."'];");
-			//print_r("Returning $ret_val for $cIdx<br>");
 			break;
 		}
-// 		echo "Returning $ret_val for is_registrered($cIdx)<br>";
-// 		pr($ret_val);
 		return $ret_val;
 	}
 	
@@ -441,16 +348,7 @@ class Session extends Model
 		{
 			foreach($_SESSION[static::sessionName()] as $member=>$val)
 			{
-				switch($member)
-				{
-// 					case self::helper:
-// 					continue;
-// 					break;
-					
-					default:
-					self::unregister($member);
-					break;
-				}
+				self::unregister($member);
 			}
 			$_SESSION[static::sessionName()] = array();
 		}
@@ -473,53 +371,38 @@ class Session extends Model
 			case in_array($cIdx, self::$q) === true:
 			case null;
 			$csdm = static::getCsdm();
-			$val = (self::isRegistered($csdm)) ? $_SESSION[static::sessionName()][$csdm] : NULL;
-// 			pr($ret_val);
+			$val = (self::isRegistered($csdm)) ? $_SESSION[static::sessionName()][$csdm] : null;
 			break;
 			
 			case in_array($cIdx, self::$no_q) === true:
-			$val = (self::isRegistered($cIdx)) ? $_SESSION[static::sessionName()][$cIdx] : NULL;
+			$val = (self::isRegistered($cIdx)) ? $_SESSION[static::sessionName()][$cIdx] : null;
 			break;
 		
 			default:
-// 			echo "Session == ".static::sessionName();
 			$csdm = @static::getCsdm();
 			$hierarchy = explode('.', $cIdx);
 			switch($hierarchy[0])
 			{
 				case in_array($hierarchy[0], self::$no_q) === true:
 				if(self::isRegistered($cIdx) !== false)
-				{
 					eval("\$val = \$_SESSION['".static::sessionName()."']['".Helper::splitf($hierarchy, "']['")."'];");
-				}
 				else
-				{
 					$val = false;
-				}
 				break;
 				
 				default:
 				$csdm = static::getCsdm();
 				if($hierarchy[0] != $csdm)
-				{
 					array_unshift($hierarchy, $csdm);
-				}
 				if(self::isRegistered($cIdx) !== false)
-				{
 					eval("\$val = \$_SESSION['".static::sessionName()."']['".Helper::splitf($hierarchy, "']['")."'];");
-				}
 				else
-				{
 					$val = false;
-				}
 				break;
 			}
 			break;		
 		}
-// 		return $ret_val = (($val === false) || sizeof($val) == 0 || empty($val)) ? false : array('idx' => $cIdx, 'value' => $val);
 		$ret_val = (($val === false)) ? false : array('idx' => $cIdx, 'value' => $val);
-// 		echo "Printing return val<br>";
-// 		pr($ret_val);
 		return $ret_val;
 	}
 	
@@ -546,16 +429,12 @@ class Session extends Model
 			default:
 			if(self::isRegistered($fields))
 			{
-// 				echo "$fields is reistered<br/>";
 				if(($search = self::reference($fields)) !== false)
 				{
 					if(!is_array($search) && ($search == $data))
-					{
 						$ret_val = true;
-					}
-					elseif(is_array($search))
+					else if(is_array($search))
 					{
-// 						echo "$fields returns an array for search";
 						foreach($search as $idx=>$val)
 						{
 							if($data == $val)
@@ -588,15 +467,12 @@ class Session extends Model
 		}
 		if(self::isRegistered($cIdx) === false)
 		{
-// 			echo "Registering $cIdx<br>";
 			switch($cIdx)
 			{
 				case in_array($cIdx, self::$no_q) === true:
 				case in_array($cIdx, self::$q) === true:
 				case in_array($cIdx, self::$b_q) === true:
-// 				echo "Registering major csdm $cIdx<br>";
 				$_SESSION[static::sessionName()][$cIdx] = array();
-// 				pr($_SESSION);
 				break;
 				
 				default:
@@ -635,7 +511,6 @@ class Session extends Model
 		$ret_val = false;
 		if(self::isRegistered($cIdx) !== false)
 		{
-// 			$cIdx = implode('.', $hierarchy);
 			switch($cIdx)
 			{
 				case in_array($cIdx, self::$q) === true:
@@ -672,9 +547,7 @@ class Session extends Model
 						break;
 					}
 				}
-// 				echo "Unregistering $cIdx<br>";
 				self::searchDel($_SESSION[static::sessionName()][$csdm], array_values($hierarchy), self::getVal($cIdx));
-// 				pr($_SESSION[static::sessionName()]['fields']);
 				$ret_val = true;
 				break;		
 			}
@@ -708,8 +581,6 @@ class Session extends Model
 				break; 
 				
 				default:
-// 				pr($key);
-// 				echo "Reference Key == $key<br>";
 				$hierarchy = explode(".", $key);
 				switch($hierarchy[0])
 				{
@@ -721,25 +592,16 @@ class Session extends Model
 					default:
 					$csdm = static::getCsdm();
 					if($hierarchy[0] == $csdm)
-					{
 						array_shift($hierarchy);
-					}
 					break;
 				}
 				$ret_val = $_SESSION[static::sessionName()][$csdm];
-// 				echo "csdm == $csdm<br>";
-// 				pr($ret_val);
-// 				print_r($hierarchy);
 				foreach($hierarchy as $k)
 				{
 					if($k)
 					{
 						if(isset($ret_val[$k]))
-						{
-// 							echo "$key isset($k) for $csdm <br>";
 							$ret_val = $ret_val[$k];
-// 							pr(debug_backtrace());
-						}
 						else
 						{
 							$ret_val = false;
@@ -747,16 +609,11 @@ class Session extends Model
 						}
 					}
 					else
-					{
 						$ret_val = false;
-					}
 				}
 				break;
 			}
 		}
-// 		pr($_SESSION);
-// 		pr($key);
-// 		pr($ret_val);
 		return $ret_val;
 	}	
 	
@@ -769,7 +626,6 @@ class Session extends Model
 	 */
 	private static function searchDel(&$array, $keys, $data)
 	{
-// 		pr($keys);
 		$ret_val = false;
 		if(is_array($array))
 		{
@@ -778,41 +634,26 @@ class Session extends Model
 				for($i = 0; $i < sizeof($keys); $i++)
 				{
 					$key = $keys[$i];
-// 					echo "Key == $key i == $i<br>";
 					if(isset($array[$key]))
 					{
 						if($array[$key] == $data)
 						{
-// 							echo "unsetting $key<br>";
-// 							session_unregister($key);
 							unset($array[$key]);
 							unset($key);
-// 							/*pr(*/$_SESSION);
 							$ret_val = true;
 							break;
 						}
 						elseif(is_array($array[$key]))
 						{
-// 							echo "unsetting array $key<br>";
 							array_shift($keys);
 							if(($ret_val = self::searchDel($array[$key], $keys, $data)) === true)
-							{
-// 								echo "ret_val 2<br>";
 								break;
-							}
 							else
-							{
-// 								echo "ret_val 3<br>";
 								$ret_val = false;
-							}
 						}
 					}
 					else
-					{
-// 						echo "ret_val 4<br>";
 						$ret_val = false;
-						break;
-					}
 				}
 			}
 			else
@@ -821,8 +662,6 @@ class Session extends Model
 				{
 					if($array[$keys] == $data)
 					{
-// 						echo "unsetting array $key<br>";
-// 						session_unregister($key);
 						unset($array[$keys]);
 						unset($keys);
 						$ret_val = true;
@@ -830,7 +669,6 @@ class Session extends Model
 				}
 			}
 		}
-// 		echo "Returning $ret_val for searchDel(".implode('.', $keys).")<br>";
 		return $ret_val;
 	}
 }

@@ -89,7 +89,7 @@ function Configuration()
 				switch(result != undefined)
 				{
 					case true:
-					form.find("input[id='configer\-cfg_s']").val(result.section);
+					form.find("input[id='configer\-section']").val(result.section);
 					break;
 				break;
 				}
@@ -99,7 +99,7 @@ function Configuration()
 				switch(v)
 				{
 					case 'deleteSection':
-					var value = form.find("input[id='configer\-cfg_s']").val();
+					var value = form.find("input[id='configer\-section']").val();
 					var message = "Are you sure you want to delete section: "+value;
 					var shouldConfirm = true;
 					break;
@@ -320,7 +320,7 @@ function Configuration()
 				_form.find(':submit').removeClass().addClass('btn btn-warning').html('undel').attr('title', "Are you sure you want to undelete this value?");
 				_form.attr('action', self.forms.actions.undelete);
 				_form.attr('role', 'undeleteValue');
-				_form.append("<input type='hidden' name='Configer[cfg_v\]' id='configer-cfg_v' value='"+$nitm.getObj(result.container+'.div').html()+"'/>");
+				_form.append("<input type='hidden' name='Configer[value\]' id='configer-value' value='"+$nitm.getObj(result.container+'.div').html()+"'/>");
 				var container = $nitm.getObj('value_'+result.container);
 				container.addClass('disabled');
 				container.children().map(function() {

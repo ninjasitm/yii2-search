@@ -15,7 +15,7 @@ use yii\data\ArrayDataProvider;
 /**
  * IssueController implements the CRUD actions for Issues model.
  */
-class IssueController extends WidgetController
+class IssueController extends DefaultController
 {
 	use \nitm\traits\Controller;
 	
@@ -112,7 +112,7 @@ class IssueController extends WidgetController
 			break;
 		}
 		$searchModel = new IssuesSearch;
-		$searchModel->withThese = ['closeUser', 'resolveUser'];
+		$searchModel->addWith(['closedBy', 'resolvedBy']);
 		$get = \Yii::$app->request->getQueryParams();
 		$params = array_merge($get, $this->model->constraints);
 		unset($params['type'], $params['id'], $params['key']);

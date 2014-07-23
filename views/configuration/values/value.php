@@ -24,7 +24,7 @@
 				?>
 					<div class="col-md-11 col-lg-11 col-sm-10">
 					<?php
-						echo Html::activeTextInput($model, 'cfg_comment', array("placeholder" => "Type comment here...",
+						echo Html::activeTextInput($model, 'comment', array("placeholder" => "Type comment here...",
 												     'value' => @$comment,
 												     'class' => 'form-control input-sm col-md-10'
 												     )
@@ -33,7 +33,7 @@
 					</div>
 					<div class="col-md-1 col-lg-1 col-sm-2">
 					<?php
-						echo Html::activeHiddenInput($model, 'cfg_id', array('value' => $unique));
+						echo Html::activeHiddenInput($model, 'id', array('value' => $id));
 						echo Html::submitButton('save', array('class' => 'btn btn-primary btn-xs',
 										      'title' => "Edit $section.$name")
 									);
@@ -55,18 +55,18 @@
 							]);
 			?>
 			<?php
-				echo Html::activeHiddenInput($model, 'cfg_w', array('value' => 'value'));
-				echo Html::activeHiddenInput($model, 'cfg_id', array('value' => $unique));
-				echo Html::activeHiddenInput($model, 'cfg_c', array('value' => $container_name));
-				echo Html::activeHiddenInput($model, 'cfg_n', array('value' => $unique_id));
-				echo Html::activeHiddenInput($model, 'cfg_v', array('value' => $value,
+				echo Html::activeHiddenInput($model, 'what', array('value' => 'value'));
+				echo Html::activeHiddenInput($model, 'id', array('value' => $id));
+				echo Html::activeHiddenInput($model, 'container', array('value' => $container_name));
+				echo Html::activeHiddenInput($model, 'name', array('value' => $unique_id));
+				echo Html::activeHiddenInput($model, 'value', array('value' => $value,
 										    'role' => 'value'));
 				echo Html::submitButton('update', [
 										'id' => 'update_value',
 										'class' => 'btn btn-primary btn-sm',
-										'title' => "Edit $unique",
+										'title' => "Edit $id",
 										'role' => 'updateFieldButton',
-										'data-id' => $unique.'.div',
+										'data-id' => $id.'.div',
 										'data-type' => $model->config['current']['type'],
 										"data-loading-text" => "Editing..."
 									]
@@ -85,11 +85,11 @@
 							]);
 			?>
 			<?php
-				echo Html::activeHiddenInput($model, 'cfg_id', array('value' => $unique));
-				echo Html::activeHiddenInput($model, 'cfg_n', array('value' => $unique_id));
-				echo Html::activeHiddenInput($model, 'cfg_w', array('value' => 'value'));
-				echo Html::activeHiddenInput($model, 'cfg_c', array('value' => $container_name));
-				echo Html::activeHiddenInput($model, 'cfg_container', array('value' => $unique.'.div'));
+				echo Html::activeHiddenInput($model, 'id', array('value' => $id));
+				echo Html::activeHiddenInput($model, 'name', array('value' => $unique_id));
+				echo Html::activeHiddenInput($model, 'what', array('value' => 'value'));
+				echo Html::activeHiddenInput($model, 'container', array('value' => $container_name));
+				echo Html::activeHiddenInput($model, 'div_container', array('value' => $id.'.div'));
 				echo Html::submitButton('del', [
 							'class' => 'btn btn-danger btn-sm',
 							'title' => "Are you sure you want to delete the $unique_id",

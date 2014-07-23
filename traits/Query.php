@@ -234,7 +234,7 @@ trait Query {
 	public static function aliasColumns($query)
 	{
 		$pri = static::primaryKey();
-		$ret_val = [$pri[0]." AS `unique`"];
+		$ret_val = [];
 		$columns = static::columns();
 		$has = is_array(static::has()) ? static::has() : null;
 		switch(is_null($has))

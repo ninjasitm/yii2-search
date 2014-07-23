@@ -21,13 +21,13 @@ $model->setScenario('createValue');
 			'enableAjaxValidation' => true
 		]); ?>
         <?php
-                echo $form->field($model, 'cfg_n')->textInput(array('placeholder' => 'Setting name...'))->label("Name", ['class' => 'sr-only']);
-                echo $form->field($model, 'cfg_v')->textInput(array('placeholder' => 'Setting value...'))->label("Value", ['class' => 'sr-only']);
+                echo $form->field($model, 'name')->textInput(array('placeholder' => 'Setting name...'))->label("Name", ['class' => 'sr-only']);
+                echo $form->field($model, 'value')->textInput(array('placeholder' => 'Setting value...'))->label("Value", ['class' => 'sr-only']);
         ?>
         <?php
-                echo Html::activeHiddenInput($model, 'cfg_c', array('value' => $container));
-                echo Html::activeHiddenInput($model, 'cfg_s', array('value' => $section));
-                echo Html::activeHiddenInput($model, 'cfg_w', array('value' => 'value'));
+                echo Html::activeHiddenInput($model, 'container', array('value' => $container));
+                echo Html::activeHiddenInput($model, 'section', array('value' => $section));
+                echo Html::activeHiddenInput($model, 'what', array('value' => 'value'));
                 echo Html::submitButton('Add Key/Value', [
 												'class' => 'btn btn-primary',
 												'title' => "Add value to $section",

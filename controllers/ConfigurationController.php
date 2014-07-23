@@ -10,9 +10,7 @@ use nitm\helpers\Response;
 use nitm\interfaces\DefaultControllerInterface;
 
 class ConfigurationController extends DefaultController implements DefaultControllerInterface
-{
-	public $model;
-	
+{	
 	public function init()
 	{
 		$this->addJs('admin', true);
@@ -62,17 +60,11 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		switch(isset($_GET['engine']))
 		{
 			case true:
-			$this->model->cfg_e = $_GET['engine'];
-			$this->model->cfg_c = @$_GET['container'];
+			$this->model->engine = $_GET['engine'];
+			$this->model->container = @$_GET['container'];
 			break;
 		}
-		switch(!empty($_POST))
-		{
-			case true:
-			$this->model->load($_POST);
-			break;
-		}
-		
+		$this->model->load($_REQUEST);
 		switch(1)
 		{
 			case $_SERVER['REQUEST_METHOD'] == 'POST':
@@ -89,20 +81,20 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		$container = Session::getVal($dm.'.current.config');
 		$engine = Session::getVal($dm.'.current.engine');
 		//set the engine
-		$this->model->cfg_e = empty($this->model->cfg_e) ? (empty($engine) ? \Yii::$app->getModule('nitm')->configOptions['engine'] : $engine) : $this->model->cfg_e;
-		$this->model->setEngine($this->model->cfg_e);
+		$this->model->engine = empty($this->model->engine) ? (empty($engine) ? \Yii::$app->getModule('nitm')->configOptions['engine'] : $engine) : $this->model->engine;
+		$this->model->setEngine($this->model->engine);
 		
-		switch($this->model->cfg_e)
+		switch($this->model->engine)
 		{
 			case 'file':
 			$this->model->setDir(\Yii::$app->getModule('nitm')->configOptions['dir']);
 			break;
 		}
 		//determine the correct container
-		$this->model->cfg_c = empty($this->model->cfg_c) ? (empty($container) ? \Yii::$app->getModule('nitm')->configOptions['container'] : $container) : $this->model->cfg_c;
+		$this->model->container = empty($this->model->container) ? (empty($container) ? \Yii::$app->getModule('nitm')->configOptions['container'] : $container) : $this->model->container;
 		
 		//if we're not requesting a specific section then only load the sections and no values
-		$this->model->prepareConfig($this->model->cfg_e, $this->model->cfg_c, $this->model->get_values);
+		$this->model->prepareConfig($this->model->engine, $this->model->container, $this->model->getValues);
 		parent::beforeAction($action);
 		return true;
 	}
@@ -119,10 +111,10 @@ class ConfigurationController extends DefaultController implements DefaultContro
 	{
 		$this->model->setScenario($this->action->id);
 		$this->model->load($_REQUEST);
-		switch($this->model->cfg_convert['do'])
+		switch($this->model->convert['do'])
 		{
 			case true:
-			$this->model->convert($this->model->cfg_convert['container'], $this->model->cfg_convert['from'], $this->model->cfg_convert['to']);
+			$this->model->convert($this->model->convert['container'], $this->model->convert['from'], $this->model->convert['to']);
 			break;
 		}
 		return $this->finalAction();
@@ -130,10 +122,10 @@ class ConfigurationController extends DefaultController implements DefaultContro
 	
 	public function actionUndelete()
 	{
-		$section = explode('.', $_REQUEST[$this->model->formName()]['cfg_n']);
-		$name = explode('.', $_REQUEST[$this->model->formName()]['cfg_n']);
-		$_REQUEST[$this->model->formName()]['cfg_s'] = array_shift($section);
-		$_REQUEST[$this->model->formName()]['cfg_n'] = array_pop($name);
+		$section = explode('.', $_REQUEST[$this->model->formName()]['name']);
+		$name = explode('.', $_REQUEST[$this->model->formName()]['name']);
+		$_REQUEST[$this->model->formName()]['section'] = array_shift($section);
+		$_REQUEST[$this->model->formName()]['name'] = array_pop($name);
 		$this->action->id = 'create';
 		return $this->actionCreate();
 	}
@@ -143,7 +135,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		switch(isset($_REQUEST[$this->model->formName()]))
 		{
 			case true:
-			$this->model->setScenario($this->action->id.ucfirst($_REQUEST[$this->model->formName()]['cfg_w']));
+			$this->model->setScenario($this->action->id.ucfirst($_REQUEST[$this->model->formName()]['what']));
 			$this->model->load($_REQUEST);
 			switch(\Yii::$app->request->isAjax && (@Helper::boolval($_REQUEST['do']) !== true))
 			{
@@ -158,32 +150,32 @@ class ConfigurationController extends DefaultController implements DefaultContro
 				switch($this->model->getScenario())
 				{
 					case 'createContainer':
-					$this->model->createContainer($this->model->cfg_v, null, $this->model->cfg_e);
+					$this->model->createContainer($this->model->value, null, $this->model->engine);
 					break;
 					
 					case 'createValue':
-					$view['data']['data'] = $this->model->create($this->model->cfg_s.'.'.$this->model->cfg_n,
-							$this->model->cfg_v,
-							$this->model->cfg_c,
+					$view['data']['data'] = $this->model->create($this->model->section.'.'.$this->model->name,
+							$this->model->value,
+							$this->model->container,
 							null,
-							$this->model->cfg_e);
+							$this->model->engine);
 					$this->model->config['current']['config'] = Session::getVal($this->model->correctKey($this->model->config['current']['action']['key']));
 					$view = [
 						'view' => 'values/value',
 						'data' => [
 							"model" => $this->model,
 							"data" => $this->model->config['current']['action'],
-							"parent" => $this->model->cfg_s
+							"parent" => $this->model->section
 						]
 					];
 					break;
 					
 					case 'createSection':
-					$this->model->create($this->model->cfg_v,
+					$this->model->create($this->model->value,
 							null,
-							$this->model->cfg_c,
+							$this->model->container,
 							null,
-							$this->model->cfg_e);
+							$this->model->engine);
 					$view = [
 						'view' => 'values/index',
 						'data' => [
@@ -217,13 +209,13 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		switch($this->model->validate())
 		{
 			case true:
-			switch($this->model->cfg_w)
+			switch($this->model->what)
 			{
 				case 'section':
-				switch(isset($this->model->config['current']['config'][$this->model->cfg_s]))
+				switch(isset($this->model->config['current']['config'][$this->model->section]))
 				{
 					case true:
-					$this->model->config['current']['config'] = $this->model->config['current']['config'][$this->model->cfg_s];
+					$this->model->config['current']['config'] = $this->model->config['current']['config'][$this->model->section];
 					break;
 					
 					default:
@@ -231,14 +223,14 @@ class ConfigurationController extends DefaultController implements DefaultContro
 					break;
 				}
 				$ret_val["success"] = true;
-				$ret_val["section"] = $this->model->cfg_s;
+				$ret_val["section"] = $this->model->section;
 				switch(@$_REQUEST['__format'])
 				{
 					case true:
 					$ret_val['data'] = $this->renderAjax('values/index', [
 						"model" => $this->model,
 						"values" => $this->model->config['current']['config'],
-						"parent" => $this->model->cfg_s
+						"parent" => $this->model->section
 					]);
 					break;
 				
@@ -262,7 +254,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		switch(isset($_REQUEST[$this->model->formName()]))
 		{
 			case true:
-			$this->model->setScenario($this->action->id.ucfirst($_REQUEST[$this->model->formName()]['cfg_w']));
+			$this->model->setScenario($this->action->id.ucfirst($_REQUEST[$this->model->formName()]['what']));
 			$this->model->load($_REQUEST);
 			switch(\Yii::$app->request->isAjax && (@Helper::boolval($_REQUEST['do']) !== true))
 			{
@@ -276,22 +268,22 @@ class ConfigurationController extends DefaultController implements DefaultContro
 				switch($this->model->getScenario())
 				{
 					case 'deleteContainer':
-					//$this->model->update_container($this->model->cfg_v);
+					//$this->model->update_container($this->model->value);
 					break;
 					
 					case 'deleteValue':
-					$this->model->delete($this->model->cfg_n,
-							$this->model->cfg_c,
+					$this->model->delete($this->model->name,
+							$this->model->container,
 							null,
-							$this->model->cfg_e);
+							$this->model->engine);
 					$this->model->config['current']['config'] = Session::getVal($this->model->correctKey($this->model->config['current']['action']['key']));
 					break;
 					
 					case 'deleteSection':
-					$this->model->delete($this->model->cfg_s,
-							$this->model->cfg_c,
+					$this->model->delete($this->model->section,
+							$this->model->container,
 							null,
-							$this->model->cfg_e);
+							$this->model->engine);
 					break;
 				}
 				break;
@@ -306,7 +298,7 @@ class ConfigurationController extends DefaultController implements DefaultContro
 		switch(isset($_REQUEST[$this->model->formName()]))
 		{
 			case true:
-			$this->model->setScenario($this->action->id.ucfirst($_REQUEST[$this->model->formName()]['cfg_w']));
+			$this->model->setScenario($this->action->id.ucfirst($_REQUEST[$this->model->formName()]['what']));
 			$this->model->load($_REQUEST);
 			switch(\Yii::$app->request->isAjax && (@Helper::boolval($_REQUEST['do']) !== true))
 			{
@@ -320,26 +312,26 @@ class ConfigurationController extends DefaultController implements DefaultContro
 				switch($this->model->getScenario())
 				{
 					case 'updateContainer':
-					//$this->model->update_container($this->model->cfg_v);
+					//$this->model->update_container($this->model->value);
 					break;
 					
 					case 'updateValue':
-					/*if (is_array($this->model->cfg_c)) 
+					/*if (is_array($this->model->container)) 
 					{
-						print_r($this->model->cfg_c); 
+						print_r($this->model->container); 
 						exit;
 					}*/
-					$this->model->update($this->model->cfg_n,
-							$this->model->cfg_v,
-							$this->model->cfg_c,
+					$this->model->update($this->model->name,
+							$this->model->value,
+							$this->model->container,
 							null,
-							$this->model->cfg_e);
+							$this->model->engine);
 					break;
 					
 					case 'updateSection':
-					/*$this->model->create($this->model->cfg_v,
+					/*$this->model->create($this->model->value,
 							null,
-							$this->model->cfg_c);*/
+							$this->model->container);*/
 					break;
 				}
 				break;

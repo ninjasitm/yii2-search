@@ -5,31 +5,28 @@ namespace nitm\models\configer;
 use Yii;
 
 /**
- * This is the model class for table "config_values".
+ * This is the model class for table "config_sections".
  *
  * @property integer $id
  * @property integer $containerid
- * @property integer $sectionid
  * @property string $name
- * @property string $value
- * @property string $comment
  * @property integer $author_id
  * @property integer $editor_id
  * @property string $created_at
  * @property string $updated_at
  * @property integer $deleted
  *
- * @property ConfigSections $section
- * @property ConfigContainers $container
+ * @property Container $container
+ * @property Value[] $values
  */
-class ConfigValues extends \nitm\models\Data
+class Section extends BaseConfiger
 {
     /**
      * @inheritdoc
      */
     public static function tableName()
     {
-        return 'config_values';
+        return 'config_sections';
     }
 
     /**
@@ -38,13 +35,22 @@ class ConfigValues extends \nitm\models\Data
     public function rules()
     {
         return [
-            [['containerid', 'sectionid', 'name', 'value', 'author_id', 'editor_id'], 'required'],
-            [['containerid', 'sectionid', 'author_id', 'editor_id', 'deleted'], 'integer'],
-            [['value', 'comment'], 'string'],
+            [['containerid', 'name', 'author_id', 'editor_id'], 'required'],
+            [['containerid', 'author_id', 'editor_id', 'deleted'], 'integer'],
+            [['name'], 'string'],
             [['created_at', 'updated_at'], 'safe'],
-            [['name'], 'string', 'max' => 128]
+            [['name', 'containerid'], 'unique', 'targetAttribute' => ['name'], 'message' => 'This section already exists'],
         ];
     }
+	
+	public function scenarios()
+	{
+		return [
+			'create' => ['containerid', 'name'],
+			'update' => ['name'],
+			'delete' => ['deleted']
+		];
+	}
 
     /**
      * @inheritdoc
@@ -54,10 +60,7 @@ class ConfigValues extends \nitm\models\Data
         return [
             'id' => Yii::t('app', 'ID'),
             'containerid' => Yii::t('app', 'Containerid'),
-            'sectionid' => Yii::t('app', 'Sectionid'),
             'name' => Yii::t('app', 'Name'),
-            'value' => Yii::t('app', 'Value'),
-            'comment' => Yii::t('app', 'Comment'),
             'author_id' => Yii::t('app', 'Author ID'),
             'editor_id' => Yii::t('app', 'Editor ID'),
             'created_at' => Yii::t('app', 'Created At'),
@@ -69,16 +72,24 @@ class ConfigValues extends \nitm\models\Data
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getSection()
+    public function getContainer()
     {
-        return $this->hasOne(ConfigSections::className(), ['id' => 'sectionid']);
+        return $this->hasOne(Container::className(), ['id' => 'containerid']);
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getContainer()
+    public function getValues()
     {
-        return $this->hasOne(ConfigContainers::className(), ['id' => 'containerid']);
+        return $this->hasMany(Value::className(), ['sectionid' => 'id'])
+		->select([
+			'*',
+			"`name` AS unique_id", 
+			"name AS unique_name", 
+			"(SELECT `name` AS 'section_name'", 
+			"(SELECT `name` FROM `".Container::tableName()."` WHERE id=containerid) AS 'container_name'"
+		])
+		->orderBy(['name' => SORT_ASC]);
     }
 }
