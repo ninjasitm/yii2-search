@@ -198,11 +198,11 @@ class User extends \dektrium\user\models\User
 				$url = "http://gravatar.com/avatar/$key";
 				break;
 			}
-			Cache::cache()->set('user-avatar'.$this->getId(), $url);
+			Cache::cache()->set('user-avatar'.$this->getId(), urlencode($url));
 			break;
 			
 			default:
-			$url = Cache::cache()->get('user-avatar'.$this->getId());
+			$url = urldecode(Cache::cache()->get('user-avatar'.$this->getId()));
 			break;
 		}
 		return $url;

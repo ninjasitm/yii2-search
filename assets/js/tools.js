@@ -10,6 +10,7 @@ function Tools ()
 	this.defaultInit = [
 		'initVisibility',
 		'initRemoveParent',
+		'initDisableParent',
 		'initCloneParent',
 		'initBsMultipleModal',
 		'initDynamicDropdown',
@@ -396,7 +397,6 @@ function Tools ()
 	{
 		var $element = $(elem);
 		var clone = $($element.data('clone')).clone();
-		console.log(clone);
 		clone.find('input').not(':hidden').each(function (){$(this).val('')});
 		clone.attr('id', clone.attr('id')+Date.now());
 		var to = $nitm.getObj($element.data('to'));
@@ -422,8 +422,8 @@ function Tools ()
 		//enable hide/unhide functionality
 		container.find("[role~='disableParent']").map(function(e) {
 			$(this).on('click', function (e) {
+				e.preventDefault();
 				self.disableParent(this);
-				return false;
 			});
 		});
 	}
@@ -433,11 +433,20 @@ function Tools ()
 	 * Disable the parent element up to a certain depth
 	 */
 	this.disableParent = function (elem, levels, parentOptions, disablerOptions, dontDisableFields) {
-		var levels = ($(elem).data('depth') == undefined) ? ((levels == undefined) ? 1 : levels): $(elem).data('depth');
-		var parent = $(elem).parent();
-		for(i = 0; i<levels; i++)
+		switch($(elem).data('parent') != undefined)
 		{
-			parent = parent.parent();
+			case true:
+			var parent = $nitm.getObj($(elem).data('parent'));
+			break;
+			
+			default:
+			var levels = ($(elem).data('depth') == undefined) ? ((levels == undefined) ? 1 : levels): $(elem).data('depth');
+			var parent = $(elem).parent();
+			for(i = 0; i<levels; i++)
+			{
+				parent = parent.parent();
+			}
+			break;
 		}
 		//If we're dealing with a form, start from the submit button
 		switch($(elem).prop('tagName'))
@@ -457,19 +466,18 @@ function Tools ()
 		{
 			case 1:
 			case true:
-				var disabled = 1;
-				break;
+			var disabled = 1;
+			break;
 				
 			default:
-				var disabled = 0;
-				break;
+			var disabled = 0;
+			break;
 		}
 		$(elem).data('disabled', !disabled);
 		
 		var _defaultDisablerOptions = {
-			class: 'btn '+((disabled == 1) ? 'btn-success' : 'btn-danger'), 
-			size: 'btn-sm',
-			indicator: ((disabled == 1) ? 'repeat' : 'remove')
+			size: !$(elem).attr('class') ? 'btn-sm' : $(elem).attr('class'),
+			indicator: ((disabled == 1) ? 'refresh' : 'ban')
 		};
 		//change the button to determine the curent status
 		var _disablerOptions = {};
@@ -482,11 +490,11 @@ function Tools ()
 			}
 			
 		};
-		$(elem).removeClass().addClass(_disablerOptions.class+' '+_disablerOptions.size).html("<span class='glyphicon glyphicon-"+_disablerOptions.indicator+"'></span>");
+		$(elem).removeClass().addClass(_disablerOptions.class+' '+_disablerOptions.size).html("<span class='fa fa-"+_disablerOptions.indicator+"'></span>");
 		
 		//now perform disabling on parent
 		var _defaultParentOptions = {
-			class: 'alert '+((disabled == 1) ? 'alert-disabled' : 'alert-success')
+			class: 'alert '+((disabled == 1) ? 'bg-disabled' : 'bg-success')
 		};
 		var elemEvents = ['click'];
 		parent.find(':input,:button,a').map(function () {

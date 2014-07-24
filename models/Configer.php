@@ -35,7 +35,6 @@ class Configer extends Model
 	public $dir = ["default" => 'config/ini/', "config" => null];
 	public $config = [];
 	
-	public $configDb = 'null';
 	public $container = 'globals';
 	
 	//Form variables
@@ -53,9 +52,6 @@ class Configer extends Model
 	//protected data
 	protected $containerModel;
 	protected $sectionModel;
-	protected $contents = null;
-	protected $sections = [];
-	protected $containers = [];
 	protected $classes = [
 		"success" => "success",
 		"failure" => "warning",
@@ -67,6 +63,7 @@ class Configer extends Model
 	const NO_DEC = 'nodec:';
 	
 	//private data
+	private static $_containers;
 	private $_objects = [];
 	private $types = ['ini' => 'cfg', 'xml' => 'xml', 'file' => 'cfg'];
 	private $location = "file";
@@ -84,9 +81,8 @@ class Configer extends Model
 		$this->init();
 	}
 	
-	public function init($enable_backups=true, $backupExtention='.cfg.bak', $configDb=null)
+	public function init($enable_backups=true, $backupExtention='.cfg.bak')
 	{
-		$this->initLogger($configDb);
 		$this->backups = $enable_backups;
 		$this->backupExtention = $backupExtention;
 		$this->dir['config'] = $this->dir['default'];
@@ -149,18 +145,6 @@ class Configer extends Model
 	}
 	
 	/*
-	 * Setup logging functionality
-	 * @param string $db
-	 * @param strign $table
-	 */ 
-	protected function initLogger($db=null, $table='logs')
-	{
-		defined("DB_DEFAULT") or define("DB_DEFAULT", null);
-		$this->configDb = is_null($db) ? "current" : $db;
-		$this->_objects['logger'] = new Logger(null, null, null, Logger::LT_DB, $this->configDb, $table);
-	}
-	
-	/*
 	 * Initiate the event handlers for this class
 	 */
 	public function initEvents()
@@ -177,7 +161,7 @@ class Configer extends Model
 				Session::set($this->correctKey($this->event['data']['key']), $this->event['data']);
 				break;
 			}
-			$this->_objects['logger']->addTrans($this->event['data']['db'],
+			\Yii::$app->getModule('nitm')->logger->addTrans($this->event['data']['db'],
 					  $this->event['data']['table'],
 					  $this->event['data']['action'],
 					  $this->event['data']['message']);
@@ -194,7 +178,7 @@ class Configer extends Model
 				Session::set($this->correctKey($this->event['data']['key'].'.value'), $this->event['data']['value']);
 				break;
 			}
-			$this->_objects['logger']->addTrans($this->event['data']['db'],
+			\Yii::$app->getModule('nitm')->logger->addTrans($this->event['data']['db'],
 					  $this->event['data']['table'],
 					  $this->event['data']['action'],
 					  $this->event['data']['message']);
@@ -215,7 +199,7 @@ class Configer extends Model
 				Session::del($this->event['data']['key']);
 				break;
 			}
-			$this->_objects['logger']->addTrans($this->event['data']['db'],
+			\Yii::$app->getModule('nitm')->logger->addTrans($this->event['data']['db'],
 					  $this->event['data']['table'],
 					  $this->event['data']['action'],
 					  $this->event['data']['message']);
@@ -1438,12 +1422,23 @@ class Configer extends Model
 		switch($this->location)
 		{
 			case 'db':
-			$result = Container::find()->select(['id', 'name'])->all();
-			array_walk($result, function ($val, $key) use(&$ret_val) {
-				$ret_val[$val->name] = $val->name;
-			});
-			$this->config['containers'] = $ret_val;
-			$this->config['load']['containers'] = true;
+			switch(isset(static::$_containers))
+			{
+				case false:
+				$result = Container::find()->select(['id', 'name'])->all();
+				array_walk($result, function ($val, $key) use(&$ret_val) {
+					$ret_val[$val->name] = $val->name;
+				});
+				static::$_containers = $ret_val;
+				$this->config['containers'] = $ret_val;
+				$this->config['load']['containers'] = true;
+				break;
+				
+				default:
+				$this->config['containers'] = static::$_containers;
+				$this->config['load']['containers'] = true;
+				break;
+			}
 			break;
 			
 			case 'file':

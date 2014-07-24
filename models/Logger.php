@@ -63,7 +63,7 @@ class Logger extends DB
 		}
 		//$currentUser = Session::getVal(AUTH_DOMAIN.'.username');
 		$this->logDir = is_dir($this->logDir) ? $this->logDir : $_SERVER['DOCUMENT_ROOT'].$this->logDir;
-		$this->currentUser = ($this->currentUser == '') ? $this->currentUser : (!\Yii::$app->user->identity ? 'loggedOut' : \Yii::$app->user->identity->username);
+		$this->currentUser = (!\Yii::$app->user->identity) ? new User(['username' => 'unknown']) : \Yii::$app->user->identity;
 	}
 	
 	public function __destruct()
@@ -193,7 +193,7 @@ class Logger extends DB
 		}
 		@chmod($this->fullpath, 0775);
 		$this->write("\n".str_repeat("-", 100), true); 
-		$this->write(date("[M-d-Y H:i:s] ").$msg." user: ".$this->currentUser, 1);
+		$this->write(date("[M-d-Y H:i:s] ").$msg." user: ".$this->currentUser->username, 1);
 		$this->write("\n".str_repeat("-", 100), true);	
 		return $this->fullpath;
 	}
@@ -307,11 +307,10 @@ class Logger extends DB
 				case 1:
 				parent::changeDbt($this->logDb, $this->logTable);
 				$this->prepareDb();
-				$this->currentUser = (!$this->currentUser) ? \Yii::$app->user->username : $this->currentUser;
 				$hostname = (empty($_SERVER['REMOTE_HOST'])) ? Network::getHost(@$_SERVER['REMOTE_ADDR']) : $_SERVER['REMOTE_HOST'];
 				$hostname = (empty($hostname)) ? 'localhost' : $hostname;
 				$ipaddr = (!empty($_SERVER['REMOTE_ADDR'])) ? $_SERVER['REMOTE_ADDR'] : 'localhost';
-				parent::insert(array('added', 'user', 'action', 'notes', 'ip_addr', 'host', 'db_name', 'table_name'), array(strtotime('now'), $this->currentUser, $action, $note, $ipaddr, $hostname, $db, $table), null, null, true);
+				parent::insert(array('added', 'user', 'action', 'notes', 'ip_addr', 'host', 'db_name', 'table_name'), array(strtotime('now'), $this->currentUser->username, $action, $note, $ipaddr, $hostname, $db, $table), null, null, true);
 				parent::revertDbt();
 				break;
 			}

@@ -37,6 +37,7 @@ class BaseWidget extends Data implements DataInterface
 	public $initSearchClass = true;
 	
 	protected static $userLastActive;
+	protected static $currentUser;
 	
 	private static $_dateFormat = "D M d Y h:iA";
 	
@@ -47,6 +48,7 @@ class BaseWidget extends Data implements DataInterface
 		$this->addWith(['author']);
 		if($this->initSearchClass)
 			static::initCache($this->constrain, $this->cacheKey());
+		static::$currentUser =  \Yii::$app->user->identity;
 	}
 	
 	public function scenarios()
@@ -73,6 +75,21 @@ class BaseWidget extends Data implements DataInterface
 			'deleted' => null,
 		];
 		return array_merge(parent::has(), $has);
+	}
+	
+	/**
+	 * Get the constraints for a widget model
+	 */
+	public function getConstraints()
+	{
+		switch(empty($this->constraints))
+		{
+			case true:
+			$this->constraints['parent_id'] = $this->parent_id;
+			$this->constraints['parent_type'] = $this->parent_type;
+			break;
+		}
+		return $this->constraints;
 	}
 	
 	/*
@@ -185,15 +202,19 @@ class BaseWidget extends Data implements DataInterface
 			 switch(1)
 			 {
 				 case $valueFilter == -1:
-				 $andWhere = ['and', 'value<=0'];
-				 break; 
+				 $select = "SUM(value<=0) AS value";
+				 break;
+				 
+				 case 'both':
+				 $select = "SUM(value<=0) AS down, SUM(value>=1) AS up";
+				 break;
 				 
 				 default:
-				 $andWhere = ['and', 'value>=1'];
+				 $select = "SUM(value>=1) AS value";
 				 break;
 			 }
-			 $ret_val = $this->find($this)->select("SUM(value) AS value")->andWhere($andWhere)->asArray()->all();
-			 $ret_val = $ret_val[0]['value'];
+			 $ret_val = $this->find($this)->select("SUM(value) AS value")->asArray()->all();
+			 $ret_val = ($this->queryFilters['value'] == 'both') ? $ret_val[0] : $ret_val[0]['value'];
 			 switch(is_null($valueFilter))
 			 {
 				case true:
@@ -242,13 +263,24 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function hasNew()
 	{
-		$model = clone Cache::getModel($this->cacheKey());
-		$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.\Yii::$app->user->identity->lastActive()];
-		$ret_val = $model->find()->orderBy(['id' => SORT_DESC])
-			->andWhere($andWhere)
-			->count();
-		\Yii::$app->user->identity->updateActivity();
-		return $ret_val >= 1;
+		$ret_val = false;
+		switch(isset($this->hasNew))
+		{
+			case false:
+			$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.static::$currentUser->lastActive()];
+			$ret_val = (static::find()->orderBy(['id' => SORT_DESC])
+				->andWhere($andWhere)
+				->andWhere($this->getConstraints())
+				->count() >= 1);
+			static::$currentUser->updateActivity();
+			$this->hasNew = $ret_val;
+			break;
+			
+			default:
+			$ret_val = $this->hasNew;
+			break;
+		}
+		return $ret_val;
 	}
 	
 	/*
@@ -257,7 +289,7 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function isNew()
 	{
-		static::$userLastActive = is_null(static::$userLastActive) ? \Yii::$app->user->identity->lastActive() : static::$userLastActive;
+		static::$userLastActive = is_null(static::$userLastActive) ? static::$currentUser->lastActive() : static::$userLastActive;
 		return strtotime($this->created_at) > static::$userLastActive;
 	}
 	

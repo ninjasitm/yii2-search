@@ -14,11 +14,13 @@ namespace nitm\models;
 class Vote extends BaseWidget
 {
 	protected static $is = 'replies';
+	protected static $maxVotes;
 	
 	public function init()
 	{
 		parent::init();
 		$this->initConfig(static::isWhat());
+		$this->constraints['author_id'] = static::$currentUser->getId();
 	}
 	
     /**
@@ -40,7 +42,7 @@ class Vote extends BaseWidget
             [['author_id', 'parent_id'], 'integer'],
             [['created_at'], 'safe'],
             [['parent_type'], 'string', 'max' => 64],
-            [['author_id', 'parent_type', 'parent_id'], 'unique', 'targetAttribute' => ['author_id', 'parent_type', 'parent_id'], 'message' => 'The combination of User ID, parent Type and parent ID has already been taken.']
+            [['author_id', 'parent_type', 'parent_id'], 'unique', 'targetAttribute' => ['author_id', 'parent_type', 'parent_id'], 'message' => 'The combination of User ID, parent Type and parent ID has already been taken.', 'on' =>['create']]
         ];
     }
 	
@@ -78,7 +80,7 @@ class Vote extends BaseWidget
 		$ret_val = ['positive' => 0];
 		//Only count votes with a 1 value
 		$this->setConstraints([$this->parent_id, $this->parent_type]);
-		switch($this->allowMultiple())
+		switch(static::allowMultiple())
 		{
 			case true:
 			$count = $this->getCount();
@@ -86,33 +88,23 @@ class Vote extends BaseWidget
 			{
 				case false:
 				//Now look only for negative values
-				$this->queryFilters['value'] = -1;
-				$negative = $this->getValue();
-				//Now look only for positive values
-				$this->queryFilters['value'] = 1;
-				$positive = $this->getValue();
+				$this->queryFilters['value'] = 'both';
+				$votes = $this->getValue();
 				break;
 				
 				default:
-				$negative = 0;
-				$positive = 0;
+				$votes = ['down' => 0, 'up' => 0];
 				break;
 			}
-			$ret_val = ['positive' => (int)$positive, 'negative' => (int)$negative];
+			$ret_val = ['positive' => (int)$votes['down'], 'negative' => (int)$votes['up']];
 			break;
 			
 			default:
-			$userCount = User::find()->where(['disabled' => 0])->count();
-			switch(is_null($userCount))
-			{
-				case false:
-				$this->queryFilters['value'] = 1;
-				$ret_val['positive'] = ($this->getCount()/$userCount) * 100;
-				//Now look only for negative values
-				//$this->queryFilters['value'] = -1;
-				//$ret_val['negative'] = ($this->getCount()/$userCount) * 100;
-				break;
-			}
+			$this->queryFilters['value'] = 1;
+			$ret_val['positive'] = ($this->getCount()/static::getMax()) * 100;
+			//Now look only for negative values
+			//$this->queryFilters['value'] = -1;
+			//$ret_val['negative'] = ($this->getCount()/$userCount) * 100;
 			break;
 		}
 		unset($this->queryFilters['value']);
@@ -123,13 +115,23 @@ class Vote extends BaseWidget
 	 * Get the rating, percentage out of 100%
 	 * @return int
 	 */
-	public function getMax()
+	public static function getMax()
 	{
-		$ret_val = 100000000000000;
-		switch($this->allowMultiple())
+		switch(isset(static::$maxVotes))
 		{
 			case false:
-			$ret_val = User::find()->where(['disabled' => 0])->count();
+			$ret_val = 100000000000000;
+			switch(self::allowMultiple())
+			{
+				case false:
+				$ret_val = User::find()->where(['disabled' => 0])->count();
+				break;
+			}
+			static::$maxVotes = $ret_val;
+			break;
+			
+			default:
+			$ret_val = static::$maxVotes;
 			break;
 		}
 		return $ret_val;
@@ -142,11 +144,13 @@ class Vote extends BaseWidget
 	{
 		$ret_val = false;
 		//If we don't multiple votes then we will check, otherwise let the user vote!
-		switch($this->allowMultiple())
+		switch(static::allowMultiple())
 		{
 			case false:
-			$this->queryFilters['author_id'] = \Yii::$app->user->getId();
-			$vote = $this->getOne();
+			$vote = static::find()
+				->select('value')
+				->where($this->getConstraints())
+				->one();
 			switch($vote instanceof Vote)
 			{
 				case true:
@@ -168,8 +172,8 @@ class Vote extends BaseWidget
 	 * Allow multiple voting?
 	 * @return boolean
 	 */
-	public function allowMultiple()
+	public static function allowMultiple()
 	{
-		return isset(static::$settings[$this->isWhat()]['globals']['allowMultiple']) && (static::$settings[$this->isWhat()]['globals']['allowMultiple'] == true);
+		return static::setting(static::isWhat().'.globals.allowMultiple') == true;
 	}
 }

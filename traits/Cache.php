@@ -15,7 +15,7 @@ trait Cache {
 	 * @param string $modelClass
 	 * @return instanceof $modelClass
 	 */
-	public function getModel($key, $property=null, $modelClass=null)
+	public function getCachedModel($key, $property=null, $modelClass=null, $options=[])
 	{
 		//PHP Doesn't support serializing of Closure functions so using local object store
 		//switch(static::$cache->exists($key))
@@ -31,7 +31,16 @@ trait Cache {
 			switch(1)
 			{
 				case !is_null($property) && !is_null($modelClass):
-				$ret_val = is_a($this->$property, $modelClass::className()) ? $this->$property : new $modelClass;
+				switch($this->hasProperty($property))
+				{
+					case true:
+					$ret_val = is_a($this->$property, $modelClass::className()) ? $this->$property : new $modelClass($options);
+					break;
+					
+					default:
+					$ret_val = new $modelClass($options);
+					break;
+				}
 				//static::$cache->set($key, $ret_val, 1000);
 				RealCache::setModel($key, $ret_val);
 				break;
@@ -47,7 +56,7 @@ trait Cache {
 	 * @param string $property
 	 * @return array
 	 */
-	public function getModelArray($key, $property=null)
+	public function getCachedModelArray($key, $property=null, $options=[])
 	{
 		//PHP Doesn't support serializing of Closure functions so using local object store
 		//switch(static::$cache->exists($key))
@@ -63,7 +72,11 @@ trait Cache {
 			switch(1)
 			{
 				case !is_null($property):
-				$ret_val = is_array($this->$property) ? $this->$property : [];
+				$ret_val = $options;
+				if($this->hasProperty($property))
+				{
+					$ret_val = is_array($this->$property) ? $this->$property : $ret_val;
+				}
 				//static::$cache->set($key, $ret_val, 1000);
 				RealCache::setModel($key, $ret_val);
 				break;
@@ -73,7 +86,7 @@ trait Cache {
 		return $ret_val;
 	}
 	
-	public function setModel($key, $model)
+	public function setCachedModel($key, $model)
 	{
 		RealCache::setModel($key, $model);
 	}

@@ -125,18 +125,10 @@ use nitm\helpers\Cache;
 	{
 		return $this->getCachedRelation('user.'.$this->category_id, 'category', \nitm\models\Category::className());
 	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getReplyModel()
-    {
-        return $this->hasOne(\nitm\models\Replies::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()]);
-    }
 	
 	public function replyModel()
 	{
-		return $this->getCachedRelation('reply-model.'.$this->isWhat().'.'.$this->getId(), 'replyModel', \nitm\models\Replies::className());
+		return $this->getCachedRelation('reply-model.'.$this->isWhat().'.'.$this->getId(), 'replyModel', \nitm\models\Replies::className(), false, ['parent_id' => $this->getId(), 'parent_type' => $this->isWhat()]);
 	}
 
     /**
@@ -151,18 +143,10 @@ use nitm\helpers\Cache;
 	{
 		return $this->getCachedRelation('replies.'.$this->isWhat().'.'.$this->getId(), 'replies', null, true);
 	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getIssueModel()
-    {
-        return $this->hasOne(\nitm\models\Issues::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()]);
-    }
 	
 	public function issueModel()
 	{
-		return $this->getCachedRelation('issue-model.'.$this->isWhat().'.'.$this->getId(), 'issueModel', \nitm\models\Issues::className());
+		return $this->getCachedRelation('issue-model.'.$this->isWhat().'.'.$this->getId(), 'issueModel', \nitm\models\Issues::className(), false, ['parent_id' => $this->getId(), 'parent_type' => $this->isWhat()]);
 	}
 
     /**
@@ -190,18 +174,10 @@ use nitm\helpers\Cache;
 	{
 		return $this->getCachedRelation('revisions.'.$this->isWhat().'.'.$this->getId(), 'revisions', null, true);
 	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getRevisionModel()
-    {
-        return $this->hasOne(\nitm\models\Revisions::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()]);
-    }
 	
 	public function revisionModel()
 	{
-		return $this->getCachedRelation('revision-model.'.$this->isWhat().'.'.$this->getId(), 'revisionModel', \nitm\models\Revisions::className());
+		return $this->getCachedRelation('revision-model.'.$this->isWhat().'.'.$this->getId(), 'revisionModel', \nitm\models\Revisions::className(), false, ['parent_id' => $this->getId(), 'parent_type' => $this->isWhat()]);
 	}
 
     /**
@@ -216,18 +192,10 @@ use nitm\helpers\Cache;
 	{
 		return $this->getCachedRelation('votes.'.$this->isWhat().'.'.$this->getId(), 'votes', null, true);
 	}
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getVoteModel()
-    {
-        return $this->hasOne(\nitm\models\Vote::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()]);
-    }
 	
 	public function voteModel()
 	{
-		return $this->getCachedRelation('vote-model.'.$this->isWhat().'.'.$this->getId(), 'voteModel', \nitm\models\Vote::className());
+		return $this->getCachedRelation('vote-model.'.$this->isWhat().'.'.$this->getId(), 'voteModel', \nitm\models\Vote::className(), false, ['parent_id' => $this->getId(), 'parent_type' => $this->isWhat()]);
 	}
 
     /**
@@ -245,26 +213,26 @@ use nitm\helpers\Cache;
 	
 	public function ratingModel()
 	{
-		return $this->getCachedRelation('rating-model.'.$this->isWhat().'.'.$this->getId(), 'ratingModel', \nitm\models\Rating::className());
+		return $this->getCachedRelation('rating-model.'.$this->isWhat().'.'.$this->getId(), 'ratingModel', \nitm\models\Rating::className(), false, ['parent_id' => $this->getId(), 'parent_type' => $this->isWhat()]);
 	}
 	
-	public function getCachedRelation($key, $property, $modelClass, $asArray=false)
+	public function getCachedRelation($key, $property, $modelClass, $asArray=false, $options=[])
 	{
 		switch($this->inCache($key))
 		{
 			case true:
-			$ret_val = $this->getModel($key);
+			$ret_val = $this->getCachedModel($key, $options);
 			break;
 			
 			default:
 			switch($asArray)
 			{
 				case false:
-				$ret_val = $this->getModel($key, $property, $modelClass);
+				$ret_val = $this->getCachedModel($key, $property, $modelClass, $options);
 				break;
 				
 				default:
-				$ret_val = $this->getModelArray($key, $property);
+				$ret_val = $this->getCachedModelArray($key, $property, $options);
 				break;
 			}
 			break;

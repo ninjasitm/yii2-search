@@ -55,7 +55,7 @@ trait Configer {
 					Session::set(Session::settings, $config);
 					break;
 					
-					case !isset(static::$settings[$container]):
+					case !isset(static::$settings[$container]) && ($container != $module->configOptions['container']):
 					$config = $module->config->getConfig($module->configOptions['engine'], $container, true);
 					static::$settings[$container] = $config;
 					Session::set(Session::current.'.'.$container, $config);
