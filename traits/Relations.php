@@ -2,6 +2,7 @@
 namespace nitm\traits;
 
 use nitm\models\Data;
+use nitm\helpers\Cache;
 
 /**
  * Traits defined for expanding active relation scopes until yii2 resolves traits issue
@@ -18,7 +19,7 @@ use nitm\models\Data;
 	
 	public function user()
 	{
-		return static::getCachedRelation('user.'.$this->user_id, 'user', \nitm\models\User::className());
+		return $this->getCachedRelation('user.'.$this->user_id, 'user', \nitm\models\User::className());
 	}
 
     /**
@@ -31,7 +32,7 @@ use nitm\models\Data;
 	
 	public function author()
 	{
-		return static::getCachedRelation('user.'.$this->author_id, 'author', \nitm\models\User::className());
+		return $this->getCachedRelation('user.'.$this->author_id, 'author', \nitm\models\User::className());
 	}
 
     /**
@@ -44,7 +45,7 @@ use nitm\models\Data;
 	
 	public function editor()
 	{
-		return static::getCachedRelation('user.'.$this->editor_id, 'editor', \nitm\models\User::className());
+		return $this->getCachedRelation('user.'.$this->editor_id, 'editor', \nitm\models\User::className());
 	}
 
     /**
@@ -57,7 +58,7 @@ use nitm\models\Data;
 	
 	public function completedBy()
 	{
-		return static::getCachedRelation('user.'.$this->completed_by, 'completedBy', \nitm\models\User::className());
+		return $this->getCachedRelation('user.'.$this->completed_by, 'completedBy', \nitm\models\User::className());
 	}
 
     /**
@@ -70,7 +71,7 @@ use nitm\models\Data;
 	
 	public function resolvedBy()
 	{
-		return static::getCachedRelation('user.'.$this->resolved_by, 'resolvedBy', \nitm\models\User::className());
+		return $this->getCachedRelation('user.'.$this->resolved_by, 'resolvedBy', \nitm\models\User::className());
 	}
 
     /**
@@ -83,7 +84,7 @@ use nitm\models\Data;
 	
 	public function closedBy()
 	{
-		return static::getCachedRelation('user.'.$this->clsoed_by, 'closedBy', \nitm\models\User::className());
+		return $this->getCachedRelation('user.'.$this->closed_by, 'closedBy', \nitm\models\User::className());
 	}
 
     /**
@@ -96,7 +97,7 @@ use nitm\models\Data;
 	
 	public function disabledBy()
 	{
-		return static::getCachedRelation('user.'.$this->disabled_by, 'disabledBy', \nitm\models\User::className());
+		return $this->getCachedRelation('user.'.$this->disabled_by, 'disabledBy', \nitm\models\User::className());
 	}	
 
     /**
@@ -109,7 +110,7 @@ use nitm\models\Data;
 	
 	public function type()
 	{
-		return static::getCachedRelation('category.'.$this->type_id, 'type', \nitm\models\Category::className());
+		return $this->getCachedRelation('category.'.$this->type_id, 'type', \nitm\models\Category::className());
 	}
 
     /**
@@ -122,7 +123,7 @@ use nitm\models\Data;
 	
 	public function category()
 	{
-		return static::getCachedRelation('user.'.$this->category_id, 'category', \nitm\models\Category::className());
+		return $this->getCachedRelation('user.'.$this->category_id, 'category', \nitm\models\Category::className());
 	}
 
     /**
@@ -135,7 +136,7 @@ use nitm\models\Data;
 	
 	public function replyModel()
 	{
-		return static::getCachedRelation('reply-model.'.$this->isWhat().'.'.$this->getId(), 'replyModel', \nitm\models\Replies::className());
+		return $this->getCachedRelation('reply-model.'.$this->isWhat().'.'.$this->getId(), 'replyModel', \nitm\models\Replies::className());
 	}
 
     /**
@@ -148,7 +149,7 @@ use nitm\models\Data;
 	
 	public function replies()
 	{
-		return static::getCachedRelation('replies.'.$this->isWhat().'.'.$this->getId(), 'replies', null, true);
+		return $this->getCachedRelation('replies.'.$this->isWhat().'.'.$this->getId(), 'replies', null, true);
 	}
 
     /**
@@ -161,7 +162,7 @@ use nitm\models\Data;
 	
 	public function issueModel()
 	{
-		return static::getCachedRelation('issue-model.'.$this->isWhat().'.'.$this->getId(), 'issueModel', \nitm\models\Issues::className());
+		return $this->getCachedRelation('issue-model.'.$this->isWhat().'.'.$this->getId(), 'issueModel', \nitm\models\Issues::className());
 	}
 
     /**
@@ -174,7 +175,7 @@ use nitm\models\Data;
 	
 	public function issues()
 	{
-		return static::getCachedRelation('issues.'.$this->isWhat().'.'.$this->getId(), 'issues', null, true);
+		return $this->getCachedRelation('issues.'.$this->isWhat().'.'.$this->getId(), 'issues', null, true);
 	}
 
     /**
@@ -187,7 +188,7 @@ use nitm\models\Data;
 	
 	public function revisions()
 	{
-		return static::getCachedRelation('revisions.'.$this->isWhat().'.'.$this->getId(), 'revisions', null, true);
+		return $this->getCachedRelation('revisions.'.$this->isWhat().'.'.$this->getId(), 'revisions', null, true);
 	}
 
     /**
@@ -200,7 +201,7 @@ use nitm\models\Data;
 	
 	public function revisionModel()
 	{
-		return static::getCachedRelation('revision-model.'.$this->isWhat().'.'.$this->getId(), 'revisionModel', \nitm\models\Revisions::className());
+		return $this->getCachedRelation('revision-model.'.$this->isWhat().'.'.$this->getId(), 'revisionModel', \nitm\models\Revisions::className());
 	}
 
     /**
@@ -213,7 +214,7 @@ use nitm\models\Data;
 	
 	public function votes()
 	{
-		return static::getCachedRelation('votes.'.$this->isWhat().'.'.$this->getId(), 'votes', null, true);
+		return $this->getCachedRelation('votes.'.$this->isWhat().'.'.$this->getId(), 'votes', null, true);
 	}
 
     /**
@@ -226,7 +227,7 @@ use nitm\models\Data;
 	
 	public function voteModel()
 	{
-		return static::getCachedRelation('vote-model.'.$this->isWhat().'.'.$this->getId(), 'voteModel', \nitm\models\Vote::className());
+		return $this->getCachedRelation('vote-model.'.$this->isWhat().'.'.$this->getId(), 'voteModel', \nitm\models\Vote::className());
 	}
 
     /**
@@ -239,31 +240,31 @@ use nitm\models\Data;
 	
 	public function rating()
 	{
-		return static::getCachedRelation('rating.'.$this->isWhat().'.'.$this->getId(), 'rating', null, true);
+		return $this->getCachedRelation('rating.'.$this->isWhat().'.'.$this->getId(), 'rating', null, true);
 	}
 	
 	public function ratingModel()
 	{
-		return static::getCachedRelation('rating-model.'.$this->isWhat().'.'.$this->getId(), 'ratingModel', \nitm\models\Rating::className());
+		return $this->getCachedRelation('rating-model.'.$this->isWhat().'.'.$this->getId(), 'ratingModel', \nitm\models\Rating::className());
 	}
 	
 	public function getCachedRelation($key, $property, $modelClass, $asArray=false)
 	{
-		switch(static::$cache->exists($key))
+		switch($this->inCache($key))
 		{
 			case true:
-			$ret_val = static::$cache->get($key);
+			$ret_val = $this->getModel($key);
 			break;
 			
 			default:
 			switch($asArray)
 			{
 				case false:
-				$ret_val = $this->getCachedModel($key, $property, $modelClass);
+				$ret_val = $this->getModel($key, $property, $modelClass);
 				break;
 				
 				default:
-				$ret_val = $this->getCachedArray($key, $property);
+				$ret_val = $this->getModelArray($key, $property);
 				break;
 			}
 			break;

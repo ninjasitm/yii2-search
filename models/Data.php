@@ -26,7 +26,8 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 {
 	use \nitm\traits\Configer,
 	\nitm\traits\Query,
-	\nitm\traits\Relations;
+	\nitm\traits\Relations,
+	\nitm\traits\Cache;
 	
 	//public members
 	public $unique;
@@ -39,7 +40,6 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	public $withThese = [];
 	public $filter;
 	public $requestModel;
-	public static $cache;
 	public static $settings;
 	public static $active = [
 		'driver' => 'mysql',
@@ -64,14 +64,12 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	protected static $is;
 	protected static $tableName;
 	protected static $supported;
-	protected static $self;
 	
 	//private members
 
 	public function init()
 	{
 		parent::init();
-		static::$cache = \Yii::$app->hasProperty('cache') ? \Yii::$app->cache : new \yii\caching\FileCache;
 		$this->initConfig(static::isWhat());
 	}
 	
@@ -607,50 +605,6 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 		return static::$connection;
 	 }
 	
-	/**
-	 * Get a cached model
-	 * @param string $key
-	 * @param string $property
-	 * @param string $modelClass
-	 * @return instanceof $modelClass
-	 */
-	protected function getCachedModel($key, $property, $modelClass)
-	{
-		switch(static::$cache->exists($key))
-		{
-			case true:
-			$ret_val = static::$cache->get($key);
-			break;
-			
-			default:
-			$ret_val = is_a($this->$property, $modelClass::className()) ? $this->$property : new $modelClass;
-			static::$cache->set($key, $ret_val, 1000);
-			break;
-		}
-		return $ret_val;
-	}
-	
-	/**
-	 * Get a cached array
-	 * @param string $key
-	 * @param string $property
-	 * @return array
-	 */
-	protected function getCachedArray($key, $property)
-	{
-		switch(static::$cache->exists($key))
-		{
-			case true:
-			$ret_val = static::$cache->get($key);
-			break;
-			
-			default:
-			$ret_val = is_array($this->$property) ? $this->$property : [];
-			static::$cache->set($key, $ret_val);
-			break;
-		}
-		return $ret_val;
-	}
 	
 	/*---------------------
 		Private Functions

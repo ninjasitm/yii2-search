@@ -10,6 +10,7 @@ use nitm\models\Data;
 use nitm\models\User;
 use nitm\models\security\Fingerprint;
 use nitm\interfaces\DataInterface;
+use nitm\helpers\Cache;
 
 /**
  * Class BaseWidget
@@ -45,7 +46,7 @@ class BaseWidget extends Data implements DataInterface
 		parent::init();
 		$this->addWith(['author']);
 		if($this->initSearchClass)
-			static::initCache($this->constrain);
+			static::initCache($this->constrain, $this->cacheKey());
 	}
 	
 	public function scenarios()
@@ -130,19 +131,18 @@ class BaseWidget extends Data implements DataInterface
 	 * Get the count for the current parameters
 	 * @return int count
 	 */
-	 public static function getCount()
+	 public function getCount()
 	 {
-		 $model = clone static::$cache->get('base-widget-search.'.static::isWhat());
 		 $ret_val = 0;
-		 $model->setScenario('count');
-		 switch($model->validate())
+		 $this->setScenario('count');
+		 switch($this->validate())
 		 {
 			 case true:
-			 switch(isset($model->queryFilters['value']))
+			 switch(isset($this->queryFilters['value']))
 			 {
 				 case true:
 				 $andWhere = ['and'];
-				 switch($model->queryFilters['value'])
+				 switch($this->queryFilters['value'])
 				 {
 					 case -1:
 					 $andWhere[] = '`value`<=0';
@@ -152,18 +152,18 @@ class BaseWidget extends Data implements DataInterface
 					 $andWhere[] = '`value`>=1';
 					 break;
 				 }
-				 unset($model->queryFilters['value']);
+				 unset($this->queryFilters['value']);
 				 break;
 				 
 				 default:
 				 $andWhere = [];
 				 break;
 			 }
-			 $ret_val = $model->find()->where($andWhere)->andWhere($model->queryFilters)->count();
+			 $ret_val = $this->find()->where($andWhere)->andWhere($this->queryFilters)->count();
 			 break;
 			 
 			 default:
-			 throw new Exception("Error validating for count.\n".var_export($model->getErrors(), true));
+			 throw new Exception("Error validating for count.\n".var_export($this->getErrors(), true));
 			 break;
 		 }
 		 return $ret_val;
@@ -205,24 +205,13 @@ class BaseWidget extends Data implements DataInterface
 		 return $ret_val;
 	}
 	
-	protected static function initCache($constrain)
-	{
-		if(!static::$cache->exists('base-widget-search.'.static::isWhat()))
-		{
-			$class = static::className();
-			$model = new $class(['initSearchClass' => false]);
-			$model->setConstraints($constrain);
-			static::$cache->set('base-widget-search.'.static::isWhat(), $model);
-		}
-	}
-	
 	/**
 	 * Find a model
 	 */
-	 public static function findModel($constrain=null)
+	 public function findModel($constrain=null)
 	 {
-		static::initCache($constrain);
-		$model = clone static::$cache->get('base-widget-search.'.static::isWhat());
+		$this->initCache($constrain, $this->cacheKey());
+		$model = clone Cache::getModel($this->cacheKey());
 		$model->setConstraints($constrain);
 		$model->addWith([
 			'last' => function ($query) {
@@ -235,9 +224,9 @@ class BaseWidget extends Data implements DataInterface
 			case true:
 			$ret_val->queryFilters = $ret_val->queryFilters;
 			$ret_val->constraints = $model->constraints;
-			$ret_val->count = static::getCount();
-			$ret_val->hasNew = static::hasNew();
-			$ret_val->hasAny = static::hasAny();
+			$ret_val->count = $this->getCount();
+			$ret_val->hasNew = $this->hasNew();
+			$ret_val->hasAny = $this->hasAny();
 			break;
 			
 			default:
@@ -251,9 +240,9 @@ class BaseWidget extends Data implements DataInterface
 	 * Check for new data by last activity of logged in user
 	 * @return mixed user array
 	 */
-	public static function hasNew()
+	public function hasNew()
 	{
-		$model = clone static::$cache->get('base-widget-search.'.static::isWhat());
+		$model = clone Cache::getModel($this->cacheKey());
 		$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.\Yii::$app->user->identity->lastActive()];
 		$ret_val = $model->find()->orderBy(['id' => SORT_DESC])
 			->andWhere($andWhere)
@@ -276,10 +265,9 @@ class BaseWidget extends Data implements DataInterface
 	 * Get the author for this object
 	 * @return boolean
 	 */
-	public static function hasAny()
+	public function hasAny()
 	{
-		$model = clone static::$cache->get('base-widget-search.'.static::isWhat());
-		return $model->find()->count() >= 1;
+		return (!isset($this->count) ? $this->find()->count() : $this->count) >= 1;
 	}
 	
 	
@@ -303,23 +291,20 @@ class BaseWidget extends Data implements DataInterface
 		return $ret_val;
 	}
 	
-	/*
-	 * Get the author for this object
-	 * @return mixed user array
-	 */
-	public function getAuthor()
+	protected static function initCache($constrain, $key)
 	{
-		 return $this->hasOne(User::className(), ['id' => 'author_id']);
+		if(!Cache::exists($key))
+		{
+			$class = static::className();
+			$model = new $class(['initSearchClass' => false]);
+			$model->setConstraints($constrain);
+			Cache::setModel($key, $model);
+		}
 	}
 	
-	
-	/*
-	 * Get the author for this object
-	 * @return mixed user array
-	 */
-	public function getEditor()
+	public function cacheKey()
 	{
-		return $this->hasOne(User::className(), ['id' => 'editor_id']);
+		return 'base-widget-model.'.static::isWhat().'.'.$this->getId();
 	}
 }
 ?>

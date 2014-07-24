@@ -92,13 +92,10 @@ class BaseSearch extends \nitm\models\Data
 
     public function search($params=[])
     {
-        $query = $this->primaryModel->find($this);
-		$params = $this->filterParams($params, $query);
-        $this->dataProvider = new ActiveDataProvider([
-            'query' => $query,
-        ]);
+		$this->reset();
+		$params = $this->filterParams($params);
         if (!($this->load($params[$this->primaryModelFormName], false) && $this->validate())) {
-			$this->addQueryOptions($query);
+			$this->addQueryOptions();
             return $this->dataProvider;
         }
 		foreach($params[$this->primaryModelFormName] as $attr=>$value)
@@ -109,20 +106,30 @@ class BaseSearch extends \nitm\models\Data
 				case 'integer':
 				case 'boolean':
 				case 'double':
-        		if(is_numeric($this->{$column->name})) $this->addCondition($query, $column->name, $value);
+        		if(is_numeric($this->{$column->name})) $this->addCondition($column->name, $value);
 				break;
 				
 				case 'string':
-        		if(is_string($this->{$column->name})) $this->addCondition($query, $column->name, $value, $this->booleanSearch);
+        		if(is_string($this->{$column->name})) $this->addCondition($column->name, $value, $this->booleanSearch);
 				break;
 			}
 		}
-		$this->addConditions($query);
-		$this->addQueryOptions($query);
+		$this->addConditions();
+		$this->addQueryOptions();
         return $this->dataProvider;
     }
 	
-	protected function addConditions($query)
+	public function reset()
+	{
+        $query = $this->primaryModel->find($this);
+        $this->dataProvider = new ActiveDataProvider([
+            'query' => $query,
+        ]);
+		$this->conditions = [];
+		return $this;
+	}
+	
+	protected function addConditions()
 	{
 		foreach($this->conditions as $type=>$condition)
 		{
@@ -130,18 +137,18 @@ class BaseSearch extends \nitm\models\Data
 			{
 				case true:
 				array_unshift($condition,( $this->inclusiveSearch ? 'or' : 'and'));
-				$query->orWhere($condition);
+				$this->dataProvider->query->orWhere($condition);
 				break;
 				
 				default:
 				array_unshift($condition,( $this->inclusiveSearch ? 'or' : 'and'));
-				$query->andWhere($condition);
+				$this->dataProvider->query->andWhere($condition);
 				break;
 			}
 		}
 	}
 
-    protected function addCondition($query, $attribute, $value, $partialMatch=false)
+    protected function addCondition($attribute, $value, $partialMatch=false)
     {
         if (($pos = strrpos($attribute, '.')) !== false) {
             $modelAttribute = substr($attribute, $pos + 1);
@@ -295,7 +302,7 @@ class BaseSearch extends \nitm\models\Data
 		}
 	}
 	
-	private function addQueryOptions($query)
+	private function addQueryOptions()
 	{
 		foreach($this->queryOptions as $type=>$queryOpts)
 		{
@@ -318,7 +325,7 @@ class BaseSearch extends \nitm\models\Data
 				case 'andhaving':
 				case 'orhaving':
 				case 'union':
-				$query->$type($queryOpts);
+				$this->dataProvider->query->$type($queryOpts);
 				break;
 			}
 		}
@@ -327,7 +334,7 @@ class BaseSearch extends \nitm\models\Data
 	/**
 	 * Filter the parameters and remove some options
 	 */
-	private function filterParams($params=[], &$query)
+	private function filterParams($params=[])
 	{
 		$params = isset($params[$this->primaryModelFormName]) ? $params[$this->primaryModelFormName] : (is_array($params) ? $params : []);
 		$useEmptyParams = false;
@@ -342,7 +349,7 @@ class BaseSearch extends \nitm\models\Data
 					{
 						case '_sort':
 						$direction = isset($params['_order']) ? $params['_order'] : SORT_DESC;
-						$query->orderBy([$filterValue => $direction]);
+						$this->dataProvider->query->orderBy([$filterValue => $direction]);
 						$useEmptyParams = true;
 						break;
 						

@@ -5,6 +5,7 @@ use yii\db\ActiveRecord;
 use yii\helpers\Security;
 use yii\web\IdentityInterface;
 use dektrium\user\models\Profile;
+use nitm\helpers\Cache;
 
 /**
  * Class User
@@ -158,43 +159,52 @@ class User extends \dektrium\user\models\User
 	 */
 	public function avatar() 
 	{
-		switch($this->hasAttribute('avatar') && !empty($this->avatar))
+		switch(Cache::cache()->exists('user-avatar'.$this->getId()))
 		{
-			case true:
-			//Support for old NITM avatar/local avatar
-			$url = $this->avatar;
-			break;
-			
-			//Fallback to dektriuk\User gravatar info
-			default:
-			$profile = $this->profile instanceof Profile ? $this->profile : Profile::find()->where(['user_id' => $this->getId()])->one();
-			switch(!is_null($profile))
+			case false:
+			switch($this->hasAttribute('avatar') && !empty($this->avatar))
 			{
 				case true:
-				switch(1)
+				//Support for old NITM avatar/local avatar
+				$url = $this->avatar;
+				break;
+				
+				//Fallback to dektriuk\User gravatar info
+				default:
+				$profile = $this->profile instanceof Profile ? $this->profile : Profile::find()->where(['user_id' => $this->getId()])->one();
+				switch(!is_null($profile))
 				{
-					case !empty($profile->gravatar_id):
-					$key = $profile->gravatar_id;
-					break;
-					
-					case !empty($profile->gravatar_email):
-					$key = $profile->gravatar_email;
+					case true:
+					switch(1)
+					{
+						case !empty($profile->gravatar_id):
+						$key = $profile->gravatar_id;
+						break;
+						
+						case !empty($profile->gravatar_email):
+						$key = $profile->gravatar_email;
+						break;
+						
+						default:
+						$key = $profile->public_email;
+						break;
+					}
 					break;
 					
 					default:
-					$key = $profile->public_email;
+					$key = \Yii::$app->user->identity->email;
 					break;
 				}
-				break;
-				
-				default:
-				$key = \Yii::$app->user->identity->email;
+				$url = "http://gravatar.com/avatar/$key";
 				break;
 			}
-			$url = "http://gravatar.com/avatar/$key";
+			Cache::cache()->set('user-avatar'.$this->getId(), $url);
+			break;
+			
+			default:
+			$url = Cache::cache()->get('user-avatar'.$this->getId());
 			break;
 		}
-		$this->avatar = $url;
 		return $url;
 	}
 	

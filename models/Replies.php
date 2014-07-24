@@ -42,16 +42,6 @@ class Replies extends BaseWidget
 	public function behaviors()
 	{
 		$behaviors = [
-			//setup special attribute behavior
-			'replyToId' => [
-				'class' => \yii\behaviors\AttributeBehavior::className(),
-				'attributes' => [
-					\yii\db\ActiveRecord::EVENT_BEFORE_INSERT => ['reply_to_author_id'],
-				],
-				'value' => function ($event) {
-					return $event->sender->replyToAuthorId();
-				},
-			],
 		];
 		return array_merge(parent::behaviors(), $behaviors);
 	}
