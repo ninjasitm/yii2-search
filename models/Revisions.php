@@ -57,7 +57,7 @@ class Revisions extends BaseWidget
             [['created_at'], 'safe'],
             [['data'], 'string'],
             [['parent_type'], 'string', 'max' => 64],
-            [['author_id', 'parent_type', 'parent_id'], 'unique', 'targetAttribute' => ['author_id', 'parent_type', 'parent_id'], 'message' => 'The combination of User ID, Parent Type and Parent ID has already been taken.']
+            [['author_id', 'parent_type', 'parent_id'], 'unique', 'targetAttribute' => ['author_id', 'parent_type', 'parent_id'], 'message' => 'The combination of User ID, Parent Type and Parent ID has already been taken.', 'on' => 'create']
         ];
     }
 

@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use kartik\widgets\ActiveForm;
 use nitm\models\Issues;
+use nitm\helpers\Icon;
 
 /**
  * @var yii\web\View $this
@@ -40,7 +41,7 @@ $uniqid = uniqid();
     <?= $form->field($model, 'text', [
 			'addon' => [
 			'append' => [
-				'content' => Html::button('Search', ['class'=>'btn btn-primary btn-sm', 'data-pjax' => 1]),
+				'content' => Html::button(Icon::forAction('search'), ['class'=>'btn btn-primary btn-sm', 'data-pjax' => 1]),
 				'asButton' => true
 			]
 		]

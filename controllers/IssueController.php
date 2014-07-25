@@ -108,7 +108,7 @@ class IssueController extends DefaultController
 			break;
 			
 			default:	
-			$this->model = Issues::findModel(['type' => $type, 'id' => $id]);
+			$this->model = Issues::findModel([$id, $type]);
 			break;
 		}
 		$searchModel = new IssuesSearch;

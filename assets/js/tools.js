@@ -379,14 +379,14 @@ function Tools ()
 	 */
 	this.removeParent = function (elem)
 	{
-		var levels = ($(elem).data('depth') == undefined) ? 0 : $(elem).data('depth');
-		switch($(elem).data('parent') != undefined)
+		var $element = $(elem);
+		var levels = ($element.data('depth') == undefined) ? -1 : $element.data('depth');
+		switch($element.data('parent') != undefined)
 		{
 			case true:
-			var parent = $(elem).parents($(elem).data('parent')).eq(levels);
+			var parent = $element.parents($element.data('parent')).eq(levels);
 			break;
 		}
-		console.log(parent);
 		parent.remove();
 	}
 	
@@ -433,15 +433,16 @@ function Tools ()
 	 * Disable the parent element up to a certain depth
 	 */
 	this.disableParent = function (elem, levels, parentOptions, disablerOptions, dontDisableFields) {
-		switch($(elem).data('parent') != undefined)
+		var $element = $(elem);
+		switch($element.data('parent') != undefined)
 		{
 			case true:
-			var parent = $nitm.getObj($(elem).data('parent'));
+			var parent = $nitm.getObj($element.data('parent'));
 			break;
 			
 			default:
-			var levels = ($(elem).data('depth') == undefined) ? ((levels == undefined) ? 1 : levels): $(elem).data('depth');
-			var parent = $(elem).parent();
+			var levels = ($element.data('depth') == undefined) ? ((levels == undefined) ? 1 : levels): $element.data('depth');
+			var parent = $element.parent();
 			for(i = 0; i<levels; i++)
 			{
 				parent = parent.parent();
@@ -449,20 +450,24 @@ function Tools ()
 			break;
 		}
 		//If we're dealing with a form, start from the submit button
-		switch($(elem).prop('tagName'))
+		switch($element.prop('tagName'))
 		{
 			case 'FORM':
-				var elem = $(elem).find(':submit').get(0);
+				var elem = $element.find(':submit').get(0);
 				break;
 		}
-		$(elem).attr('role', 'disableParentTrigger');
+		
+		/*
+		 * For some reason this cdoe block doesn't make sense...
+		 */
+		$element.attr('role', 'disableParent');
 		//get and set the role of the element activating this removal process
 		var thisRole = $(this).attr('role');
-		$(this).attr('role', (thisRole == undefined) ? 'disableParentTrigger' : thisRole);
+		$(this).attr('role', (thisRole == undefined) ? 'disableParent' : thisRole);
 		var thisRole = $(this).attr('role');
 		
 		//get and set the disabled data attribute
-		switch($(elem).data('disabled'))
+		switch($element.data('disabled'))
 		{
 			case 1:
 			case true:
@@ -470,13 +475,13 @@ function Tools ()
 			break;
 				
 			default:
-			var disabled = 0;
+			var disabled = ($element.data('disabled') == undefined) ? 1 : 0;
 			break;
 		}
-		$(elem).data('disabled', !disabled);
+		$element.data('disabled', !disabled);
 		
 		var _defaultDisablerOptions = {
-			size: !$(elem).attr('class') ? 'btn-sm' : $(elem).attr('class'),
+			size: !$element.attr('class') ? 'btn-sm' : $element.attr('class'),
 			indicator: ((disabled == 1) ? 'refresh' : 'ban')
 		};
 		//change the button to determine the curent status
@@ -490,7 +495,7 @@ function Tools ()
 			}
 			
 		};
-		$(elem).removeClass().addClass(_disablerOptions.class+' '+_disablerOptions.size).html("<span class='fa fa-"+_disablerOptions.indicator+"'></span>");
+		$element.removeClass().addClass(_disablerOptions.class+' '+_disablerOptions.size).html("<span class='fa fa-"+_disablerOptions.indicator+"'></span>");
 		
 		//now perform disabling on parent
 		var _defaultParentOptions = {
@@ -516,7 +521,7 @@ function Tools ()
 									
 								default:
 									var _class = 'danger';
-									var _icon = 'remove';
+									var _icon = 'ban';
 									break;
 							}
 							switch(dontDisableFields)
