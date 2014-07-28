@@ -289,8 +289,8 @@ class BaseController extends Controller
 				$item['sub'] = static::getNavHtml($item['sub']);
 				$submenu = $item['sub'];
 				break;
-			}
-			$ret_val[$idx] = [
+			} 
+			$item = array_merge($item, [
 				'label' => Html::tag('span', @$item['name'], [
 					'class' => @$item['label-class']
 				]),
@@ -300,7 +300,8 @@ class BaseController extends Controller
 					"class" => @$item['class'], 
 					"encode" => false
 				]
-			];
+			]);
+			$ret_val[$idx] = $item;
 			switch(empty($encapsulate))
 			{
 				case false:

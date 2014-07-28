@@ -151,16 +151,11 @@ class Configer extends Model
 	{
 		$this->on("afterCreate", function($e) {
 			$this->config['current']['section'] = $this->event['data']['section'];
-			switch($this->container == \Yii::$app->getModule('nitm')->configOptions['container'])
+			if($this->container == \Yii::$app->getModule('nitm')->configOptions['container'])
 			{
-				case true:
 				Session::set($this->correctKey($this->event['data']['key']), (is_null($decoded = json_decode(trim($this->event['data']['value']), true)) ? $this->event['data']['value'] : $decoded));
-				break;
-				
-				default:
-				Session::set($this->correctKey($this->event['data']['key']), $this->event['data']);
-				break;
 			}
+			Session::set(self::dm.'.'.$this->location.'.config.'.$this->event['data']['key'], $this->event['data']);
 			\Yii::$app->getModule('nitm')->logger->addTrans($this->event['data']['db'],
 					  $this->event['data']['table'],
 					  $this->event['data']['action'],
@@ -168,16 +163,11 @@ class Configer extends Model
 		});
 		
 		$this->on("afterUpdate", function($e) {
-			switch($this->container == @Yii::$app->getModule('nitm')->configOptions['container'])
+			if($this->container == \Yii::$app->getModule('nitm')->configOptions['container'])
 			{
-				case true:
 				Session::set($this->correctKey($this->event['data']['key']), (is_null($decoded = json_decode(trim($this->event['data']['value']), true)) ? $this->event['data']['value'] : $decoded));
-				break;
-				
-				default:
-				Session::set($this->correctKey($this->event['data']['key'].'.value'), $this->event['data']['value']);
-				break;
 			}
+			Session::set(self::dm.'.'.$this->location.'.config.'.$this->event['data']['key'].'.value', $this->event['data']['value']);
 			\Yii::$app->getModule('nitm')->logger->addTrans($this->event['data']['db'],
 					  $this->event['data']['table'],
 					  $this->event['data']['action'],
@@ -193,7 +183,7 @@ class Configer extends Model
 			}
 			$this->config['current']['section'] = @$this->event['data']['section'];
 			Session::del($this->correctKey($this->event['data']['key']));
-			switch($this->container == @Yii::$app->getModule('nitm')->configOptions['container'])
+			switch($this->container == \Yii::$app->getModule('nitm')->configOptions['container'])
 			{
 				case true:
 				Session::del($this->event['data']['key']);
@@ -798,7 +788,7 @@ class Configer extends Model
 			$e = new Event;
 			$this->event['data'] = array_merge($ret_val, [
 				'table' => 'config',
-				'db' => $this->configDb,
+				'db' => DB::getDbName(),
 				'action' => 'Create Config',
 				'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username') ." created new key->value ($key -> ".var_export($value, true).") to config ".$container
 			]);
@@ -901,7 +891,7 @@ class Configer extends Model
 				$ret_val['class'] = $this->classes['success'];
 				$this->event['data'] = [
 					'table' => 'config',
-					'db' => $this->configDb,
+					'db' => DB::getDbName(),
 					'key' => $key,
 					'value' => $value,
 					'action' => "Update Config",
@@ -934,8 +924,8 @@ class Configer extends Model
 					case true:
 					$ret_val['class'] = $this->classes['success'];
 					$this->event['data'] = [
-						'table' => 'NULL',
-						'db' => 'NULL',
+						'table' => 'null',
+						'db' => DB::getDbName(),
 						'key' => $key,
 						'value' => $value,
 						'action' => "Update Config File",
@@ -984,7 +974,7 @@ class Configer extends Model
 				$ret_val['class'] = $this->classes['success'];
 				$this->event['data'] = [
 					'table' => 'config',
-					'db' => $this->configDb,
+					'db' => DB::getDbName(),
 					'key' => $key,
 					'value' => $value,
 					'section' => $ret_val['section'],
@@ -1055,7 +1045,7 @@ class Configer extends Model
 				$data["sections"]['name'] = 'global';
 				$this->event['data'] = [
 					'table' => 'config',
-					'db' => $this->configDb,
+					'db' => DB::getDbName(),
 					'action' => $action[$result],
 					'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." ".$message
 				];
@@ -1122,7 +1112,7 @@ class Configer extends Model
 			'message' => "Unable to create value ".$value
 		];
 		
-		$container = $this->getContainerId($container);
+		$container = $this->container($container);
 		switch($this->location)
 		{
 			case 'db':
@@ -1131,21 +1121,23 @@ class Configer extends Model
 				//We're creating a section
 				case 4:
 				case 2:
-				$model = new Value([
-					'containerid' => $container,
+				$value = [
+					'containerid' => $container->id,
 					'name' => $sectionName
-				]);
+				];
+				$model = new Value($value);
 				$message = "Added section ".$sectionName;
 				break;
 				
 				case 5:
 				case 3:
-				$model = new Value([
-					'containerid' => $container,
-					'sectionid' => $this->getSectionId($container, $sectionName),
+				$value = [
+					'containerid' => $container->id,
+					'sectionid' => $this->section($sectionName)->id,
 					'value' => $value,
 					'name' => $name
-				]);
+				];
+				$model = new Value($value);
 				$message = "Added $name to section $sectionName";
 				break;
 			}
@@ -1158,7 +1150,7 @@ class Configer extends Model
 				$ret_val['container_name'] = $ret_val['container'];
 				$ret_val['unique_id'] = $key;
 				$ret_val['section_name'] = $sectionName;
-				$ret_val = array_merge($ret_val, $val);
+				$ret_val = array_merge($ret_val, $value);
 				$ret_val['success'] = true;
 				$ret_val['message'] = $message;
 				break;
@@ -1251,7 +1243,7 @@ class Configer extends Model
 			{
 				case true:
 				$model->setScenario('update');
-				$model->load($values);
+				$model->load([$model->formName() => $values]);
 				switch($model->save())
 				{
 					case true:
@@ -1338,7 +1330,7 @@ class Configer extends Model
 				$model = Value::findOne($this->id);
 				break;
 			}
-			switch(is_objectsbject($model) && $model->delete())
+			switch(is_object($model) && $model->delete())
 			{
 				case true:
 				$ret_val['success'] = true;
@@ -1496,7 +1488,7 @@ class Configer extends Model
 				$message .= "deleted config for $name in $name\n\n";
 				$this->trigger('afterDelete', new Event($this, [
 						'table' => 'config',
-						'db' => $this->configDb,
+						'db' => DB::getDbName(),
 						'action' => $action[$result],
 						'message' => "On ".date("F j, Y @ g:i a")." user ".Session::getVal('securer.username')." ".$message
 					])
@@ -1580,13 +1572,14 @@ class Configer extends Model
 	 */
 	private function section($section)
 	{
-		$ret_Val = null;
+		$ret_val = null;
 		if(!$this->sectionModel instanceof Section)
 		{
-			$section = $this->containerModel->getSection()
+			$section = $this->containerModel->getSections()
 				->where(['or', "name='$section'", "id='$section'"])
 				->one();
 			$this->sectionModel = $section instanceof Section ? $section : null;
+			$ret_val = $this->sectionModel;
 		}
 		return $ret_val;
 	}

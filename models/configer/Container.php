@@ -38,8 +38,8 @@ class Container extends BaseConfiger
             [['author_id', 'editor_id', 'deleted'], 'integer'],
             [['created_at', 'updated_at'], 'safe'],
             [['name'], 'string', 'max' => 255],
-            [['name'], 'unique'],
-            [['name'], 'unique', 'targetAttribute' => ['name'], 'message' => 'This container already exists'],
+			[['name', 'value'], 'filter', 'filter' => 'trim'],
+            [['name'], 'unique', 'targetAttribute' => ['name'], 'message' => 'This container already exists', 'on' => ['create']],
         ];
     }
 	

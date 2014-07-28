@@ -123,7 +123,7 @@ $this->params['breadcrumbs'][] = $this->title;
 						]);
 					},
 					'complete' => function ($url, $model) {
-						return Html::a(Icon::forAction('complete', 'completed', $model), \Yii::$app->urlManager->createUrl([$url]), [
+						return Html::a(Icon::forAction('thumbs-up', 'completed', $model), \Yii::$app->urlManager->createUrl([$url]), [
 							'title' => Yii::t('yii', ($model->completed ? 'Incomplete' : 'Complete').' '.$model->title),
 							'role' => 'metaAction resolveAction disabledOnClose',
 							'class' => 'fa-2x',
@@ -154,9 +154,8 @@ $this->params['breadcrumbs'][] = $this->title;
 		],
 		'afterRow' => function ($model, $key, $index, $grid){
 			//Extra information section
-			$model->replies = \nitm\models\Replies::findModel([$model->getId(), $model->isWhat(), $model->created_at]);
 			$replies = $this->context->replyCountWidget([
-				"model" => $model->replies,
+				"model" => $model->replyModel(),
 				'fullDetails' => false,
 				'widgetOptions' => ['class' => 'list-group'],
 				'itemOptions' => [
@@ -164,6 +163,7 @@ $this->params['breadcrumbs'][] = $this->title;
 				]
 			]);
 			$revisions = $this->context->revisionsCountWidget([
+				'model' => $model->revisionModel(),
 				"parentId" => $model->getId(), 
 				"parentType" => $model->isWhat(),
 				'fullDetails' => false ,
@@ -173,6 +173,7 @@ $this->params['breadcrumbs'][] = $this->title;
 				]
 			]);
 			$issues = $this->context->issueCountWidget([
+				'model' => $model->issueModel(),
 				'enableComments' => true,
 				"parentId" => $model->getId(), 
 				"parentType" => $model->isWhat(),
@@ -212,17 +213,6 @@ $this->params['breadcrumbs'][] = $this->title;
 					'class' => 'clearfix'
 				]
 			)."<br>";
-					
-			/*$statusInfo .= \lab1\widgets\MetaInfo::widget([
-				'attributes' => [
-					'numbers',
-				],
-				'items' => [
-					[
-						'attribute' => 'numbers',
-					],
-				],
-			]);*/
 			return Html::tag('tr', 
 				Html::tag(
 					'td', 

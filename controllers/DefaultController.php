@@ -62,6 +62,7 @@ class DefaultController extends BaseController
 					'delete' => ['post'],
 					'create' => ['post', 'get'],
 					'update' => ['post', 'get'],
+					'search' => ['get', 'post']
 				],
 			],
 		];
@@ -115,7 +116,7 @@ class DefaultController extends BaseController
 		Response::$viewOptions['args'] = [
 			"content" => $this->renderAjax('data', ["dataProvider" => $dataProvider]),
 		];
-		echo $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
+		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
 	}
 	
 	/*

@@ -28,10 +28,12 @@ use yii\widgets\ActiveField;
 
 <?php $form = ActiveForm::begin(['id' => 'filter',
 	'type' => ActiveForm::TYPE_HORIZONTAL,
+	'method' => 'get',
 	'action' => '/'.$model->isWhat().'/search?__format=json',
 	'options' => [
 		'class' => 'form-horizontal',
-		"role" => "filter"
+		"role" => "filter",
+		'data-id' => 'requests'
 	],
 	'fieldConfig' => [
 		'inputOptions' => ['class' => 'form-control'],

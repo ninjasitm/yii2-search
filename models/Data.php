@@ -480,6 +480,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	public function getList($label='name')
 	{
 		$ret_val = [];
+		$label = empty($label) ? 'name' : $label;
 		$items = $this->getModels();
 		switch(empty($items))
 		{

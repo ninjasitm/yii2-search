@@ -38,6 +38,7 @@ class Section extends BaseConfiger
             [['containerid', 'name', 'author_id', 'editor_id'], 'required'],
             [['containerid', 'author_id', 'editor_id', 'deleted'], 'integer'],
             [['name'], 'string'],
+			[['name'], 'filter', 'filter' => 'trim'],
             [['created_at', 'updated_at'], 'safe'],
             [['name', 'containerid'], 'unique', 'targetAttribute' => ['name'], 'message' => 'This section already exists'],
         ];

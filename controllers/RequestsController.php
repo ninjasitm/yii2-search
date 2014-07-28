@@ -28,31 +28,8 @@ class RequestsController extends DefaultController
 	
     public function behaviors()
     {
-        $behaviors = [
-			'access' => [
-				'class' => \yii\filters\AccessControl::className(),
-				//'only' => ['index', 'update', 'create', 'index', 'get', 'delete', 'convert', 'undelete'],
-				'rules' => [
-					[
-						'actions' => ['index',  'create',  'update',  'delete', 'resolve','close', 'form', 'issues'],
-						'allow' => true,
-						'roles' => ['@'],
-					],
-				],
-			],
-            'verbs' => [
-                'class' => \yii\filters\VerbFilter::className(),
-                'actions' => [
-                    'delete' => ['post'],
-                    'create' => ['post'],
-                    'update' => ['post'],
-                    'close' => ['post'],
-                    'resolve' => ['post'],
-                    'duplicate' => ['post'],
-                ],
-            ],
-        ];
-		return array_merge(parent::behaviors(), $behaviors);
+        $behaviors = [];
+		return array_merge_recursive(parent::behaviors(), $behaviors);
     }
 	
 	public static function has()

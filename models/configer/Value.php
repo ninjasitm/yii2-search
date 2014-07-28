@@ -43,7 +43,8 @@ class Value extends BaseConfiger
             [['value', 'comment'], 'string'],
             [['created_at', 'updated_at'], 'safe'],
             [['name'], 'string', 'max' => 128],
-            [['name', 'containerid', 'sectionid'], 'unique', 'targetAttribute' => ['name'], 'message' => 'This value already exists'],
+			[['name', 'value'], 'filter', 'filter' => 'trim'],
+            [['name', 'containerid', 'sectionid'], 'unique', 'targetAttribute' => ['name'], 'message' => 'This value already exists', 'on' => ['create']],
         ];
     }
 	

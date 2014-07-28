@@ -38,11 +38,9 @@ class Cache extends Model
 	/**
 	 * Get a cached model
 	 * @param string $key
-	 * @param string $property
-	 * @param string $modelClass
-	 * @return instanceof $modelClass
+	 * @return object
 	 */
-	public static function getModel($key, $property=null, $modelClass=null)
+	public static function getModel($key)
 	{
 		//PHP Doesn't support serializing of Closure functions so using local object store
 		//switch(static::$cache->exists($key))
@@ -52,17 +50,6 @@ class Cache extends Model
 			case true:
 			$ret_val = static::$_cache[$key];
 			//$ret_val = static::$cache->get($key);
-			break;
-			
-			default:
-			switch(1)
-			{
-				case !is_null($property) && !is_null($modelClass):
-				$ret_val = is_a(static::$$property, $modelClass::className()) ? static::$$property : new $modelClass;
-				//static::$cache->set($key, $ret_val, 1000);
-				static::$_cache[$key] = $ret_val;
-				break;
-			}
 			break;
 		}
 		return $ret_val;

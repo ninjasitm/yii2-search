@@ -99,7 +99,14 @@ trait Query {
 				}
 			}
 			//now search for conditional filters
-			$filters = array_filter($filters, 'strlen');
+			/*if(is_object($filters))
+			{
+				print_r($filters);
+				exit;
+			}
+			$filters = array_filter($filters, function ($key, $value) {
+				return 
+			});*/
 			switch(is_array($filters) && (sizeof($filters) >= 1))
 			{
 				case true:
