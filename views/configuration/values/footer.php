@@ -11,13 +11,14 @@ $model->setScenario('createValue');
 			"type" => ActiveForm::TYPE_INLINE,
 			'options' => [
 				'id' => "create_new_value_$section",
-				"role" => "filter"
+				'role' => 'createNewValue'
 			],
 			'fieldConfig' => [
 				'inputOptions' => ['class' => 'form-control'],
 				'template' => "{label}\n<div class=\"col-lg-10\">{input}</div>\n<div class=\"col-lg-12\">{error}</div>",
 				'labelOptions' => ['class' => 'col-lg-2 control-label'],
 			],
+			'validateOnSubmit' => true,
 			'enableAjaxValidation' => true
 		]); ?>
         <?php
@@ -31,7 +32,7 @@ $model->setScenario('createValue');
                 echo Html::submitButton('Add Key/Value', [
 												'class' => 'btn btn-primary',
 												'title' => "Add value to $section",
-												"data-loading-text" => "Adding..."
+												"data-loading-text" => "Adding...",
 											]
                                         );
         ?>

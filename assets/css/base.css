@@ -98,7 +98,7 @@ a.desc:after { content: /*"\e114"*/"\e152"; }
 }
 
 .modal-body {
-    overflow: auto;
+    overflow: visible;
 }
 
 

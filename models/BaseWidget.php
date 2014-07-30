@@ -50,6 +50,7 @@ class BaseWidget extends Data implements DataInterface
 		if($this->initSearchClass)
 			static::initCache($this->constrain, self::cacheKey($this->getId()));
 		static::$currentUser =  \Yii::$app->user->identity;
+		static::$userLastActive = is_null(static::$userLastActive) ? static::$currentUser->lastActive() : static::$userLastActive;
 	}
 	
 	public function scenarios()
@@ -239,7 +240,7 @@ class BaseWidget extends Data implements DataInterface
 		{
 			case false:
 			$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.static::$currentUser->lastActive()];
-			$ret_val = ($this->hasNewQuery()->count() >= 1);
+			$ret_val = $this->hasNewQuery()->count();
 			static::$currentUser->updateActivity();
 			$this->hasNew = $ret_val;
 			break;
@@ -371,12 +372,13 @@ class BaseWidget extends Data implements DataInterface
 			case true:
 			$sql = static::find()->select([
 				"_count" => 'COUNT(id)',
-				"_hasNew" => 'COUNT(UNIX_TIMESTAMP(created_at)>='.static::$currentUser->lastActive().")"
+				"_hasNew" => 'SUM(IF(UNIX_TIMESTAMP(created_at)>='.static::$currentUser->lastActive().", 1, 0))"
 			])
 			->where($this->getConstraints());
 			$metadata = $sql->createCommand()->queryAll();
 			$this->count = $metadata[0]['_count'];
 			$this->hasNew = $metadata[0]['_hasNew'];
+			static::$currentUser->updateActivity();
 			break;
 		}
 	}

@@ -633,7 +633,6 @@ class Configer extends Model
 			}
 			break;
 		}
-
 		return $ret_val;
 	}
 	
@@ -1098,7 +1097,7 @@ class Configer extends Model
 	 * @param string|int $key
 	 * @return mixed
 	 */
-	protected function _create($container, $key, $value=null)
+	protected function _create($container, $key, $originalValue=null)
 	{
 		$correctKey = $this->correctKey($key);
 		$hierarchy = explode('.', $correctKey);
@@ -1109,7 +1108,7 @@ class Configer extends Model
 			'key' => $correctKey,
 			'section' =>$sectionName,
 			'container' => $container,
-			'message' => "Unable to create value ".$value
+			'message' => "Unable to create value ".$originalValue
 		];
 		
 		$container = $this->container($container);
@@ -1134,7 +1133,7 @@ class Configer extends Model
 				$value = [
 					'containerid' => $container->id,
 					'sectionid' => $this->section($sectionName)->id,
-					'value' => $value,
+					'value' => $originalValue,
 					'name' => $name
 				];
 				$model = new Value($value);
@@ -1145,7 +1144,7 @@ class Configer extends Model
 			switch($model->save())
 			{
 				case true:
-				$ret_val['value'] = rawurlencode($value);
+				$ret_val['value'] = rawurlencode($originalValue);
 				$ret_val['unique'] = $model->id;
 				$ret_val['container_name'] = $ret_val['container'];
 				$ret_val['unique_id'] = $key;
@@ -1153,6 +1152,11 @@ class Configer extends Model
 				$ret_val = array_merge($ret_val, $value);
 				$ret_val['success'] = true;
 				$ret_val['message'] = $message;
+				break;
+				
+				default:
+				print_r($model->getErrors());
+				exit;
 				break;
 			}
 			break;

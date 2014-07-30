@@ -93,6 +93,10 @@ class Form extends Behavior
 					$data = (isset($options['dataProvider']) && !is_null($options['dataProvider']) && $model->hasProperty($options['dataProvider'])) ? $data->$dataProvider : $model;
 					switch(1)
 					{
+						case is_callable($options['title']):
+						$title = $options['title']($model);
+						break;
+						
 						case ($model->hasProperty(@$options['title'][0]) || $model->hasAttribute(@$options['title'][0])):
 						$title = $model->getAttribute($options['title'][0]);
 						break;

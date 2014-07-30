@@ -38,13 +38,13 @@ class Value extends BaseConfiger
     public function rules()
     {
         return [
-            [['containerid', 'sectionid', 'name', 'value', 'author_id', 'editor_id'], 'required'],
+            [['name', 'value'], 'required'],
             [['containerid', 'sectionid', 'author_id', 'editor_id', 'deleted'], 'integer'],
             [['value', 'comment'], 'string'],
             [['created_at', 'updated_at'], 'safe'],
             [['name'], 'string', 'max' => 128],
 			[['name', 'value'], 'filter', 'filter' => 'trim'],
-            [['name', 'containerid', 'sectionid'], 'unique', 'targetAttribute' => ['name'], 'message' => 'This value already exists', 'on' => ['create']],
+            [['name'], 'unique', 'targetAttribute' => ['name', 'containerid', 'sectionid'], 'message' => 'This value already exists', 'on' => ['create']],
         ];
     }
 	

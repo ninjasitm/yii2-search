@@ -153,7 +153,7 @@ function Configuration()
 			form.off('submit');
 			form.on('submit', function (e) {
 				e.preventDefault();
-				return self.operation(this);
+				self.operation(this);
 			});
 		});
 	}
@@ -163,11 +163,11 @@ function Configuration()
 		/*
 		 * This is to support yii active form validation and prevent multiple submitssions
 		 */
-		try {
+		/*try {
 			$data = $(form).data('yiiActiveForm');
 			if(!$data.validated)
 				return false;
-		} catch (error) {}
+		} catch (error) {}*/
 		data = $(form).serializeArray();
 		data.push({'name':'__format', 'value':'json'});
 		data.push({'name':'getHtml', 'value':true});

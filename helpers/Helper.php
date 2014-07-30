@@ -304,6 +304,16 @@ class Helper extends Model
 		}
 	}
 	
+	public function toList(array $what, $label)
+	{
+		$ret_val = [];
+		foreach($what as $item)
+		{
+			$ret_val[] = $item->$label;
+		}
+		return $ret_val;
+	}
+	
 	/*---------------------
 		Protected Functions
 	---------------------*/

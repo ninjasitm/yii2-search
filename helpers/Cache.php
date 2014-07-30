@@ -25,14 +25,19 @@ class Cache extends Model
 		return static::$cache;
 	}
 	
+	public static function exists($key)
+	{
+		return isset(static::$_cache[$key]);
+	}
+	
 	public static function setModel($key, $model)
 	{
 		static::$_cache[$key] = $model;
 	}
 	
-	public static function exists($key)
+	public static function setModelArray($key, $model)
 	{
-		return isset(static::$_cache[$key]);
+		static::$_cache[$key] = $model;
 	}
 	
 	/**

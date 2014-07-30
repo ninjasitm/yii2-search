@@ -71,21 +71,13 @@ class BaseController extends Controller
 			case true:
 			foreach($this->_cssFiles as $css)
 			{
-				$file = (is_array($css) ? $css['url'] : $css).'.css';
-				switch(file_exists(Yii::$app->basePath.'/web'.$file))
+				$file = (is_array($css) ? $css['url'] : '/css/'.$css).'.css';
+				switch(file_exists(\Yii::getAlias(Yii::$app->basePath.'/web/'.$file)))
 				{
 					case true:
-					$this->view->registerCssFile(Yii::$app->UrlManager->baseUrl.$file, @$css['depends'], @$css['options']);
-					break;
-					
-					default:
-					//This is probably a module css file
-					/*switch(file_exists(\Yii::$app->getModule('nitm')->basePath.'/assets/css/'.$file))
-					{
-						case true:
-						$this->view->registerCssFile(Yii::$app->UrlManager->baseUrl.$file, '');
-						break;
-					}*/
+					$depends = isset($css['depends']) ? $css['depends'] : [];
+					$options = isset($css['options']) ? $css['options'] : [];
+					$this->view->registerCssFile($file, $depends, $options);
 					break;
 				}
 			}
@@ -290,18 +282,21 @@ class BaseController extends Controller
 				$submenu = $item['sub'];
 				break;
 			} 
-			$item = array_merge($item, [
-				'label' => Html::tag('span', @$item['name'], [
-					'class' => @$item['label-class']
-				]),
-				'items' => $submenu,
-				'url' => @$item['href'],
-				"options" => [
-					"class" => @$item['class'], 
-					"encode" => false
-				]
-			]);
-			$ret_val[$idx] = $item;
+			if(is_array($item))
+			{
+				$item = array_merge($item, [
+					'label' => Html::tag('span', @$item['name'], [
+						'class' => @$item['label-class']
+					]),
+					'items' => $submenu,
+					'url' => @$item['href'],
+					"options" => [
+						"class" => @$item['class'], 
+						"encode" => false
+					]
+				]);
+				$ret_val[$idx] = $item;
+			}
 			switch(empty($encapsulate))
 			{
 				case false:

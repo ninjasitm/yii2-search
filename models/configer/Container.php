@@ -34,7 +34,7 @@ class Container extends BaseConfiger
     public function rules()
     {
         return [
-            [['name', 'author_id', 'editor_id'], 'required'],
+            [['name'], 'required'],
             [['author_id', 'editor_id', 'deleted'], 'integer'],
             [['created_at', 'updated_at'], 'safe'],
             [['name'], 'string', 'max' => 255],
@@ -91,6 +91,6 @@ class Container extends BaseConfiger
 			"(SELECT `name` FROM `".Container::tableName()."` WHERE id=containerid) AS 'container_name'"
 		])
 		->orderBy(['name' => SORT_ASC])
-		->indexBy('name');
+		->indexBy('unique_id');
 	}
 }

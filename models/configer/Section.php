@@ -35,7 +35,7 @@ class Section extends BaseConfiger
     public function rules()
     {
         return [
-            [['containerid', 'name', 'author_id', 'editor_id'], 'required'],
+            [['name'], 'required'],
             [['containerid', 'author_id', 'editor_id', 'deleted'], 'integer'],
             [['name'], 'string'],
 			[['name'], 'filter', 'filter' => 'trim'],

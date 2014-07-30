@@ -64,7 +64,7 @@ trait Cache {
 		switch(RealCache::exists($key))
 		{
 			case true:
-			$ret_val = RealCache::getModel($key);
+			$ret_val = RealCache::getModelArray($key);
 			//$ret_val = static::$cache->get($key);
 			break;
 			
@@ -78,7 +78,7 @@ trait Cache {
 					$ret_val = is_array($this->$property) ? $this->$property : $ret_val;
 				}
 				//static::$cache->set($key, $ret_val, 1000);
-				RealCache::setModel($key, $ret_val);
+				RealCache::setModelArray($key, $ret_val);
 				break;
 			}
 			break;
