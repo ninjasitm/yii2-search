@@ -27,6 +27,7 @@ use nitm\helpers\Cache;
 class User extends \dektrium\user\models\User
 {
 	public $updateActivity;
+	public $useFullnames;
 	
 	protected $useToken;
 	

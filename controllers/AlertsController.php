@@ -12,7 +12,7 @@ use nitm\helpers\Response;
 /**
  * AlertsController implements the CRUD actions for Alerts model.
  */
-class AlertsController extends DefaultApiController
+class AlertsController extends DefaultController
 {
     public function behaviors()
     {
@@ -24,6 +24,17 @@ class AlertsController extends DefaultApiController
 	public function init()
 	{
 		$this->model = new Alerts(['scenario' => 'default']);
+	}
+	
+	public function beforeAction($action)
+	{
+		switch($action->id)
+		{
+			case 'list':
+			$this->enableCsrfValidation = false;
+			break;
+		}
+		return parent::beforeAction($action);
 	}
 	
     /**
@@ -79,12 +90,12 @@ class AlertsController extends DefaultApiController
         return parent::actionDelete($id, Alerts::className());
     }
 	
-	public function actionList($type)
+	public function actionList($id)
 	{
 		$this->setResponseFormat('json');
 		$options = [];
 		$dependsOn = \Yii::$app->request->post('depdrop_parents')[0];
-		switch($type)
+		switch($id)
 		{	
 			case 'for':
 			switch($dependsOn)

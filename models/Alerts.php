@@ -4,6 +4,7 @@ namespace nitm\models;
 
 use Yii;
 use yii\db\ActiveRecord;
+use yii\helpers\Html;
 use nitm\helpers\Cache;
 
 /**
@@ -23,17 +24,21 @@ use nitm\helpers\Cache;
  */
 class Alerts extends Data
 {
+	public $useFullnames = true;
 	
 	protected static $is = 'alerts';
 	protected $_criteria = [];
+	protected $_originUserId;
 	
 	private $_prepared = false;
 	private $_variables = [];
+	private $_mailer;
 	
 	public function init()
 	{
 		parent::init();
 		$this->initConfig(static::isWhat());
+		$this->_mailer = \Yii::$app->mailer;
 	}
 	
     /**
@@ -129,6 +134,25 @@ class Alerts extends Data
     {
         return $this->hasOne(User::className(), ['id' => 'user_id'])->with('profile');
     }
+
+    /**
+     * @return array
+     */
+    public function getUsers()
+    {
+        switch(Cache::exists('alerts.users'))
+		{
+			case true:
+			$ret_val = Cache::getModelArray($key, $options);
+			break;
+			
+			default:
+			$ret_val = User::find()->with('profile')->all();
+			Cache::setModelArray('alerts.users', $ret_val);
+			break;
+		}
+		return $ret_val;
+    }
 	
 	public function getPriority()
 	{
@@ -169,51 +193,101 @@ class Alerts extends Data
 		return $this->_prepared === true;
 	}
 	
-	public function findSpecific()
+	public function criteria($key, $value='undefined')
 	{
-		return self::find()->select('id')
-		->where($this->_criteria)
-		->andWhere([
-			'user_id' => \Yii::$app->user->getId()
-		])
-		->with('user')->all();
-	}
-	
-	public function findOwner($author_id)
-	{
-		$criteria = $this->_criteria;
-		$criteria['user_id'] = $author_id;
-		$criteria['action'] .= '_my';
-		return self::find()->select('id')
-		->where($criteria)
-		->with('user')->all();
+		$ret_val = true;
+		switch($value)
+		{
+			case 'undefined':
+			$ret_val = isset($this->_criteria[$key]) ? $this->_criteria[$key] : false;
+			break;
+			
+			default:
+			$this->_criteria[$key] = $value;
+			break;
+		}
+		return $ret_val;
 	}
 	
 	/**
-	 * This searches for users who are listening for activity based on the remote_type, action and priority
+	 * Find alerts for the specific criteia originally provided
+	 * @param int $originUserId Is the ID of the user for the object which triggered this alert sequence
+	 * @return \yii\db\Query
 	 */
-	public function findListeners()
+	public function findAlerts($originUserId)
 	{
-		$criteria = array_intersect_key($this->_criteria, [
+		$this->_originUserId = $originUserId;
+		return $this->findSpecific($this->_criteria)
+			->union($this->findOwner($this->_originUserId, $this->_criteria))
+			->union($this->findListeners($this->_criteria))
+			->union($this->findGlobal($this->_criteria))
+			->with('user')->all();
+	}
+	
+	/**
+	 * Find alerts for the specific criteia originally provided
+	 * @param array $criteria
+	 * @return \yii\db\Query
+	 */
+	public static function findSpecific(array $criteria)
+	{
+		return self::find()->select('*')
+			->where($criteria)
+			->andWhere([
+				'user_id' => \Yii::$app->user->getId()
+			])
+			->with('user');
+	}
+	
+	/**
+	 * Find alerts for the specific criteia originally provided
+	 * @param array $criteria
+	 * @return \yii\db\Query
+	 */
+	public function findOwner($author_id, array $criteria)
+	{
+		$criteria['user_id'] = $author_id;
+		$criteria['action'] .= '_my';
+		return self::find()->select('*')
+			->where($criteria)
+			->with('user');
+	}
+	
+	/**
+	 * This searches for users who are listening for activity 
+	 * Based on the remote_type, action and priority
+	 * @param array $criteria
+	 * @return \yii\db\Query
+	 */
+	public function findListeners(array $criteria)
+	{
+		unset($criteria['user_id']);
+		$listenerCriteria = array_intersect_key($criteria, [
 			'remote_type' => null,
 			'action' => null
 		]);
-		$anyRemoteFor = array_merge($criteria, [
+		$anyRemoteFor = array_merge($listenerCriteria, [
 			'remote_for' => 'any'
 		]);
-		$anyPriority = array_merge($criteria, [
+		$anyPriority = array_merge($listenerCriteria, [
 			'priority' => 'any'
 		]);
-		$users = self::find()->select('id')
-		->orWhere($anyRemoteFor)
-		->orWhere($anyPriority)
-		->orWhere($this->_criteria)
-		->andWhere([
-			'not', 'user_id' => \Yii::$app->user->getId()
-		])->with('user')->all();
+		return self::find()->select('*')
+			->orWhere($anyRemoteFor)
+			->orWhere($anyPriority)
+			->orWhere($criteria)
+			->andWhere([
+				'not', ['user_id' => \Yii::$app->user->getId()]
+			])
+			->with('user');
 	}
 	
-	public function findGlobal()
+	/**
+	 * Find global listeners for this criteria 
+	 * @param array $criteria
+	 * @return \yii\db\Query
+	 */
+	public function findGlobal(array $criteria)
 	{
 		$criteria = array_intersect_key($this->_criteria, [
 			'remote_type' => null,
@@ -221,95 +295,123 @@ class Alerts extends Data
 		]);
 		$criteria['global'] = 1;
 		$criteria['user_id'] = null;
-		$anyRemoteFor = array_merge($criteria, [
+		$anyRemoteFor = array_replace($criteria, [
 			'remote_for' => 'any'
 		]);
-		$anyPriority = array_merge($criteria, [
+		$anyPriority = array_replace($criteria, [
 			'priority' => 'any'
 		]);
-		return self::find()->select('id')
-		->orWhere($criteria)
-		->orWhere($anyRemoteFor)
-		->orWhere($anyPriority)
-		->with('user')->all();
+		return self::find()->select('*')
+			->orWhere($criteria)
+			->orWhere($anyRemoteFor)
+			->orWhere($anyPriority)
+			->with('user');
 	}
 	
-	public function send($compose, $alerts, $global=false)
+	public function sendAlerts($compose, $alerts)
 	{
-		$to = [];
+		$to = [
+			'global' => [],
+			'individual'=> [],
+			'owner' => []
+		];
 		//Build the addresses
 		switch(is_array($alerts) && !empty($alerts))
 		{
 			case true:
-			switch($global)
+			//Organize by global and individual alerts
+			foreach($alerts as $idx=>$alert)
 			{
-				case false:
-				foreach($alerts as $alert)
+				switch(1)
 				{
-					$user = $alert->user;
-					$methods = ($alert->methods == 'any') ? array_keys(static::supportedMethods()) : explode(',', $alert->methods);
-					foreach($methods as $method)
-					{
-						if(isset($user->profile) && !empty($user->profile->getAttribute($method.'_email')))
-						{
-							$to[$method][] = $user->name."<".$user->profile->getAttribute($method.'_email').">";
-						}
-					}
-				}
-				break;
-				
-				default:
-				$users = User::find()->with('profile')->all();
-				foreach($users as $user)
-				{
+					case $alert->global == 1:
 					/**
 					 * Only send global emails based on what the user preferrs in their profile. 
 					 * For specific alerts those are based ont he alert settings
 					 */
-					$preferredMethods = ($user->profile->contact_methods == 'any') ? array_keys(static::supportedMethods()) : explode(',', $user->profile->contact_methods);
-					foreach($preferredMethods as $method)
-					{
-						if(isset($user->profile) && !empty($user->profile->getAttribute($method.'_email')))
-						{
-							$to[$method][] = $user->name."<".$user->profile->getAttribute($method.'_email').">";
-						}
-					}
-				}
-				break;
-			}
-			//Send the emails/mobile alerts
-			foreach($to as $type=>$addresses)
-			{
-				//140 characters to be able to send a single SMS
-				$subject = $this->replaceCommon($compose['subject']);
-				$body = $this->replaceCommon($compose['message'][$type]);
-				$mail = \Yii::$app->mailer->compose()
-				->setTo(implode(',', $addresses))
-				->setFrom(\Yii::$app->params['alerts.sender']);
-				switch($type)
-				{
-					case 'email':
-					$message->setSubject($subject);
-					$body = str_replace(["%title%", "%content%"], [$subject, $body], 
-					"<html>
-						<head>
-							<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
-							<title>%title%</title>
-						</head>
-						<body>%content%</body>
-					</html>");
+					$to['global'] = array_merge_recursive($to['global'], $this->getAddresses($alert->user->profile->contact_methods, $this->getUsers(), true));
 					break;
 					
-					case 'mobile':
-					$body = substr($body, 0, 140);
+					case $alert->user->getId() == $this->_originUserId:
+					$to['owner'] = array_merge_recursive($to['owner'], $this->getAddresses($alert->methods, [$alert->user]));
+					break;
+					
+					default:
+					$to['individual'] = array_merge_recursive($to['individual'], $this->getAddresses($alert->methods, [$alert->user]));
 					break;
 				}
-				$mail->setTextBody($body)
-				->send();
+			}
+			//Send the emails/mobile alerts
+			$originalSubject = $this->replaceCommon(is_array($compose['subject']) ? $this->_mailer->render($compose['subject']['view']) : $compose['subject']);;
+			foreach($to as $scope=>$types)
+			{
+				foreach($types as $type=>$addresses)
+				{
+					$body = $this->replaceCommon(is_array($compose['message'][$type]) ? $this->_mailer->render($compose['message'][$type]['view']) : $compose['message'][$type]);
+					$params = [
+						"content" => $body
+					];
+					switch($scope)
+					{
+						case 'owner':
+						$subject = 'Your '.$originalSubject;
+						$body = (($this->criteria('action') == 'create') ? '' : 'Your ').$body;
+						$params['greeting'] = "Dear ".current($addresses)['user']->username.", <br><br>";
+						break;
+						
+						default:
+						$subject = (($this->criteria('action') == 'create') ? 'A' : 'The').' '.$originalSubject;
+						$body = (($this->criteria('action') == 'create') ? '' : 'The ').$body;
+						$params['greeting'] = "Dear user, <br><br>";
+						break;
+					}
+					$params['title'] = $subject;
+					switch($type)
+					{
+						case 'email':
+						$view = ['html' => '@nitm/views/alerts/message/email'];
+						$params['content'] = nl2br($params['content'].$this->getFooter($scope));
+						break;
+						
+						case 'mobile':
+						//140 characters to be able to send a single SMS
+						$params['content'] = substr($body, 0, 140);
+						$params['title'] = '';
+						$view = ['text' => '@nitm/views/alerts/message/mobile'];
+						break;
+					}
+					$addresses = $this->filterAddresses($addresses);
+					$email = $this->_mailer->compose($view, $params)->setTo(array_slice($addresses, 0, 1));
+					switch($type)
+					{
+						case 'email':
+						$email->setSubject($subject);
+						break;
+					}
+					switch(sizeof($addresses) >= 1)
+					{
+						case true:
+						$email->setBcc($addresses);
+						break;
+					}
+					$email->setFrom(\Yii::$app->params['components.alerts']['sender'])
+						->send();
+				}
 			}
 			break;
 		}
 		return true;
+	}
+	
+	protected function filterAddresses($addresses)
+	{
+		$ret_val = [];
+		foreach($addresses as $address)
+		{
+			unset($address['user']);
+			$ret_val[key($address)] = $address[key($address)];
+		}
+		return $ret_val;
 	}
 	
 	public function filterMethods($value)
@@ -341,20 +443,92 @@ class Alerts extends Data
 	protected function replaceCommon($string)
 	{
 		$variables = array_merge($this->defaultVariables(), $this->_variables);
-		return str_replace(array_keys($variables), aray_values($variables), $string);
+		return str_replace(array_keys($variables), array_values($variables), $string);
 	}
 	
 	private function defaultVariables()
 	{
-		return [
-			'%currentUser%' => \Yii::$app->user->identity->fullName(), 
+		return [ 
+			'%who%' => \Yii::$app->user->identity->fullName(), 
 			'%when%' => date('D M jS Y @ h:i'), 
 			'%today%' => date('D M jS Y'),
 			'%priority%' => ucfirst($this->_criteria['priority']),
-			'%action%' => ucfirst($this->_criteria['action']),
+			'%action%' => $this->_criteria['action'].'d',
 			'%remoteFor%' => ucfirst($this->_criteria['remote_for']),
 			'%remoteType%' => ucfirst($this->_criteria['remote_type']),
 			'%remoteId%' => ucfirst($this->_criteria['remote_id'])
 		];
+	}
+	
+	private function getAddresses($method=null, $users=[], $global=false)
+	{
+		$method = (string)$method;
+		$ret_val = [];
+		switch($global)
+		{
+			case true:
+			$users = $this->getUsers();
+			break;
+		}
+		$methods = ($method == 'any' || is_null($method)) ? array_keys(static::supportedMethods()) : explode(',', $method);
+		unset($methods[array_search('any', $methods)]);
+		foreach($users as $user)
+		{
+			foreach($methods as $method)
+			{
+				switch($method)
+				{
+					case 'email':
+					switch(1)
+					{
+						case !empty($uri = (is_object($user->profile) ? $user->profile->getAttribute('public_email') : $user->email)):
+						break;
+						
+						default:
+						$uri = $user->email;
+						break;
+					}
+					break;
+					
+					default:
+					$uri = is_object($user->profile) ? $user->profile->getAttribute($method.'_email') : $user->email;
+					break;
+				}
+				if(!empty($uri))
+				{
+					$name = $user->fullName();
+					$ret_val[$method][$user->getId()] = [$uri => (!$name ? $uri : $name), 'user' => $user];
+				}
+			}
+		}
+		return $ret_val;
+	}
+	
+	private function getFooter($scope)
+	{	
+		switch($scope)
+		{
+			case 'global':
+			$footer = "\n\nYou are receiving this becuase of a global alert matching: ";
+			break;
+			
+			default:
+			$footer = "\n\nYou are receiving this bcause your alert settings matched: ";
+			break;
+		}
+		if(($priority = $this->criteria('priority')) != false)
+		$footer .= "Priority: ".ucfirst($priority).", ";
+		if(($type = $this->criteria('remote_type')) != false)
+		$footer .= "Type: ".ucfirst($type).", ";
+		if(($id = $this->criteria('priority')) != false)
+		$footer .= "Id: ".ucfirst($id).", ";
+		if(($for = $this->criteria('priority')) != false)
+		$footer .= "For: ".ucfirst($for).", ";
+		if(($action = $this->criteria('action')) != false)
+		$footer .= "and Action ".$this->properName($action)." ";
+		$footer .= ". Go ".Html::a("here", \Yii::$app->urlManager->createAbsoluteUrl("/alerts/index"))." to change your alerts";
+		$footer .= "\n\nSite: ".Html::a(\Yii::$app->urlManager->createAbsoluteUrl('/'), \Yii::$app->urlManager->createAbsoluteUrl('/index'));
+			
+		return Html::tag('small', $footer);
 	}
 }

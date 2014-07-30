@@ -35,9 +35,9 @@ class Cache extends Model
 		static::$_cache[$key] = $model;
 	}
 	
-	public static function setModelArray($key, $model)
+	public static function setModelArray($key, $array)
 	{
-		static::$_cache[$key] = $model;
+		static::$_cache[$key] = $array;
 	}
 	
 	/**

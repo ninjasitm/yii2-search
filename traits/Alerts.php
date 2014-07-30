@@ -43,24 +43,18 @@ trait Alerts
 	 */
 	protected function processAlerts($options=[])
 	{
-		$this->_alerts->_criteria['action'] = isset($options['action']) ? $options['action'] : $this->_alerts->_criteria['action'];
-		switch(is_null($this->_alerts->_criteria['action']))
+		$this->_alerts->criteria('action', isset($options['action']) ? $options['action'] : $this->_alerts->criteria('action'));
+		switch(!$this->_alerts->criteria('action'))
 		{
 			case false:
-			$this->_alerts->_criteria['remote_for'] = isset($options['for']) ? $options['for'] : 'any';
-			$this->_alerts->_criteria['remote_id'] = isset($options['id']) ? $options['id'] : null;
-			$this->_alerts->_criteria['priority'] = isset($options['priority']) ? $options['priority'] : 'any';
+			$this->_alerts->criteria('remote_for', isset($options['for']) ? $options['for'] : 'any');
+			$this->_alerts->criteria('remote_id', isset($options['id']) ? $options['id'] : null);
+			$this->_alerts->criteria('priority', isset($options['priority']) ? $options['priority'] : 'any');
 			switch($this->_alerts->isPrepared())
 			{
 				case true:
 				//First check to see if this specific alert exits
-				$this->_alerts->send($options, $this->_alerts->findSpecific());
-				//Then check to see if the owner wants to be alerted for thsi action
-				$this->_alerts->send($options, $this->_alerts->findOwner($options['owner_id']));
-				//Now see if anyone is interested in being updated on this
-				$this->_alerts->send($options, $this->_alerts->findListeners());
-				//Now see if there is a global alert for this type of aactivity
-				$this->_alerts->send($options, $this->_alerts->findGlobal(), true);
+				$this->_alerts->sendAlerts($options, $this->_alerts->findAlerts($options['owner_id']));
 				break;
 				
 				default:
