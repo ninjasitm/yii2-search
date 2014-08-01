@@ -77,7 +77,7 @@ switch(1)
 								'type' => 'addon',
 								'inputsInline' => true,
 								'addonType' => 'radiolist',
-								'fieldName' => 'priority',
+								'attribute' => 'priority',
 								'model' => $model,
 								'form' => $form
 							]),

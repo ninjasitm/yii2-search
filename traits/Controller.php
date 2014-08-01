@@ -135,9 +135,12 @@ use nitm\helpers\Response;
 				}
 				break;
 			}
-            return $model->one();
+			if(($ret_val = $model->one()) != null)
+            	return $model->one();
+			else
+            	throw new \yii\web\NotFoundHttpException("What you're looking for doesn't exist");
         } else {
-            throw new NotFoundHttpException('The requested page does not exist.');
+            throw new \yii\web\NotFoundHttpException('The requested page does not exist.');
         }
     }
  }

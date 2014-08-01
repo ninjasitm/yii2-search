@@ -151,7 +151,7 @@ function Nitm ()
 		var obj = nObj instanceof jQuery ? nObj : this.getObj(this.responseSection);
 		if(obj instanceof jQuery)
 		{
-			obj.fadeIn(function () {
+			obj.html('').fadeOut().fadeIn(function () {
 				obj.removeClass().addClass(nClass);
 				obj.html(nMessage);
 			}).delay(10000).fadeOut();

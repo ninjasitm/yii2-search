@@ -17,16 +17,14 @@ trait Alerts
 {
 	protected $_alerts;
 	
-	protected function prepareAlerts()
+	protected function prepareAlerts($for='any', $priority='any')
 	{
 		$this->_alerts = new AlertModel;
 		$alerts = [];
-		$alerts['remote_id'] = null;
 		$alerts['remote_type'] = $this->isWhat();
-		$alerts['remote_for'] = 'any';
-		$alerts['action'] = $this->getIsNewRecord() ? 'create' : 'update';
-		$alerts['priority'] = 'any';
-		$this->_alerts->prepare($alerts);
+		$alerts['remote_for'] = $for;
+		$alerts['priority'] = $priority;
+		$this->_alerts->prepare($this->getIsNewRecord(), $alerts);
 	}
 	
 	/**
@@ -54,7 +52,7 @@ trait Alerts
 			{
 				case true:
 				//First check to see if this specific alert exits
-				$this->_alerts->sendAlerts($options, $this->_alerts->findAlerts($options['owner_id']));
+				$this->_alerts->sendAlerts($options, $options['owner_id']);
 				break;
 				
 				default:

@@ -6,10 +6,6 @@ use nitm\helpers\Icon;
 
 /* @var $this yii\web\View */
 /* @var $model nitm\models\Alerts */
-
-$this->title = $model->id;
-$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Alerts'), 'url' => ['index']];
-$this->params['breadcrumbs'][] = $this->title;
 ?>
 <?php if(!isset($notAsListItem)): ?>
 <li id="alert<?= $model->getId(); ?>" class="<?= \nitm\helpers\Statuses::getListIndicator($model->getPriority()) ?>">

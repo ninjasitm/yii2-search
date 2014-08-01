@@ -25,6 +25,8 @@ use nitm\helpers\Cache;
 class Alerts extends Data
 {
 	public $useFullnames = true;
+	public $reportedAction;
+	public $usersWhere;
 	
 	protected static $is = 'alerts';
 	protected $_criteria = [];
@@ -132,7 +134,7 @@ class Alerts extends Data
      */
     public function getUser()
     {
-        return $this->hasOne(User::className(), ['id' => 'user_id'])->with('profile');
+        return $this->hasOne(User::className(), ['id' => 'user_id'])->where($this->usersWhere)->with('profile');
     }
 
     /**
@@ -147,7 +149,7 @@ class Alerts extends Data
 			break;
 			
 			default:
-			$ret_val = User::find()->with('profile')->all();
+			$ret_val = User::find()->with('profile')->where($this->usersWhere)->all();
 			Cache::setModelArray('alerts.users', $ret_val);
 			break;
 		}
@@ -182,8 +184,10 @@ class Alerts extends Data
 		];
 	}
 	
-	public function prepare($basedOn)
+	public function prepare($isNew, $basedOn)
 	{
+		$basedOn['action'] = $isNew === true ? 'create' : 'update';
+		$this->reportedAction = $basedOn['action'].'d';
 		$this->_criteria = $basedOn;
 		$this->_prepared = true;
 	}
@@ -308,8 +312,9 @@ class Alerts extends Data
 			->with('user');
 	}
 	
-	public function sendAlerts($compose, $alerts)
+	public function sendAlerts($compose, $ownerId)
 	{
+		$alerts = $this->findAlerts($ownerId);
 		$to = [
 			'global' => [],
 			'individual'=> [],
@@ -355,13 +360,13 @@ class Alerts extends Data
 					{
 						case 'owner':
 						$subject = 'Your '.$originalSubject;
-						$body = (($this->criteria('action') == 'create') ? '' : 'Your ').$body;
+						$params['content'] = (($this->criteria('action') == 'create') ? '' : 'Your ').$params['content'];
 						$params['greeting'] = "Dear ".current($addresses)['user']->username.", <br><br>";
 						break;
 						
 						default:
 						$subject = (($this->criteria('action') == 'create') ? 'A' : 'The').' '.$originalSubject;
-						$body = (($this->criteria('action') == 'create') ? '' : 'The ').$body;
+						$params['content'] = (($this->criteria('action') == 'create') ? '' : 'The ').$params['content'];
 						$params['greeting'] = "Dear user, <br><br>";
 						break;
 					}
@@ -449,14 +454,14 @@ class Alerts extends Data
 	private function defaultVariables()
 	{
 		return [ 
-			'%who%' => \Yii::$app->user->identity->fullName(), 
-			'%when%' => date('D M jS Y @ h:i'), 
+			'%who%' => \Yii::$app->user->identity->username,
+			'%when%' => date('D M jS Y @ h:iA'), 
 			'%today%' => date('D M jS Y'),
 			'%priority%' => ucfirst($this->_criteria['priority']),
-			'%action%' => $this->_criteria['action'].'d',
+			'%action%' => $this->reportedAction,
 			'%remoteFor%' => ucfirst($this->_criteria['remote_for']),
 			'%remoteType%' => ucfirst($this->_criteria['remote_type']),
-			'%remoteId%' => ucfirst($this->_criteria['remote_id'])
+			'%remoteId%' => $this->_criteria['remote_id']
 		];
 	}
 	
@@ -476,6 +481,8 @@ class Alerts extends Data
 		{
 			foreach($methods as $method)
 			{
+				if($user->getId() == $this->_originUserId)
+					continue;
 				switch($method)
 				{
 					case 'email':
@@ -491,7 +498,7 @@ class Alerts extends Data
 					break;
 					
 					default:
-					$uri = is_object($user->profile) ? $user->profile->getAttribute($method.'_email') : $user->email;
+					$uri = is_object($user->profile) ? $user->profile->getAttribute($method.'_email') : null;
 					break;
 				}
 				if(!empty($uri))
@@ -517,17 +524,17 @@ class Alerts extends Data
 			break;
 		}
 		if(($priority = $this->criteria('priority')) != false)
-		$footer .= "Priority: ".ucfirst($priority).", ";
+		$footer .= "Priority: <b>".ucfirst($priority)."</b>, ";
 		if(($type = $this->criteria('remote_type')) != false)
-		$footer .= "Type: ".ucfirst($type).", ";
+		$footer .= "Type: <b>".ucfirst($type)."</b>, ";
 		if(($id = $this->criteria('priority')) != false)
-		$footer .= "Id: ".ucfirst($id).", ";
+		$footer .= "Id: <b>".ucfirst($id)."</b>, ";
 		if(($for = $this->criteria('priority')) != false)
-		$footer .= "For: ".ucfirst($for).", ";
+		$footer .= "For: <b>".ucfirst($for)."</b>, ";
 		if(($action = $this->criteria('action')) != false)
-		$footer .= "and Action ".$this->properName($action)." ";
+		$footer .= "and Action <b>".$this->properName($action)."</b>";
 		$footer .= ". Go ".Html::a("here", \Yii::$app->urlManager->createAbsoluteUrl("/alerts/index"))." to change your alerts";
-		$footer .= "\n\nSite: ".Html::a(\Yii::$app->urlManager->createAbsoluteUrl('/'), \Yii::$app->urlManager->createAbsoluteUrl('/index'));
+		$footer .= "\nSite: ".Html::a(\Yii::$app->urlManager->createAbsoluteUrl('/'), \Yii::$app->urlManager->createAbsoluteUrl('/index'));
 			
 		return Html::tag('small', $footer);
 	}
