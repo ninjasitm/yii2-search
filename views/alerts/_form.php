@@ -38,6 +38,7 @@ $model->setScenario('create');
 	<?=
 		$form->field($model, 'remote_type')->widget(DepDrop::className(), [
 			'value' => $model->remote_type,
+			'data' => [$model->remote_type => $model->properName($model->remote_type)],
 			'options' => ['placeholder' => ' type of ', 'id' => 'new-alert-type', ],
 			'type' => DepDrop::TYPE_SELECT2,
 			'select2Options'=>['id' => 'new-alert-remote-type', 'pluginOptions'=>['allowClear'=>true]],
@@ -50,7 +51,8 @@ $model->setScenario('create');
 	?>    
 	<?=
 		$form->field($model, 'remote_for')->widget(DepDrop::className(), [
-			'value' => $model->remote_type,
+			'value' => $model->remote_for,
+			'data' => [$model->remote_for => $model->properName($model->remote_for)],
 			'options' => ['placeholder' => ' for ', 'id' => 'new-alert-for', ],
 			'type' => DepDrop::TYPE_SELECT2,
 			'select2Options'=>['id' => 'new-alert-remote-type', 'pluginOptions'=>['allowClear'=>true]],
@@ -63,7 +65,8 @@ $model->setScenario('create');
 	?>
 	<?=
 		$form->field($model, 'priority')->widget(DepDrop::className(), [
-			'value' => $model->remote_type,
+			'value' => $model->priority,
+			'data' => [$model->priority => $model->properName($model->priority)],
 			'options' => ['placeholder' => 'that is'],
 			'type' => DepDrop::TYPE_SELECT2,
 			'select2Options'=>['pluginOptions'=>['allowClear'=>true]],
@@ -78,7 +81,7 @@ $model->setScenario('create');
 		$form->field($model, 'methods')->widget(Select2::className(), [
 			'value' => explode(',', $model->methods),
 			'options' => ['placeholder' => 'using'],
-			'data' => $model->supportedMethods(),
+			'data' => \nitm\helpers\alerts\Dispatcher::supportedMethods(),
 			
 		])->label("Priority");
 	?>

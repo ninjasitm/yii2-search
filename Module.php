@@ -40,6 +40,16 @@ class Module extends \yii\base\Module
 	 * @var nitm\models\Logger object
 	 */
 	public $logger;
+	
+	/*
+	 * @var nitm\models\Alerts object
+	 */
+	public $alerts;
+	
+	/*
+	 * @var array options for nitm\models\Alerts
+	 */
+	public $alertOptions = [];
 
 	public function init()
 	{
@@ -48,6 +58,7 @@ class Module extends \yii\base\Module
 		$this->config = new models\Configer($this->configOptions);
 		$this->logOptions['db'] = DB::getDefaultDbName();
 		$this->logger = new models\Logger();
+		$this->alerts = new helpers\alerts\Dispatcher($this->alertOptions);
 		Session::del(Session::current);
 		
 		/**

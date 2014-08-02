@@ -13,14 +13,7 @@ use nitm\helpers\Response;
  * AlertsController implements the CRUD actions for Alerts model.
  */
 class AlertsController extends DefaultController
-{
-    public function behaviors()
-    {
-		$behaviors = [
-		];
-		return array_replace_recursive(parent::behaviors(), $behaviors);
-    }
-	
+{	
 	public function init()
 	{
 		$this->model = new Alerts(['scenario' => 'default']);
@@ -36,6 +29,12 @@ class AlertsController extends DefaultController
 		}
 		return parent::beforeAction($action);
 	}
+    public function behaviors()
+    {
+		$behaviors = [
+		];
+		return array_merge_recursive(parent::behaviors(), $behaviors);
+    }
 	
     /**
      * Lists all Alerts models.
@@ -46,48 +45,6 @@ class AlertsController extends DefaultController
         Response::$viewOptions['args']['content'] = \nitm\widgets\alerts\Alerts::widget();
 		$this->setResponseFormat('html');
 		return $this->renderResponse(null, Response::$viewOptions, \Yii::$app->request->isAjax);
-    }
-
-    /**
-     * Displays a single Alerts model.
-     * @param integer $id
-     * @return mixed
-     */
-    public function actionView($id)
-    {
-	return parent::actionView(Alerts::className(), $id);
-    }
-
-    /**
-     * Creates a new Alerts model.
-     * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return mixed
-     */
-    public function actionCreate()
-    {
-        return parent::actionCreate(Alerts::className());
-    }
-
-    /**
-     * Updates an existing Alerts model.
-     * If update is successful, the browser will be redirected to the 'view' page.
-     * @param integer $id
-     * @return mixed
-     */
-    public function actionUpdate($id)
-    {
-        return parent::actionUpdate($id, Alerts::className());
-    }
-
-    /**
-     * Deletes an existing Alerts model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
-     * @param integer $id
-     * @return mixed
-     */
-    public function actionDelete($id)
-    {
-        return parent::actionDelete($id, Alerts::className());
     }
 	
 	public function actionList($id)

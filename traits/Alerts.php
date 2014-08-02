@@ -15,16 +15,18 @@ use nitm\models\Alerts as AlertModel;
 
 trait Alerts
 {
-	protected $_alerts;
+	protected static $_alerts;
 	
-	protected function prepareAlerts($for='any', $priority='any')
+	protected function prepareAlerts($event, $for='any', $priority='any')
 	{
-		$this->_alerts = new AlertModel;
+		if($event->handled)
+			return;
+		static::$_alerts = \Yii::$app->getModule('nitm')->alerts;
 		$alerts = [];
-		$alerts['remote_type'] = $this->isWhat();
+		$alerts['remote_type'] = $event->sender->isWhat();
 		$alerts['remote_for'] = $for;
 		$alerts['priority'] = $priority;
-		$this->_alerts->prepare($this->getIsNewRecord(), $alerts);
+		static::$_alerts->prepare($event->sender->getIsNewRecord(), $alerts);
 	}
 	
 	/**
@@ -39,24 +41,27 @@ trait Alerts
 	 * ]
 	 * @param array $options = an array of parameters to be used during alert creation
 	 */
-	protected function processAlerts($options=[])
+	protected function processAlerts($event, $options=[])
 	{
-		$this->_alerts->criteria('action', isset($options['action']) ? $options['action'] : $this->_alerts->criteria('action'));
-		switch(!$this->_alerts->criteria('action'))
+		if($event->handled)
+			return;
+		static::$_alerts->criteria('action', isset($options['action']) ? $options['action'] : static::$_alerts->criteria('action'));
+		switch(!static::$_alerts->criteria('action'))
 		{
 			case false:
-			$this->_alerts->criteria('remote_for', isset($options['for']) ? $options['for'] : 'any');
-			$this->_alerts->criteria('remote_id', isset($options['id']) ? $options['id'] : null);
-			$this->_alerts->criteria('priority', isset($options['priority']) ? $options['priority'] : 'any');
-			switch($this->_alerts->isPrepared())
+			static::$_alerts->criteria('remote_for', isset($options['for']) ? $options['for'] : 'any');
+			static::$_alerts->criteria('remote_id', isset($options['id']) ? $options['id'] : null);
+			static::$_alerts->criteria('priority', isset($options['priority']) ? $options['priority'] : 'any');
+			switch(static::$_alerts->isPrepared())
 			{
 				case true:
 				//First check to see if this specific alert exits
-				$this->_alerts->sendAlerts($options, $options['owner_id']);
+				static::$_alerts->sendAlerts($options, $options['owner_id']);
+				$event->handled = true;
 				break;
 				
 				default:
-				throw new \yii\base\Exception("You need to call \$this->prepareAlerts() before calling \$this->processAlerts");
+				throw new \yii\base\Exception("You need to call \$this->prepareAlerts() before calling \self::processAlerts");
 				break;
 			}
 			break;

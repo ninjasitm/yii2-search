@@ -33,19 +33,9 @@ class DefaultController extends BaseController
 					],
 					[
 						'actions' => [
-							'index', 
-							'add', 
-							'list', 
-							'view',
-							'create', 
-							'update', 
-							'delete', 
-							'form', 
-							'search',
-							'disable',
-							'close',
-							'resolve',
-							'complete'
+							'index', 'add', 'list', 'view', 'create', 
+							'update', 'delete', 'form', 'search', 'disable',
+							'close', 'resolve', 'complete'
 						],
 						'allow' => true,
 						'roles' => ['@'],
@@ -66,9 +56,20 @@ class DefaultController extends BaseController
 				],
 			],
 		];
-		
 		return array_merge(parent::behaviors(), $behaviors);
 	}
+	
+    /**
+	* @inheritdoc
+	*/
+    public function actions()
+    {
+        return [
+            'error' => [
+                'class' => 'yii\web\ErrorAction',
+            ]
+        ];
+    }
 	
 	public function beforeAction($action)
 	{
@@ -126,12 +127,12 @@ class DefaultController extends BaseController
 	 * @param array $options
 	 * @return string | json
 	 */
-	public function actionForm($type=null, $id=null, $options=[])
+	public function actionForm($param=null, $id=null, $options=[])
 	{
 		$force = false;
 		$options['id'] = $id;
-		$options['param'] = $type;
-		switch($type)
+		$options['param'] = $param;
+		switch($param)
 		{	
 			//This is for generating the form for updating and creating a form for $this->model->className()
 			default:
@@ -140,7 +141,7 @@ class DefaultController extends BaseController
 			$options['scenario'] = $action;
 			$options['provider'] = null;
 			$options['dataProvider'] = null;
-			$options['view'] = $type;
+			$options['view'] = $param;
 			$options['args'] = [false, true, true];
 			$options['modelClass'] = $this->model->className();
 			$options['force'] = true;
@@ -158,6 +159,7 @@ class DefaultController extends BaseController
 			],
 			'contentOnly' => true
 		];
+		
 		$format = Response::formatSpecified() ? $this->getResponseFormat() : 'html';
 		$this->setResponseFormat($format);
 		return $this->renderResponse($this->getFormVariables($this->model, $options, $modalOptions), Response::$viewOptions, \Yii::$app->request->isAjax);
@@ -307,13 +309,20 @@ class DefaultController extends BaseController
 		$deleted = false;
 		$modelClass = !$modelClass ? $this->model->className() : $modelClass;
         $this->model =  $this->findModel($modelClass, $id);
-		if($this->model && $this->model->delete())
+		switch(1)
 		{
+			case \Yii::$app->user->identity->isAdmin():
+			case $this->model->hasProperty('author_id') && $this->model->author_id == \Yii::$app->user->getId():
+			case $this->model->hasProperty('user_id') && $this->model->user_id == \Yii::$app->user->getId():
+			if($this->model && $this->model->delete())
+			{
+				$deleted = true;
+				$this->model = new $modelClass;
+				$this->model->id = $id;
+			}
 			$deleted = true;
-			$this->model = new $modelClass;
-			$this->model->id = $id;
+			break;
 		}
-		$deleted = true;
 		switch(\Yii::$app->request->isAjax)
 		{
 			case true:
@@ -479,7 +488,8 @@ class DefaultController extends BaseController
 						break;
 						
 						default:
-						$ret_val['class'] .= ' '.\nitm\helpers\Statuses::getIndicator($this->model->getStatus());
+						if(method_exists($this->model, 'getStatus'))
+							$ret_val['class'] .= ' '.\nitm\helpers\Statuses::getIndicator($this->model->getStatus());
 						break;
 					}
 					break;
@@ -498,17 +508,20 @@ class DefaultController extends BaseController
 						}
 						break;
 					}
+					$viewFile = '/'.$this->model->isWhat().'/view';
+					$ret_val['success'] = true;
 					switch($this->getResponseFormat())
 					{
 						case 'json':
-						$ret_val = [
-							'data' => $this->renderAjax('/'.$this->model->isWhat().'/view', ["model" => $this->model]),
-							'success' => true
-						];
+						if(file_exists($this->getViewPath() . DIRECTORY_SEPARATOR . ltrim($viewFile, '/')))
+							$ret_val['data'] = $this->renderAjax($viewFile, ["model" => $this->model]);
 						break;
 						
 						default:
-						Response::$viewOptions['content'] = $this->renderAjax('/'.$this->model->isWhat().'/view', ["model" => $this->model]);
+						if(file_exists($this->getViewPath() . DIRECTORY_SEPARATOR . ltrim($viewFile, '/')))
+							Response::$viewOptions['content'] = $this->renderAjax($viewFile, ["model" => $this->model]);
+						else
+							Response::$viewOptions['content'] = true;
 						break;
 					}
 					break;
@@ -528,5 +541,5 @@ class DefaultController extends BaseController
 		$ret_val['action'] = $this->action->id;
 		$ret_val['id'] = $this->model->getId();
 		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
-	}	
+	}
 }

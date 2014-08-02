@@ -17,7 +17,7 @@ use nitm\helpers\Icon;
 	<div class="col-md-2 col-lg-2">
 		<?php
 			echo "<b>".$model::setting($model->isWhat().'.allowed.'.$model->remote_type)."</b>";
-			if(!is_null($model->remote_for) && ($model->remote_for != 'any')) echo " for <b>".$model::$settings[$model->isWhat()]['for'][$model->remote_for]."</b>";
+			if(!is_null($model->remote_for) && ($model->remote_for != 'any')) echo " for <b>".$model::setting('for.'.$model->remote_for)."</b>";
 		?>
 	</div>
 	<div class="col-md-3 col-lg-3">
@@ -27,6 +27,17 @@ use nitm\helpers\Icon;
 		alert me using <b><?= $model->methods; ?></b>
 	</div>
 	<div class="col-md-1 col-lg-1">
+		<?= \nitm\widgets\modal\Modal::widget([
+				'toggleButton' => [
+					'tag' => 'a',
+					'class' => 'btn btn-info',
+					'label' => Icon::forAction('update'), 
+					'href' => \Yii::$app->urlManager->createUrl(['/alerts/form/update/'.$model->getId(), '__format' => 'modal']),
+					'title' => Yii::t('yii', 'Update '),
+					'role' => 'updateAlert',
+				],
+			]);
+		?>
 		<?= Html::a(Icon::forAction('delete'), '#', [
 			'class' => 'btn btn-danger',
 			'role' => 'removeAlert',

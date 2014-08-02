@@ -33,7 +33,7 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 		<?php endif; ?>
 	</div>
 	<div id="messageBody<?= $localUniqid ?>" class="message-body">
-		<p role='message'> <?=$model->message ?> </p>
+		<div role='message'> <?= \nitm\helpers\Helper::parseLinks($model->message); ?> </div>
 	</div>
 	<div id="messageFooter<?= $localUniqid ?>" class="message-footer">
 		<div id="messageMeta<?= $localUniqid ?>" class="message-meta">
