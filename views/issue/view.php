@@ -73,7 +73,7 @@ $uniqid = uniqid();
 				]);
 				if($enableComments==true)
 				{
-					echo Html::a(Icon::forAction('comment', null, null, ['size' => '2x']).ActivityIndicator::widget(['position' => 'top right', 'size' => 'small', 'text' => $repliesModel->getCount(), 'type' => 'info']), \Yii::$app->urlManager->createUrl(['/reply/index/'.$model->isWhat().'/'.$model->getId(), '__format' => 'html']), [
+					echo Html::a(Icon::forAction('comment', null, null, ['size' => '2x']).ActivityIndicator::widget(['position' => 'top right', 'size' => 'small', 'text' => $repliesModel->count(), 'type' => 'info']), \Yii::$app->urlManager->createUrl(['/reply/index/'.$model->isWhat().'/'.$model->getId(), '__format' => 'html']), [
 						'title' => 'See comments for this issue',
 						'role' => 'visibility',
 						'data-id' => 'issue-comments'.$uniqid,

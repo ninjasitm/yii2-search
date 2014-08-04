@@ -2,9 +2,7 @@
 
 namespace nitm\helpers;
 
-use kartik\icons\Icon as BaseIcon;
-
-class Icon
+class Icon extends \kartik\icons\Icon
 {
 	/**
 	 * Get certain types of icons
@@ -67,7 +65,7 @@ class Icon
 			$options['class'] .= \Yii::$app->params['icon-framework']."-".$options['size'];
 			unset($options['size']);
 		}
-		return BaseIcon::show($icon, $options);
+		return Icon::show($icon, $options);
 	}
 }
 ?>

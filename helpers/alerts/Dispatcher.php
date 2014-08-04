@@ -474,7 +474,7 @@ class Dispatcher extends \yii\base\Component
 					case 'email':
 					switch(1)
 					{
-						case !empty($uri = (is_object($user->profile) ? $user->profile->getAttribute('public_email') : $user->email)):
+						case ($uri = (is_object($user->profile) ? $user->profile->getAttribute('public_email') : $user->email)) != '':
 						break;
 						
 						default:

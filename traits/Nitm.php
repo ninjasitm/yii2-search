@@ -7,6 +7,7 @@ use yii\base\Model;
 use yii\base\Event;
 use nitm\models\User;
 use nitm\models\Category;
+use nitm\helpers\Cache as CacheHelper;
 
 /**
  * Class Replies
@@ -144,15 +145,26 @@ trait Nitm
      */
     public static function getCategoryList($type)
     {
-		$model = new Category([
-			'queryFilters' => [
-				'where' => [
-					'parent_ids' => new \yii\db\Expression("(SELECT id FROM ".Category::tableName()." WHERE slug='".$type."' LIMIT 1)")
-				],
-				'orderBy' => ['name' => SORT_ASC]
-			]
-		]);
-		return $model->getList('name');
+		switch(CacheHelper::cache()->exists('category-list'.static::isWhat()))
+		{
+			case true:
+			$model = new Category([
+				'queryFilters' => [
+					'where' => [
+						'parent_ids' => new \yii\db\Expression("(SELECT id FROM ".Category::tableName()." WHERE slug='".$type."' LIMIT 1)")
+					],
+					'orderBy' => ['name' => SORT_ASC]
+				]
+			]);
+			$ret_val = $model->getList('name');
+			CacheHelper::cache()->set('category-list'.static::isWhat(), $ret_val);
+			break;
+			
+			default:
+			$ret_val = CacheHelper::cache()->get('category-list'.static::isWhat());
+			break;
+		}
+		return $ret_val;
     }
 	
 	/*

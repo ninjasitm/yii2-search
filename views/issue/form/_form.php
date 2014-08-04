@@ -42,7 +42,7 @@ $enableComments = isset($enableComments) ? $enableComments : \Yii::$app->request
 								'type' => 'addon',
 								'inputsInline' => true,
 								'addonType' => 'radiolist',
-								'fieldName' => 'status',
+								'attribute' => 'status',
 								'model' => $model,
 								'form' => $form
 							]),

@@ -38,7 +38,23 @@ trait Cache {
 					break;
 					
 					default:
-					$ret_val = new $modelClass($options);
+					switch(isset($options['find']))
+					{
+						case true:
+						$find = $modelClass::find();
+						foreach($options['find'] as $option=>$params)
+						{
+							$find->$option($params);
+						}
+						unset($options['find']);
+						$ret_val = $find->one();
+						$ret_val = !$ret_val ? new $modelClass($options['construct']) : $ret_val;
+						break;
+						
+						default:
+						$ret_val = new $modelClass($options);
+						break;
+					}
 					break;
 				}
 				//static::$cache->set($key, $ret_val, 1000);

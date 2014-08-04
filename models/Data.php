@@ -59,6 +59,7 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 		]
 	];
 	
+	protected $_count;
 	protected $success;
 	protected $connection;
 	protected static $is;
@@ -463,6 +464,24 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 			}
 		}
 		return $query;
+	}
+
+    /**
+	 * This is here to allow base classes to modify the query before finding the count
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCount($link)
+    {
+		$primaryKey = $this->primaryKey()[0];
+		$link = is_array($link) ? $link : [$primaryKey => $primaryKey];
+        return $this->hasOne(static::className(), $link)
+			->select(['_count' => 'COUNT('.$primaryKey.')'])
+			->orWhere($this->queryFilters);
+    }
+	
+	public function count()
+	{
+		return $this->count instanceof static ? $this->count->_count : 0;
 	}
 
 	/*

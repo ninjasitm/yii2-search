@@ -10,7 +10,7 @@ use yii\base\Model;
  */
 class Cache extends Model
 {
-	protected static $cache;
+	public static $cache;
 	private static $_cache = [];
 	
 	/**

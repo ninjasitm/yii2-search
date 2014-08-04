@@ -8,7 +8,6 @@ use nitm\helpers\Cache;
  * Traits defined for expanding active relation scopes until yii2 resolves traits issue
  */
  trait Relations {
-
     /**
      * @return \yii\db\ActiveQuery
      */
@@ -128,8 +127,19 @@ use nitm\helpers\Cache;
 	
 	public function replyModel()
 	{
-		return $this->getCachedRelation('reply-model.'.$this->isWhat().'.'.$this->getId(), 'replyModel', \nitm\models\Replies::className(), false, ['parent_id' => $this->getId(), 'parent_type' => $this->isWhat()]);
+		return $this->replyModel instanceof \nitm\models\Replies ? $this->replyModel : new \nitm\models\Replies([
+			'parent_id' => $this->getId(), 
+			'parent_type' => $this->isWhat()
+		]);
 	}
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getReplyModel()
+    {
+        return $this->getRelatedWidgetModel(\nitm\models\Replies::className());
+    }
 
     /**
      * @return \yii\db\ActiveQuery
@@ -146,8 +156,19 @@ use nitm\helpers\Cache;
 	
 	public function issueModel()
 	{
-		return $this->getCachedRelation('issue-model.'.$this->isWhat().'.'.$this->getId(), 'issueModel', \nitm\models\Issues::className(), false, ['parent_id' => $this->getId(), 'parent_type' => $this->isWhat()]);
+		return $this->issueModel instanceof \nitm\models\Issues ? $this->issueModel : new \nitm\models\Issues([
+			'parent_id' => $this->getId(), 
+			'parent_type' => $this->isWhat()
+		]);
 	}
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getIssueModel()
+    {
+        return $this->getRelatedWidgetModel(\nitm\models\Issues::className());
+    }
 
     /**
      * @return \yii\db\ActiveQuery
@@ -177,8 +198,19 @@ use nitm\helpers\Cache;
 	
 	public function revisionModel()
 	{
-		return $this->getCachedRelation('revision-model.'.$this->isWhat().'.'.$this->getId(), 'revisionModel', \nitm\models\Revisions::className(), false, ['parent_id' => $this->getId(), 'parent_type' => $this->isWhat()]);
+		return $this->revisionModel instanceof \nitm\models\Revisions ? $this->revisionModel : new \nitm\models\Revisions([
+			'parent_id' => $this->getId(), 
+			'parent_type' => $this->isWhat()
+		]);
 	}
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getRevisionModel()
+    {
+        return $this->getRelatedWidgetModel(\nitm\models\Revisions::className());
+    }
 
     /**
      * @return \yii\db\ActiveQuery
@@ -195,8 +227,19 @@ use nitm\helpers\Cache;
 	
 	public function voteModel()
 	{
-		return $this->getCachedRelation('vote-model.'.$this->isWhat().'.'.$this->getId(), 'voteModel', \nitm\models\Vote::className(), false, ['parent_id' => $this->getId(), 'parent_type' => $this->isWhat()]);
+		return $this->voteModel instanceof \nitm\models\Vote ? $this->voteModel : new \nitm\models\Vote([
+			'parent_id' => $this->getId(), 
+			'parent_type' => $this->isWhat()
+		]);
 	}
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getVoteModel()
+    {
+        return $this->getRelatedWidgetModel(\nitm\models\Vote::className());
+    }
 
     /**
      * @return \yii\db\ActiveQuery
@@ -213,7 +256,28 @@ use nitm\helpers\Cache;
 	
 	public function ratingModel()
 	{
-		return $this->getCachedRelation('rating-model.'.$this->isWhat().'.'.$this->getId(), 'ratingModel', \nitm\models\Rating::className(), false, ['parent_id' => $this->getId(), 'parent_type' => $this->isWhat()]);
+		return $this->ratingModel instanceof \nitm\models\Rating ? $this->ratingModel : new \nitm\models\Rating([
+			'parent_id' => $this->getId(), 
+			'parent_type' => $this->isWhat()
+		]);
+	}
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getRatingModel()
+    {
+        return $this->getRelatedWidgetModel(\nitm\models\Rating::className());
+    }
+	
+	protected function getRelatedWidgetModel($className)
+	{
+        $ret_val = $this->hasOne($className, ['parent_id' => 'id'])
+			->select(['id', 'parent_type', 'parent_id'])
+			->andWhere(["parent_type" => $this->isWhat()]);
+		if(static::className() != $className)
+			$ret_val->with(['count', 'newCount']);
+		return $ret_val;
 	}
 	
 	public function getCachedRelation($key, $property, $modelClass, $asArray=false, $options=[])

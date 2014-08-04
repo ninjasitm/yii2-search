@@ -20,23 +20,21 @@ use nitm\helpers\Cache;
 
 class BaseWidget extends Data implements DataInterface
 {
-	use \nitm\traits\Nitm, \nitm\traits\Relations;
+	use \nitm\traits\Nitm;
 	
 	public $fetchedValue;
-	public $count;
-	public $hasAny;
-	public $hasNew;
 	public $constrain;
 	public $constraints = [];
 	public $queryOptions = [];
+	public $initSearchClass = true;
 	
 	public static $statuses = [
 		'normal' => 'default',
 		'important' => 'info',
 		'critical' => 'error'
 	];
-	public $initSearchClass = true;
 	
+	protected $_new; 
 	protected static $userLastActive;
 	protected static $currentUser;
 	
@@ -89,6 +87,7 @@ class BaseWidget extends Data implements DataInterface
 			case true:
 			$this->constraints['parent_id'] = $this->parent_id;
 			$this->constraints['parent_type'] = $this->parent_type;
+			$this->queryFilters = array_merge($this->queryFilters, $this->constraints);
 			break;
 		}
 		return $this->constraints;
@@ -147,61 +146,6 @@ class BaseWidget extends Data implements DataInterface
 	}
 	
 	/**
-	 * Get the count for the current parameters
-	 * @return int count
-	 */
-	 public function getCount()
-	 {
-			$this->populateMetadata();
-		 $ret_val = 0;
-		 switch(isset($this->count))
-		 {
-			 case false:
-			 $ret_val = $this->countQuery()->count();
-			 break;
-			 
-			 default:
-			 $ret_val = $this->count;
-			 break;
-		 }
-		 return $ret_val;
-	 }
-	
-	/**
-	 * Get the count for the current parameters
-	 * @return int count
-	 */
-	 public function getValue()
-	 {
-		 $ret_val = 0;
-		 $this->setScenario('count');
-		 switch(isset($this->fetchedValue))
-		 {
-			 case false:
-			 switch($this->validate())
-			 {
-				 case true:
-				 $this->valueQuery()->asArray()->all();
-				 $ret_val = ($this->queryFilters['value'] == 'both') ? $ret_val[0] : $ret_val[0]['value'];
-				 switch(is_null($valueFilter))
-				 {
-					case true:
-					$this->queryFilters['value'] = $valueFilter;
-					break;
-				 }
-				 break;
-			 }
-			 $this->fetchedValue = $ret_val;
-			 break;
-			 
-			 default:
-			 $ret_val = $this->fetchedValue;
-			 break;
-		 }
-		 return $ret_val;
-	}
-	
-	/**
 	 * Find a model
 	 */
 	 public static function findModel($constrain)
@@ -219,7 +163,7 @@ class BaseWidget extends Data implements DataInterface
 			case true:
 			$ret_val->queryFilters = $model->queryFilters;
 			$ret_val->constraints = $model->constraints;
-			$ret_val->populateMetadata();
+			//$ret_val->populateMetadata();
 			break;
 			
 			default:
@@ -229,26 +173,107 @@ class BaseWidget extends Data implements DataInterface
 		return $ret_val;
 	 }
 	
+	/**
+	 * Get the count for the current parameters
+	 * @return \yii\db\ActiveQuery
+	 */
+	 public function getCount()
+	 {
+		$ret_val = parent::getCount([
+			'parent_type' => 'parent_type',
+			'parent_id' => 'parent_id'
+		]);
+		switch(isset($this->queryFilters['value']))
+		{
+			case true:
+			$andWhere = ['and'];
+			switch($this->queryFilters['value'])
+			{
+				case -1:
+				$andWhere[] = '`value`<=0';
+				break; 
+				
+				case 1:
+				$andWhere[] = '`value`>=1';
+				break;
+			}
+			unset($this->queryFilters['value']);
+			$this->queryFilters = array_merge($this->queryFilters, $andWhere);
+			break;
+		}
+		$filters = $this->queryFilters;
+		unset($filters['parent_id'], $filters['parent_type']);
+		$ret_val->andWhere($filters);
+		return $ret_val;
+	 }
+
+    /**
+	 * This is here to allow base classes to modify the query before finding the count
+     * @return \yii\db\ActiveQuery
+     */
+    public function getValue()
+    {
+		$primaryKey = $this->primaryKey()[0];
+		$ret_val = $this->hasOne(static::className(), [
+			'parent_type' => 'parent_type',
+			'parent_id' => 'parent_id'
+		]);
+		$valueFilter = @$this->queryFilters['value'];
+		unset($this->queryFilters['value']);
+		switch(1)
+		{
+			case $valueFilter == -1:
+			$select = [
+				"value" => "SUM(value<=0)"
+			];
+			break;
+			
+			case 'both':
+			$select = [
+				'_down' => "SUM(value<=0)",
+				"_up" => "SUM(value>=1)"
+			];
+			break;
+			
+			default:
+			$select = [
+				"value" => "SUM(value>=1)"
+			];
+			break;
+		}
+		$filters = $this->queryFilters;
+		unset($filters['parent_id'], $filters['parent_type']);
+		return $ret_val->select($select)
+			->andWhere($filters);
+    }
+	
+	public function value()
+	{
+		return $this->getCachedRelation('value.'.$this->isWhat().'.'.$this->getId(), 'value');
+	}
+	
 	/*
 	 * Check for new data by last activity of logged in user
 	 * @return mixed user array
 	 */
 	public function hasNew()
 	{
-		$ret_val = false;
-		switch(isset($this->hasNew))
-		{
-			case false:
-			$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.static::$currentUser->lastActive()];
-			$ret_val = $this->hasNewQuery()->count();
-			static::$currentUser->updateActivity();
-			$this->hasNew = $ret_val;
-			break;
-			
-			default:
-			$ret_val = $this->hasNew;
-			break;
-		}
+		return $this->hasAttribute('_new') ? $this->newCount->_new : 0;
+	}
+	
+	protected function getNewCount()
+	{
+		$primaryKey = $this->primaryKey()[0];
+		$ret_val = $this->hasOne(static::className(), [
+			'parent_type' => 'parent_type',
+			'parent_id' => 'parent_id'
+		]);
+		$andWhere = ['or', 'UNIX_TIMESTAMP(created_at)>='.static::$currentUser->lastActive()];
+		$ret_val->select([
+				'_new' => 'COUNT('.$primaryKey.')'
+			])
+			->andWhere($andWhere);
+		static::$currentUser->updateActivity();
 		return $ret_val;
 	}
 	
@@ -268,7 +293,7 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function hasAny()
 	{
-		return (!isset($this->count) ? $this->find()->count() : $this->count) >= 1;
+		return $this->count() >= 1;
 	}
 	
 	
@@ -279,7 +304,8 @@ class BaseWidget extends Data implements DataInterface
 	public function getLast()
 	{
 		$ret_val = $this->hasOne(static::className(), [
-				'id' => 'id',
+				'parent_id' => 'parent_id',
+				'parent_type' => 'parent_type'
 			])
 			->orderBy([array_shift($this->primaryKey()) => SORT_DESC])
 			->with('author');
@@ -298,73 +324,6 @@ class BaseWidget extends Data implements DataInterface
 		return 'base-widget-model.'.$key.'.'.$id;
 	}
 	 
-	protected function countQuery()
-	{
-		$this->setScenario('count');
-		switch($this->validate())
-		{
-			case true:
-			switch(isset($this->queryFilters['value']))
-			{
-				case true:
-				$andWhere = ['and'];
-				switch($this->queryFilters['value'])
-				{
-					case -1:
-					$andWhere[] = '`value`<=0';
-					break; 
-					
-					case 1:
-					$andWhere[] = '`value`>=1';
-					break;
-				}
-				unset($this->queryFilters['value']);
-				break;
-				
-				default:
-				$andWhere = [];
-				break;
-			}
-			$ret_val = $this->find()->select("id")->where($andWhere)->andWhere($this->getConstraints());
-			break;
-			
-			default:
-			throw new Exception("Error validating for count.\n".var_export($this->getErrors(), true));
-			break;
-		}
-		return $ret_val;
-	}
-	
-	protected function valueQuery()
-	{
-		 $valueFilter = @$this->queryFilters['value'];
-		 unset($this->queryFilters['value']);
-		 switch(1)
-		 {
-			 case $valueFilter == -1:
-			 $select = "SUM(value<=0) AS value";
-			 break;
-			 
-			 case 'both':
-			 $select = "SUM(value<=0) AS down, SUM(value>=1) AS up";
-			 break;
-			 
-			 default:
-			 $select = "SUM(value>=1) AS value";
-			 break;
-		 }
-		 return $this->find($this)->select($select);
-	}
-	
-	protected function hasNewQuery()
-	{
-		$andWhere = ['and', 'UNIX_TIMESTAMP(created_at)>='.static::$currentUser->lastActive()];
-		$ret_val = static::find()->select("id")->orderBy(['id' => SORT_DESC])
-			->andWhere($andWhere)
-			->andWhere($this->getConstraints());
-		return $ret_val;
-	}
-	 
 	protected function populateMetadata()
 	{
 		switch(!isset($this->count) && !isset($this->hasNew))
@@ -376,8 +335,6 @@ class BaseWidget extends Data implements DataInterface
 			])
 			->where($this->getConstraints());
 			$metadata = $sql->createCommand()->queryAll();
-			$this->count = $metadata[0]['_count'];
-			$this->hasNew = $metadata[0]['_hasNew'];
 			static::$currentUser->updateActivity();
 			break;
 		}
