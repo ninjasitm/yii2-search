@@ -146,7 +146,7 @@ use nitm\helpers\Cache;
      */
     public function getReplies()
     {
-        return $this->hasMany(\nitm\models\Replies::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()])->orderBy(['id' => SORT_DESC]);
+        return $this->hasMany(\nitm\models\Replies::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()])->orderBy(['id' => SORT_DESC])->with('replyTo');
     }
 	
 	public function replies()
@@ -238,7 +238,10 @@ use nitm\helpers\Cache;
      */
     public function getVoteModel()
     {
-        return $this->getRelatedWidgetModel(\nitm\models\Vote::className());
+        return $this->getRelatedWidgetModel(\nitm\models\Vote::className(), [
+			//Disabled due to Yii framework inability to return statistical relations
+			//'with' => ['currentUserVoted', 'fetchedValue']
+		]);
     }
 
     /**
@@ -267,16 +270,27 @@ use nitm\helpers\Cache;
      */
     public function getRatingModel()
     {
-        return $this->getRelatedWidgetModel(\nitm\models\Rating::className());
+        return $this->getRelatedWidgetModel(\nitm\models\Rating::className(), [
+			//Disabled due to Yii framework inability to return statistical relations
+			//'with' => ['currentUserVoted', 'fetchedValue']
+		]);
     }
 	
-	protected function getRelatedWidgetModel($className)
+	protected function getRelatedWidgetModel($className, $options=[])
 	{
         $ret_val = $this->hasOne($className, ['parent_id' => 'id'])
 			->select(['id', 'parent_type', 'parent_id'])
-			->andWhere(["parent_type" => $this->isWhat()]);
-		if(static::className() != $className)
-			$ret_val->with(['count', 'newCount']);
+			->andWhere([$className::tableName().".parent_type" => $this->isWhat()]);
+		//Disabled due to Yii framework inability to return statistical relations
+		//if(static::className() != $className)
+			//$ret_val->with(['count', 'newCount']);
+		if(is_array($options) && !empty($options))
+		{
+			foreach($options as $option=>$params)
+			{
+				$ret_val->$option($params);
+			}
+		}
 		return $ret_val;
 	}
 	

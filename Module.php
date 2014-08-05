@@ -50,6 +50,15 @@ class Module extends \yii\base\Module
 	 * @var array options for nitm\models\Alerts
 	 */
 	public $alertOptions = [];
+	
+	/*
+	 * @var array options for nitm\models\Votes
+	 */
+	public $voteOptions = [
+		'individualCounts' => true,
+		'allowMultiple' => false,
+		'usePercentages' => true
+	];
 
 	public function init()
 	{

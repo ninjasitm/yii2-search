@@ -9,25 +9,25 @@ use nitm\models\Vote;
  *
  */
 
-class VoteController extends \nitm\controllers\DefaultController
+class VoteController extends DefaultController
 {
 	
 	public function behaviors()
 	{
 		$behaviors = [
 			'access' => [
-				'class' => \yii\web\AccessControl::className(),
+				//'class' => \yii\filters\AccessControl::className(),
 				'only' => ['down', 'up', 'reset'],
 				'rules' => [
 					[
-						'actions' => ['down', 'up', ],
+						'actions' => ['down', 'up', 'reset'],
 						'allow' => true,
 						'roles' => ['@'],
 					],
 				],
 			],
 			'verbs' => [
-				'class' => \yii\web\VerbFilter::className(),
+				//'class' => \yii\filters\VerbFilter::className(),
 				'actions' => [
 					'down' => ['get'],
 					'up' => ['get'],
@@ -36,7 +36,7 @@ class VoteController extends \nitm\controllers\DefaultController
 			],
 		];
 		
-		return array_replace_recursive(parent::behaviors(), $behaviors);
+		return array_merge_recursive(parent::behaviors(), $behaviors);
 	}
 	
 	/**
@@ -47,9 +47,9 @@ class VoteController extends \nitm\controllers\DefaultController
 	 */
     public function actionDown($type, $id)
     {
-		$ret_val = ['success' => false];
+		$ret_val = ['success' => false, 'value' => null, 'id' => $id];
 		$existing = new Vote();
-		$existing->queryFilters['author'] = \Yii::$app->user->getId();
+		$existing->queryFilters['author_id'] = \Yii::$app->user->getId();
 		$existing->queryFilters['parent_type'] = $type;
 		$existing->queryFilters['parent_id'] = $id;
 		$vote = $existing->find()->where($existing->queryFilters)->one();
@@ -61,7 +61,7 @@ class VoteController extends \nitm\controllers\DefaultController
 			$vote->load([
 				'parent_type' => $type, 
 				'parent_id' => $id, 
-				'user_id' => \Yii::$app->user->getId()
+				'author_id' => \Yii::$app->user->getId()
 			]);
 			break;
 			
@@ -69,13 +69,14 @@ class VoteController extends \nitm\controllers\DefaultController
 			$vote->setScenario('update');
 			break;
 		}
-		$vote->value = $vote->allowMultiple() ? $vote->value-1 : -1;
+		$vote->value = Vote::$allowMultiple ? $vote->value-1 : -1;
 		$ret_val['success'] = $vote->save();
-		unset($existing->queryFilters['user_id']);
-		$ret_val['value'] = $vote->getRating();
-		$ret_val['atMax'] = $vote->allowMultiple() ? false : $ret_val['value']['positive'] >= $vote->getMax();
-		$ret_val['atMin'] = $vote->allowMultiple() ? false : @$ret_val['value']['negative'] <= 0;
-		$this->renderResponse($ret_val);
+		unset($existing->queryFilters['author_id']);
+		$ret_val['value'] = $vote->rating();
+		$ret_val['atMax'] = Vote::$allowMultiple ? false : ($vote->value == 1);
+		$ret_val['atMin'] = Vote::$allowMultiple ? false : ($vote->value == -1);
+		$this->setResponseFormat('json');
+		return $this->renderResponse($ret_val);
     }
 	
 	/**
@@ -86,9 +87,9 @@ class VoteController extends \nitm\controllers\DefaultController
 	 */
     public function actionUp($type, $id)
     {
-		$ret_val = ['success' => false, 'value' => null];
+		$ret_val = ['success' => false, 'value' => null, 'id' => $id];
 		$existing = new Vote();
-		$existing->queryFilters['user_id'] = \Yii::$app->user->getId();
+		$existing->queryFilters['author_id'] = \Yii::$app->user->getId();
 		$existing->queryFilters['parent_type'] = $type;
 		$existing->queryFilters['parent_id'] = $id;
 		$vote = $existing->find()->where($existing->queryFilters)->one();
@@ -101,22 +102,45 @@ class VoteController extends \nitm\controllers\DefaultController
 				'Vote' => [
 					'parent_type' => $type, 
 					'parent_id' => $id, 
-					'user_id' => \Yii::$app->user->getId()
+					'author_id' => \Yii::$app->user->getId()
 				]
 			]);
 			break;
 			
 			default:
 			$vote->setScenario('update');
-			$vote->value = $vote->allowMultiple() ? $vote->value+1 : 1;
+			$vote->value = Vote::$allowMultiple ? $vote->value+1 : 1;
 			break;
 		}
 		$ret_val['success'] = $vote->save();
-		unset($existing->queryFilters['user_id']);
-		$ret_val['value'] = $vote->getRating();
-		$ret_val['atMax'] = $vote->allowMultiple() ? false : $ret_val['value']['positive'] >= $vote->getMax();
-		$ret_val['atMin'] = $vote->allowMultiple() ? false : @$ret_val['value']['negative'] <= 0;
-		$this->renderResponse($ret_val);
+		unset($existing->queryFilters['author_id']);
+		$ret_val['value'] = $vote->rating();
+		$ret_val['atMax'] = Vote::$allowMultiple ? false : ($vote->value == 1);
+		$ret_val['atMin'] = Vote::$allowMultiple ? false : ($vote->value == -1);
+		$this->setResponseFormat('json');
+		return $this->renderResponse($ret_val);
     }
-
+	
+	/**
+	 * Place an upvote
+	 * @param string $type the type of object
+	 * @param int $id the id
+	 * @return boolean should we allow more upvoting?
+	 */
+    public function actionReset($type, $id)
+    {
+		$ret_val = ['success' => false, 'value' => null, 'id' => $id];
+		switch(\Yii::$app->user->identity->isAdmin())
+		{
+			case true:
+			$deleted = Vote::deleteAll([
+				'parent_id' => $id,
+				'parent_type' => $type
+			]);
+			$ret_val['success'] = $deleted;
+			break;
+		}
+		$this->setResponseFormat('json');
+		return $this->renderResponse($ret_val);
+    }
 }

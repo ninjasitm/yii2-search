@@ -22,12 +22,16 @@ class BaseWidget extends Data implements DataInterface
 {
 	use \nitm\traits\Nitm;
 	
-	public $fetchedValue;
+	public $_value;
+	public $_count;
 	public $constrain;
 	public $constraints = [];
 	public $queryOptions = [];
 	public $initSearchClass = true;
 	
+	public static $usePercentages;
+	public static $allowMultiple;
+	public static $individualCounts;
 	public static $statuses = [
 		'normal' => 'default',
 		'important' => 'info',
@@ -179,6 +183,7 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	 public function getCount()
 	 {
+		$primaryKey = $this->primaryKey()[0];
 		$ret_val = parent::getCount([
 			'parent_type' => 'parent_type',
 			'parent_id' => 'parent_id'
@@ -186,24 +191,23 @@ class BaseWidget extends Data implements DataInterface
 		switch(isset($this->queryFilters['value']))
 		{
 			case true:
-			$andWhere = ['and'];
 			switch($this->queryFilters['value'])
 			{
 				case -1:
-				$andWhere[] = '`value`<=0';
+				$andWhere = ['<=', 'value',  0];
 				break; 
 				
 				case 1:
-				$andWhere[] = '`value`>=1';
+				$andWhere = ['>=', 'value', 1];
 				break;
 			}
 			unset($this->queryFilters['value']);
-			$this->queryFilters = array_merge($this->queryFilters, $andWhere);
+			$ret_val->andWhere($andWhere);
 			break;
 		}
 		$filters = $this->queryFilters;
 		unset($filters['parent_id'], $filters['parent_type']);
-		$ret_val->andWhere($filters);
+		//$ret_val->andWhere($filters);
 		return $ret_val;
 	 }
 
@@ -211,7 +215,7 @@ class BaseWidget extends Data implements DataInterface
 	 * This is here to allow base classes to modify the query before finding the count
      * @return \yii\db\ActiveQuery
      */
-    public function getValue()
+    public function getFetchedValue()
     {
 		$primaryKey = $this->primaryKey()[0];
 		$ret_val = $this->hasOne(static::className(), [
@@ -220,24 +224,19 @@ class BaseWidget extends Data implements DataInterface
 		]);
 		$valueFilter = @$this->queryFilters['value'];
 		unset($this->queryFilters['value']);
-		switch(1)
+		switch(static::$allowMultiple)
 		{
-			case $valueFilter == -1:
+			case true:
 			$select = [
-				"value" => "SUM(value<=0)"
-			];
-			break;
-			
-			case 'both':
-			$select = [
-				'_down' => "SUM(value<=0)",
-				"_up" => "SUM(value>=1)"
+				"_down" => "SUM(IF(value<=0, value, 0))",
+				"_up" => "SUM(IF(value>=1, value, 0))"
 			];
 			break;
 			
 			default:
 			$select = [
-				"value" => "SUM(value>=1)"
+				'_down' => "SUM(value=-1)",
+				"_up" => "SUM(value=1)"
 			];
 			break;
 		}
@@ -247,9 +246,9 @@ class BaseWidget extends Data implements DataInterface
 			->andWhere($filters);
     }
 	
-	public function value()
+	public function fetchedValue()
 	{
-		return $this->getCachedRelation('value.'.$this->isWhat().'.'.$this->getId(), 'value');
+		return $this->hasProperty('fetchedValue') && isset($this->fetchedValue) ? $this->fetchedValue->_value : 0;
 	}
 	
 	/*

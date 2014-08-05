@@ -70,16 +70,25 @@ class Rating extends BaseWidget
 	 * Get the rating, percentage out of 100%
 	 * @return int
 	 */
-	public function getRating()
+	public function rating()
 	{
 		$ret_val = 0;
 		$userCount = User::find()->where(['disabled' => 0])->count();
 		switch(is_null($userCount))
 		{
 			case false:
-			$ret_val =( $this->getCount()/$userCount) * 100;
+			$ret_val = ($this->count()/$userCount) * 100;
 			break;
 		}
 		return $ret_val;
+	}
+	
+	public function getCurrentUserVoted()
+	{
+		$primaryKey = $this->primaryKey()[0];
+		return $this->hasOne(static::className(), [
+			'parent_type' => 'parent_type',
+			'parent_id' => 'parent_id'
+		])->andWhere(['author_id' => static::$currentUser->getId()]);
 	}
 }

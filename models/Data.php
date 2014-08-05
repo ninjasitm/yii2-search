@@ -474,14 +474,18 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
     {
 		$primaryKey = $this->primaryKey()[0];
 		$link = is_array($link) ? $link : [$primaryKey => $primaryKey];
+		$tableName = static::tableName();
+		$tableNameAlias = $tableName.'_alias';
         return $this->hasOne(static::className(), $link)
-			->select(['_count' => 'COUNT('.$primaryKey.')'])
-			->orWhere($this->queryFilters);
+			->select([
+				'_count' => "COUNT(".$primaryKey.")",
+			])
+			->andWhere($this->queryFilters);
     }
 	
 	public function count()
 	{
-		return $this->count instanceof static ? $this->count->_count : 0;
+		return $this->hasProperty('count') && isset($this->count) ? $this->count->_count : 0;
 	}
 
 	/*

@@ -44,9 +44,9 @@ trait Nitm
 	public function getStatuses()
 	{
 		return [
-			'notice' => 'Normal',
-			'info' => 'Important',
-			'danger' => 'Urgent'
+			'Normal',
+			'Important',
+			'Critical'
 		];
 	}
 	

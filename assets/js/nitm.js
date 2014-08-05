@@ -390,7 +390,7 @@ function Nitm ()
 		}
 	}
 	
-	this.doRequest = function (rUrl, rData, success, error, timeout, headers)
+	this.doRequest = function (rUrl, rData, success, error, timeout, headers, useGet)
 	{
 		switch(this.r.hasOwnProperty('token'))
 		{
@@ -406,7 +406,7 @@ function Nitm ()
 		this.r.success = success;
 		this.r.error = (error == undefined) ? function (e) { console.log(e) } : error;
 		this.r.timeout = (timeout !== undefined) ? timeout : 30000;
-		this.r.type = 'POST';
+		this.r.type = (useGet === true) ? 'GET' : 'POST';
 		if(headers != undefined)
 		{
 			for(var key in headers)
