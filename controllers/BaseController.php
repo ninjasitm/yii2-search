@@ -296,17 +296,17 @@ class BaseController extends Controller
 					]
 				]);
 				$ret_val[$idx] = $item;
-			}
-			switch(empty($encapsulate))
-			{
-				case false:
-				$ret_val[$idx]['label'] = Html::tag($encapsulate, $ret_val[$idx]['label'], 
-				[
-					"class" => @$item['class'], 
-					"encode" => false
-				]);
-				$ret_val[$idx]['options']['class'] = null;
-				break;
+				switch(empty($encapsulate))
+				{
+					case false:
+					$ret_val[$idx]['label'] = Html::tag($encapsulate, $ret_val[$idx]['label'], 
+					[
+						"class" => @$item['class'], 
+						"encode" => false
+					]);
+					$ret_val[$idx]['options']['class'] = null;
+					break;
+				}
 			}
 		}
 		return $ret_val;
