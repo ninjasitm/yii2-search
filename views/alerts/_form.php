@@ -11,6 +11,7 @@ use kartik\widgets\DepDrop;
 /* @var $form kartik\widgets\ActiveForm */
 $action = $model->getIsNewRecord() ? 'create' : 'update';
 $model->setScenario('create');
+$uniqid = uniqid();
 ?>
 
 <div class="alerts-form" >
@@ -31,19 +32,19 @@ $model->setScenario('create');
 	]); ?>
 	<?=
 		$form->field($model, 'action')->widget(Select2::className(), [
-			'data' => $model::$settings[$model->isWhat()]['actions'],
-			'options' => ['id' => 'new-alert-action', 'placeholder' => 'Alert me when someone...', "allowClear" => true]
+			'data' => $model::setting($model->isWhat().'.actions'),
+			'options' => ['id' => 'alert-action'.$uniqid, 'placeholder' => 'Alert me when someone...', "allowClear" => true]
 		])->label("Action");
 	?>    
 	<?=
 		$form->field($model, 'remote_type')->widget(DepDrop::className(), [
 			'value' => $model->remote_type,
 			'data' => [$model->remote_type => $model->properName($model->remote_type)],
-			'options' => ['placeholder' => ' type of ', 'id' => 'new-alert-type', ],
+			'options' => ['placeholder' => ' type of ', 'id' => 'alert-type'.$uniqid],
 			'type' => DepDrop::TYPE_SELECT2,
-			'select2Options'=>['id' => 'new-alert-remote-type', 'pluginOptions'=>['allowClear'=>true]],
+			'select2Options'=>['id' => 'alert-remote-type'.$uniqid, 'pluginOptions'=>['allowClear'=>true]],
 			'pluginOptions'=>[
-				'depends'=>['new-alert-action'],
+				'depends'=>['alert-action'.$uniqid],
 				'url' => Url::to(['/alerts/list/types']),
 				'loadingText' => '...',
 			]
@@ -53,11 +54,11 @@ $model->setScenario('create');
 		$form->field($model, 'remote_for')->widget(DepDrop::className(), [
 			'value' => $model->remote_for,
 			'data' => [$model->remote_for => $model->properName($model->remote_for)],
-			'options' => ['placeholder' => ' for ', 'id' => 'new-alert-for', ],
+			'options' => ['placeholder' => ' for ', 'id' => 'alert-for'.$uniqid, ],
 			'type' => DepDrop::TYPE_SELECT2,
-			'select2Options'=>['id' => 'new-alert-remote-type', 'pluginOptions'=>['allowClear'=>true]],
+			'select2Options'=>['id' => 'alert-remote-type'.$uniqid, 'pluginOptions'=>['allowClear'=>true]],
 			'pluginOptions'=>[
-				'depends'=>['new-alert-type'],
+				'depends'=>['alert-type'.$uniqid],
 				'url' => Url::to(['/alerts/list/for']),
 				'loadingText' => '...',
 			]
@@ -67,11 +68,11 @@ $model->setScenario('create');
 		$form->field($model, 'priority')->widget(DepDrop::className(), [
 			'value' => $model->priority,
 			'data' => [$model->priority => $model->properName($model->priority)],
-			'options' => ['placeholder' => 'that is'],
+			'options' => ['placeholder' => 'that is', 'id' => 'priority'.$uniqid],
 			'type' => DepDrop::TYPE_SELECT2,
-			'select2Options'=>['pluginOptions'=>['allowClear'=>true]],
+			'select2Options'=>['id' => 'alert-priority'.$uniqid, 'pluginOptions'=>['allowClear'=>true]],
 			'pluginOptions'=>[
-				'depends'=>['new-alert-type'],
+				'depends'=>['alert-type'.$uniqid],
 				'url' => Url::to(['/alerts/list/priority']),
 				'loadingText' => '...',
 			]
@@ -80,7 +81,7 @@ $model->setScenario('create');
 	<?=
 		$form->field($model, 'methods')->widget(Select2::className(), [
 			'value' => explode(',', $model->methods),
-			'options' => ['placeholder' => 'using'],
+			'options' => ['id' => 'alert-methods'.$uniqid, 'placeholder' => 'using'],
 			'data' => \nitm\helpers\alerts\Dispatcher::supportedMethods(),
 			
 		])->label("Priority");

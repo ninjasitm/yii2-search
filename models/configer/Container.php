@@ -20,6 +20,8 @@ use Yii;
  */
 class Container extends BaseConfiger
 {
+	public $sections = [];
+	
     /**
      * @inheritdoc
      */

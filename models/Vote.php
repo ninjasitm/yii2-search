@@ -92,8 +92,8 @@ class Vote extends BaseWidget
 				
 				default:
 				$ret_val = [
-					'positive' => ((int)$this->fetchedValue->_up/static::getMax()) * 100, 
-					'negative' => ((int)$this->fetchedValue->_down/static::getMax()) * 100
+					'positive' => round(((int)$this->fetchedValue->_up/static::getMax()) * 100), 
+					'negative' => round(((int)$this->fetchedValue->_down/static::getMax()) * 100)
 				];
 				break;
 			}

@@ -17,6 +17,7 @@ class AlertsController extends DefaultController
 	public function init()
 	{
 		$this->model = new Alerts(['scenario' => 'default']);
+		parent::init();
 	}
 	
 	public function beforeAction($action)
@@ -32,6 +33,16 @@ class AlertsController extends DefaultController
     public function behaviors()
     {
 		$behaviors = [
+			'access' => [
+				//'class' => \yii\filters\AccessControl::className(),
+				'rules' => [
+					[
+						'actions' => ['notifications', 'mark-notification-read'],
+						'allow' => true,
+						'roles' => ['@'],
+					],
+				],
+			],
 		];
 		return array_merge_recursive(parent::behaviors(), $behaviors);
     }
@@ -46,6 +57,66 @@ class AlertsController extends DefaultController
 		$this->setResponseFormat('html');
 		return $this->renderResponse(null, Response::$viewOptions, \Yii::$app->request->isAjax);
     }
+	
+    /**
+     * Lists all Notifications models.
+     * @return mixed
+     */
+    public function actionNotifications()
+    {
+        Response::$viewOptions['args']['content'] = \nitm\widgets\alerts\Notifications::widget();
+		$this->setResponseFormat('html');
+		return $this->renderResponse(null, Response::$viewOptions, \Yii::$app->request->isAjax);
+    }
+	
+    /**
+     * Mark notification read.
+     * @return mixed
+     */
+    public function actionMarkNotificationRead($id)
+    {
+		$this->model = \nitm\models\Notification::findOne($id);
+		if($this->model)
+		{
+			$this->model->read = 1;
+			$ret_val = $this->model->save();
+		}
+		else
+		{
+			$ret_val = false;
+		}
+		$this->setResponseFormat('json');
+		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
+    }
+	
+	/*
+	 * Get the forms associated with this controller
+	 * @param string $param What are we getting this form for?
+	 * @param int $unique The id to load data for
+	 * @return string | json
+	 */
+	public function actionForm($type=null, $id=null)
+	{
+		$options = [
+			'modelOptions' => [
+			],
+			'title' => function ($model) {
+				if($model->isNewRecord)
+					return "Create Alert";
+				else
+					$header = 'Update Alert: '
+					.' Matching '.$model->properName($model->priority)
+					.' '.($model->remote_type == 'any' ? 'Anything' : $model->properName($model->remote_type));
+					if(!empty($model->remote_for) && !($model->remote_for == 'any'))
+						$header .= ' for '.$model->properName($model->remote_for);
+					if(!empty($model->remote_id))
+						$header .= ' '.(!$model->remote_id ? 'with Any id' : ' with id '.$model->remote_id);
+					return $header;
+			}
+		];
+		$options['force'] = true;
+		return parent::actionForm($type, $id, $options);
+	}
 	
 	public function actionList($id)
 	{

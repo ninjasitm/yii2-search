@@ -64,6 +64,7 @@ class Configer extends Model
 	
 	//private data
 	private static $_containers;
+	private static $_cache;
 	private $_objects = [];
 	private $types = ['ini' => 'cfg', 'xml' => 'xml', 'file' => 'cfg'];
 	private $location = "file";
@@ -1421,7 +1422,8 @@ class Configer extends Model
 			switch(isset(static::$_containers))
 			{
 				case false:
-				$result = Container::find()->select(['id', 'name'])->all();
+				$result = Container::find()->select(['id', 'name'])->indexBy('name')->all();
+				static::$_cache = $result;
 				array_walk($result, function ($val, $key) use(&$ret_val) {
 					$ret_val[$val->name] = $val->name;
 				});
@@ -1555,16 +1557,26 @@ class Configer extends Model
 			break;
 			
 			case 'db':
-			if(!$this->containerModel instanceof Container)
+			switch(isset(static::$_cache[$container]))
 			{
-				$model = Container::find()
-					->where(['or', "name='$container'", "id='$container'"])
-					->one();
-				$this->containerModel = $model instanceof Container ? $model : null;
+				case false:
+				if(!$this->containerModel instanceof Container)
+				{
+					$model = Container::find()
+						->where(['or', "name='$container'", "id='$container'"])
+						->one();
+					$this->containerModel = $model instanceof Container ? $model : null;
+				}
+				$ret_val = $this->containerModel;
+				static::$_cache[$container] = $ret_val;
+				break;
+				
+				default:
+				$ret_val = static::$_cache[$container];
+				break;
 			}
-			$ret_val = $this->containerModel;
 			break;
-		}
+		 }
 		return $ret_val;
 	 }
 	 
@@ -1577,13 +1589,23 @@ class Configer extends Model
 	private function section($section)
 	{
 		$ret_val = null;
-		if(!$this->sectionModel instanceof Section)
+		switch(@isset(static::$_cache[$this->containerModel->name]->sections[$section]))
 		{
-			$section = $this->containerModel->getSections()
-				->where(['or', "name='$section'", "id='$section'"])
-				->one();
-			$this->sectionModel = $section instanceof Section ? $section : null;
-			$ret_val = $this->sectionModel;
+			case false:
+			if(!$this->sectionModel instanceof Section)
+			{
+				$section = $this->containerModel->getSections()
+					->where(['or', "name='$section'", "id='$section'"])
+					->one();
+				$this->sectionModel = $section instanceof Section ? $section : null;
+				$ret_val = $this->sectionModel;
+				static::$_cache[$this->containerModel->name]->sections[$section] = $ret_val;
+			}
+			break;
+				
+			default:
+			$ret_val = static::$_cache[$this->containerModel->name]->sections[$section];
+			break;
 		}
 		return $ret_val;
 	}

@@ -30,6 +30,7 @@ class Dispatcher extends \yii\base\Component
 	
 	const BATCH = 'batch';
 	const SINGLE = 'single';
+	const UNDEFINED = '__undefined__';
 	
 	public static function supportedMethods()
 	{
@@ -76,20 +77,25 @@ class Dispatcher extends \yii\base\Component
 		return $this->_prepared === true;
 	}
 	
-	public function criteria($key, $value='undefined')
+	public function criteria($_key, $_value='__undefined__')
 	{
-		$ret_val = true;
-		switch($value)
+		$ret_val = [];
+		$key = is_array($_key) ? $_key : [$_key];
+		$value = is_array($_value) ? $_value : [$_value];
+		foreach($key as $idx=>$k)
 		{
-			case 'undefined':
-			$ret_val = isset($this->_criteria[$key]) ? $this->_criteria[$key] : false;
-			break;
-			
-			default:
-			$this->_criteria[$key] = $value;
-			break;
+			switch($value[$idx])
+			{
+				case self::UNDEFINED:
+				$ret_val[$k] = isset($this->_criteria[$k]) ? $this->_criteria[$k] : self::UNDEFINED;
+				break;
+				
+				default:
+				$this->_criteria[$k] = $value[$idx];
+				break;
+			}
 		}
-		return $ret_val;
+		return (is_array($ret_val) && sizeof($ret_val) == 1) ? $ret_val[$_key] : $ret_val;
 	}
 	
 	/**
@@ -133,8 +139,20 @@ class Dispatcher extends \yii\base\Component
 	{
 		$criteria['user_id'] = $author_id;
 		$criteria['action'] .= '_my';
+		$anyRemoteType = array_merge($criteria, [
+			'remote_type' => 'any'
+		]);
+		$anyRemoteFor = array_merge($criteria, [
+			'remote_for' => 'any'
+		]);
+		$anyPriority = array_merge($criteria, [
+			'priority' => 'any'
+		]);
 		return Alerts::find()->select('*')
 			->where($criteria)
+			->orWhere($anyRemoteFor)
+			->orWhere($anyRemoteType)
+			->orWhere($anyPriority)
 			->indexBy('user_id')
 			->with('user');
 	}
@@ -152,6 +170,9 @@ class Dispatcher extends \yii\base\Component
 			'remote_type' => null,
 			'action' => null
 		]);
+		$anyRemoteType = array_merge($listenerCriteria, [
+			'remote_type' => 'any'
+		]);
 		$anyRemoteFor = array_merge($listenerCriteria, [
 			'remote_for' => 'any'
 		]);
@@ -160,6 +181,7 @@ class Dispatcher extends \yii\base\Component
 		]);
 		return Alerts::find()->select('*')
 			->orWhere($anyRemoteFor)
+			->orWhere($anyRemoteType)
 			->orWhere($anyPriority)
 			->orWhere($criteria)
 			->andWhere([
@@ -182,6 +204,9 @@ class Dispatcher extends \yii\base\Component
 		]);
 		$criteria['global'] = 1;
 		$criteria['user_id'] = null;
+		$anyRemoteType = array_merge($criteria, [
+			'remote_type' => 'any'
+		]);
 		$anyRemoteFor = array_replace($criteria, [
 			'remote_for' => 'any'
 		]);
@@ -190,6 +215,7 @@ class Dispatcher extends \yii\base\Component
 		]);
 		return Alerts::find()->select('*')
 			->orWhere($criteria)
+			->orWhere($anyRemoteType)
 			->orWhere($anyRemoteFor)
 			->orWhere($anyPriority)
 			->indexBy('user_id')
@@ -268,7 +294,7 @@ class Dispatcher extends \yii\base\Component
 			$ret_val = true;
 			//Send the emails/mobile alerts
 			self::$_subject = $this->replaceCommon(is_array($compose['subject']) ? \Yii::$app->mailer->render($compose['subject']['view']) : $compose['subject']);
-			foreach($types as $type=>$addresses)
+			foreach($types as $type=>$unMappedAddresses)
 			{
 				$params = [
 					"content" => $this->replaceCommon(is_array($compose['message'][$type]) ? \Yii::$app->mailer->render($compose['message'][$type]['view']) : $compose['message'][$type])
@@ -302,7 +328,7 @@ class Dispatcher extends \yii\base\Component
 					$view = ['text' => '@nitm/views/alerts/message/mobile'];
 					break;
 				}
-				$addresses = $this->getAddressNameMap($addresses);
+				$addresses = $this->getAddressNameMap($unMappedAddresses);
 				$this->_message = \Yii::$app->mailer->compose($view, $params)->setTo(array_slice($addresses, 0, 1));
 				switch($type)
 				{
@@ -317,6 +343,8 @@ class Dispatcher extends \yii\base\Component
 					break;
 				}
 				$this->send();
+				$notificationText = $this->replaceCommon($subject." by %who% on %when%");
+				$this->sendNotifications($notificationText, $unMappedAddresses);
 			}
 			break;
 		}
@@ -383,6 +411,8 @@ class Dispatcher extends \yii\base\Component
 						break;
 					}
 					$this->send();
+					$notificationText = $this->replaceCommon($subject." by %who% on %when%");
+					$this->sendNotifications($notificationText, [$this->_alerts[current($unMappedAddresses)['user']->getId()]]);
 				}
 			}
 			break;
@@ -394,6 +424,7 @@ class Dispatcher extends \yii\base\Component
 	{
 		if(!is_null($this->_message))
 		{
+			
 			$this->_message->setFrom(\Yii::$app->params['components.alerts']['sender'])
 				->send();
 			$this->_message = null;
@@ -401,6 +432,35 @@ class Dispatcher extends \yii\base\Component
 		}
 		else
 			return false;
+	}
+	
+	protected function sendNotifications($message, $alerts)
+	{
+		switch(is_array($alerts) && !empty($alerts))
+		{
+			case true:
+			$notifications = [];
+			$keys = [
+				'user_id',
+				'message',
+				'priority'
+			];
+			foreach($alerts as $alert)
+			{
+				$notification = [
+					$alert->user->getId(),
+					$message,
+					$alert->priority
+				];
+				$notifications[] = $notification;
+			}
+			\nitm\models\Notification::find()->createCommand()->batchInsert(
+				\nitm\models\Notification::tableName(), 
+				$keys, 
+				$notifications
+			)->execute();
+			break;
+		}
 	}
 	
 	protected function getAddressNameMap($addresses)
@@ -442,7 +502,7 @@ class Dispatcher extends \yii\base\Component
 			'%who%' => \Yii::$app->user->identity->username,
 			'%when%' => date('D M jS Y @ h:iA'), 
 			'%today%' => date('D M jS Y'),
-			'%priority%' => ucfirst($this->_criteria['priority']),
+			'%priority%' => ($this->_criteria['priority'] == 'any') ? 'Normal' : ucfirst($this->_criteria['priority']),
 			'%action%' => $this->reportedAction,
 			'%remoteFor%' => ucfirst($this->_criteria['remote_for']),
 			'%remoteType%' => ucfirst($this->_criteria['remote_type']),

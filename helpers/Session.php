@@ -311,13 +311,12 @@ class Session extends Model
 	 */
 	public static final function isRegistered($cIdx)
 	{
-		$__SESSION = (static::$useCache === true) ? Cache::cache()->get('nitm-cached-session') : @$_SESSION[static::sessionName()];
 		$ret_val = false;
 		switch($cIdx)
 		{
 			case in_array($cIdx, self::$no_q) === true:
 			case in_array($cIdx, self::$q) === true:
-			$ret_val = isset($__SESSION[$cIdx]);
+			$ret_val = isset($_SESSION[static::sessionName()][$cIdx]);
 			break;
 			
 			default:
@@ -333,7 +332,7 @@ class Session extends Model
 				array_unshift($hierarchy, @static::getCsdm());
 				break;
 			}
-			eval("\$ret_val = isset(\$__SESSION['".Helper::splitf($hierarchy, "']['")."']);");
+			eval("\$ret_val = isset(\$_SESSION['".static::sessionName()."']['".Helper::splitf($hierarchy, "']['")."']);");
 			break;
 		}
 		return $ret_val;

@@ -6,6 +6,7 @@ use Yii;
 use yii\base\Exception;
 use yii\base\Model;
 use yii\base\Event;
+use yii\db\ActiveRecord;
 use nitm\models\Data;
 use nitm\models\User;
 use nitm\models\security\Fingerprint;
@@ -20,7 +21,7 @@ use nitm\helpers\Cache;
 
 class BaseWidget extends Data implements DataInterface
 {
-	use \nitm\traits\Nitm;
+	use \nitm\traits\Nitm, \nitm\traits\Alerts;
 	
 	public $_value;
 	public $_count;
@@ -53,6 +54,15 @@ class BaseWidget extends Data implements DataInterface
 			static::initCache($this->constrain, self::cacheKey($this->getId()));
 		static::$currentUser =  \Yii::$app->user->identity;
 		static::$userLastActive = is_null(static::$userLastActive) ? static::$currentUser->lastActive() : static::$userLastActive;
+		$this->initEvents();
+	}
+	
+	protected function initEvents()
+	{
+		Event::on(ActiveRecord::className(), ActiveRecord::EVENT_BEFORE_INSERT, [$this, 'beforeSaveEvent']);
+		Event::on(ActiveRecord::className(), ActiveRecord::EVENT_BEFORE_UPDATE, [$this, 'beforeSaveEvent']);
+		Event::on(ActiveRecord::className(), ActiveRecord::EVENT_AFTER_INSERT, [$this, 'afterSaveEvent']);
+		Event::on(ActiveRecord::className(), ActiveRecord::EVENT_AFTER_UPDATE, [$this, 'afterSaveEvent']);
 	}
 	
 	public function scenarios()
@@ -352,6 +362,15 @@ class BaseWidget extends Data implements DataInterface
 			$model = Cache::getModel($key);
 		}
 		return $model;
+	}
+	
+	public static function beforeSaveEvent($event)
+	{
+		static::prepareAlerts($event);
+	}
+	
+	public static function afterSaveEvent($event)
+	{
 	}
 }
 ?>

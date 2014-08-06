@@ -45,13 +45,9 @@ trait Alerts
 	{
 		if($event->handled)
 			return;
-		static::$_alerts->criteria('action', isset($options['action']) ? $options['action'] : static::$_alerts->criteria('action'));
 		switch(!static::$_alerts->criteria('action'))
 		{
 			case false:
-			static::$_alerts->criteria('remote_for', isset($options['for']) ? $options['for'] : 'any');
-			static::$_alerts->criteria('remote_id', isset($options['id']) ? $options['id'] : null);
-			static::$_alerts->criteria('priority', isset($options['priority']) ? $options['priority'] : 'any');
 			switch(static::$_alerts->isPrepared())
 			{
 				case true:

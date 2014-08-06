@@ -127,12 +127,12 @@ class DefaultController extends BaseController
 	 * @param array $options
 	 * @return string | json
 	 */
-	public function actionForm($param=null, $id=null, $options=[])
+	public function actionForm($type=null, $id=null, $options=[])
 	{
 		$force = false;
 		$options['id'] = $id;
-		$options['param'] = $param;
-		switch($param)
+		$options['param'] = $type;
+		switch($type)
 		{	
 			//This is for generating the form for updating and creating a form for $this->model->className()
 			default:
@@ -141,7 +141,7 @@ class DefaultController extends BaseController
 			$options['scenario'] = $action;
 			$options['provider'] = null;
 			$options['dataProvider'] = null;
-			$options['view'] = $param;
+			$options['view'] = $type;
 			$options['args'] = [false, true, true];
 			$options['modelClass'] = $this->model->className();
 			$options['force'] = true;

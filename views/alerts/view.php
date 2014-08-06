@@ -28,6 +28,7 @@ use nitm\helpers\Icon;
 	</div>
 	<div class="col-md-1 col-lg-1">
 		<?= \nitm\widgets\modal\Modal::widget([
+				'size' => 'large',
 				'toggleButton' => [
 					'tag' => 'a',
 					'class' => 'btn btn-info',

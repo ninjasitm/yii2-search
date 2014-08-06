@@ -222,10 +222,8 @@ class BaseController extends Controller
 	 */
 	public static function loadNav($from="navigation")
 	{
-		$ret_val = array();
-		$navigation = array();
+		$ret_val = $priorities = [];
 		$navigation = Session::getVal($from);
-		$priorities = array();
 		if(is_array($navigation))
 		{
 			foreach($navigation as $group=>$val)

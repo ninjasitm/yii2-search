@@ -84,7 +84,8 @@ function Tools ()
 					var success = ($(object).data('success') != undefined) ? $(object).data('success') : null;
 					eval(success);
 					if($(object).data('toggle')) $nitm.handleVis($(object).data('toggle'));
-					$nitm.handleVis(id);
+					if(!$(on).get(0))
+						$nitm.handleVis(id);
 					return ret_val;
 				}
 				$(this).off('click');
@@ -224,7 +225,6 @@ function Tools ()
 					}
 					return ret_val; 
 				}
-				$(this).off('click');
 				switch($(this).data('run-once'))
 				{
 					case true:
@@ -354,7 +354,7 @@ function Tools ()
 			$(this).on('click', function (e) {
 				e.preventDefault();
 				self.removeParent(this);
-				return false;
+				return true;
 			});
 		});
 	}
@@ -369,7 +369,7 @@ function Tools ()
 			$(this).on('click', function (e) {
 				e.preventDefault();
 				self.cloneParent(this);
-				return false;
+				return true;
 			});
 		});
 	}

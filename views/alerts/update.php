@@ -19,8 +19,10 @@ $this->params['breadcrumbs'][] = ['label' => $model->id, 'url' => ['view', 'id' 
 $this->params['breadcrumbs'][] = Yii::t('app', 'Update');
 ?>
 <div class="alerts-update">
-
-    <h1><?= Html::encode($this->title) ?></h1>
+	<?php if(!\Yii::$app->request->isAjax): ?>
+	<?= \yii\widgets\Breadcrumbs::widget(['links' => $this->params['breadcrumbs']]); ?>
+	<h2><?= Html::encode($this->title) ?></h2>
+	<?php endif; ?>
 
     <?= $this->render('_form', [
         'model' => $model,

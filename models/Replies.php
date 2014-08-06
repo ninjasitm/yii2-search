@@ -218,5 +218,47 @@ class Replies extends BaseWidget
 		}
 		return $ret_val;
 	}
+	
+	public static function afterSaveEvent($event)
+	{
+		$message = [];
+		static::$_alerts->addVariables([
+			'%id%' => $event->sender->getId(),
+			"%viewLink%" => \yii\helpers\Html::a(\Yii::$app->urlManager->createAbsoluteUrl($event->sender->parent_type."/view/".$event->sender->parent_id), \Yii::$app->urlManager->createAbsoluteUrl($event->sender->parent_type."/view/".$event->sender->parent_id))
+		]);
+		switch($event->sender->getScenario())
+		{
+			case 'create':
+			$message = [
+				'subject' => " %priority% %remoteFor% was %action% to by %who% on %when%",
+				'message' => [
+					'email' => " %priority% %remoteFor% was %action% to  by %who%. %who% said:\n\t".$event->sender->message,
+					'mobile' => " %priority% %remoteFor% was %action% to  by %who%. %who% said:\n\t".$event->sender->message,
+				]
+			];
+			break;
+		}
+		if(!empty($message) && !empty($event->sender->getId()))
+		{
+			static::$_alerts->criteria([
+				'remote_for',
+				'remote_id',
+				'action'
+			], [
+				$event->sender->parent_type,
+				$event->sender->parent_id,
+				'reply'
+			]);
+			switch($event->sender->getScenario())
+			{
+				case 'create':
+				static::$_alerts->reportedAction = 'replied';
+				break;
+			}
+			$message['owner_id'] = $event->sender->hasAttribute('author_id') ? $event->sender->author_id : null;
+			if(!$event->handled) static::processAlerts($event, $message);
+		}
+		return $message;
+	}
 }
 ?>
