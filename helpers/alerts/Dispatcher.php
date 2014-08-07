@@ -95,7 +95,7 @@ class Dispatcher extends \yii\base\Component
 				break;
 			}
 		}
-		return (is_array($ret_val) && sizeof($ret_val) == 1) ? $ret_val[$_key] : $ret_val;
+		return (is_array($ret_val) && sizeof($ret_val) == 1) ? array_pop($ret_val) : $ret_val;
 	}
 	
 	/**
