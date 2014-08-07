@@ -145,9 +145,9 @@ trait Nitm
      */
     public static function getCategoryList($type)
     {
-		switch(CacheHelper::cache()->exists('category-list'.static::isWhat()))
+		switch(CacheHelper::cache()->exists('category-list-'.$type))
 		{
-			case true:
+			case false:
 			$model = new Category([
 				'queryFilters' => [
 					'where' => [
@@ -157,11 +157,11 @@ trait Nitm
 				]
 			]);
 			$ret_val = $model->getList('name');
-			CacheHelper::cache()->set('category-list'.static::isWhat(), $ret_val);
+			CacheHelper::cache()->set('category-list-'.$type, $ret_val);
 			break;
 			
 			default:
-			$ret_val = CacheHelper::cache()->get('category-list'.static::isWhat());
+			$ret_val = CacheHelper::cache()->get('category-list-'.$type);
 			break;
 		}
 		return $ret_val;

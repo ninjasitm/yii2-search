@@ -18,6 +18,7 @@ function Tools ()
 		'initOffCanvasMenu',
 		'initAutocompleteSelect',
 		'initSubmitSelect',
+		'initToolTips'
 	];
 	
 	this.init = function (containerId) {
@@ -633,6 +634,15 @@ function Tools ()
 			$("[data-toggle='offcanvas']").click(function () {
 				$('.row-offcanvas').toggleClass('active')
 			});
+		});
+	}
+	
+	/**
+	 * Off tooltip support
+	 */
+	this.initToolTips = function () {
+		$(document).ready(function() {
+			$("body").tooltip({ selector: '[data-toggle=tooltip]' });
 		});
 	}
 }

@@ -118,7 +118,8 @@ use nitm\helpers\Response;
      */
     protected function findModel($className, $id, $with=null, $queryOptions=[])
     {
-        if ($id !== null && ($model = $className::find()->where(['id' => $id])) !== null) {
+		$baseModel = new $className;
+        if ($id !== null && ($model = $className::find()->where([$baseModel->primaryKey()[0] => $id])) !== null) {
 			$with = is_array($with) ? $with : (is_null($with) ? null : [$with]);
 			switch(is_array($with))
 			{
@@ -138,7 +139,8 @@ use nitm\helpers\Response;
 			if(($ret_val = $model->one()) != null)
             	return $model->one();
 			else
-            	throw new \yii\web\NotFoundHttpException("What you're looking for doesn't exist");
+				
+            	throw new \yii\web\NotFoundHttpException($className."->find($id) doesn't exist");
         } else {
             throw new \yii\web\NotFoundHttpException('The requested page does not exist.');
         }

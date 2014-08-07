@@ -64,7 +64,7 @@ class Configer extends Model
 	
 	//private data
 	private static $_containers;
-	private static $_cache;
+	private static $_cache = [];
 	private $_objects = [];
 	private $types = ['ini' => 'cfg', 'xml' => 'xml', 'file' => 'cfg'];
 	private $location = "file";
@@ -1129,6 +1129,7 @@ class Configer extends Model
 				$message = "Added section ".$sectionName;
 				break;
 				
+				//We're creating a value
 				case 5:
 				case 3:
 				$value = [
@@ -1146,7 +1147,7 @@ class Configer extends Model
 			{
 				case true:
 				$ret_val['value'] = rawurlencode($originalValue);
-				$ret_val['unique'] = $model->id;
+				$ret_val['id'] = $model->id;
 				$ret_val['container_name'] = $ret_val['container'];
 				$ret_val['unique_id'] = $key;
 				$ret_val['section_name'] = $sectionName;
@@ -1156,8 +1157,8 @@ class Configer extends Model
 				break;
 				
 				default:
-				print_r($model->getErrors());
-				exit;
+				//print_r($model->getErrors());
+				//exit;
 				break;
 			}
 			break;
@@ -1566,18 +1567,19 @@ class Configer extends Model
 						->where(['or', "name='$container'", "id='$container'"])
 						->one();
 					$this->containerModel = $model instanceof Container ? $model : null;
+					static::$_cache[$this->containerModel->name] = $ret_val;
 				}
 				$ret_val = $this->containerModel;
-				static::$_cache[$container] = $ret_val;
 				break;
 				
 				default:
 				$ret_val = static::$_cache[$container];
+				$this->containerModel = $ret_val;
 				break;
 			}
 			break;
 		 }
-		return $ret_val;
+		 return $ret_val;
 	 }
 	 
 	/*
@@ -1589,15 +1591,15 @@ class Configer extends Model
 	private function section($section)
 	{
 		$ret_val = null;
-		switch(@isset(static::$_cache[$this->containerModel->name]->sections[$section]))
+		switch(isset(static::$_cache[$this->containerModel->name]->sections[$section]))
 		{
 			case false:
 			if(!$this->sectionModel instanceof Section)
 			{
-				$section = $this->containerModel->getSections()
+				$found = $this->containerModel->getSections()
 					->where(['or', "name='$section'", "id='$section'"])
 					->one();
-				$this->sectionModel = $section instanceof Section ? $section : null;
+				$this->sectionModel = $found instanceof Section ? $found : null;
 				$ret_val = $this->sectionModel;
 				static::$_cache[$this->containerModel->name]->sections[$section] = $ret_val;
 			}
