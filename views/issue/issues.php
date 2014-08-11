@@ -51,4 +51,4 @@ $nitm.onModuleLoad('issueTracker', function () {
 }, 'issueTrackerIssues');
 </script>
 <br>
-<? Pjax::end();
+<?php Pjax::end(); ?>

@@ -385,7 +385,20 @@ function Tools ()
 		switch($element.data('parent') != undefined)
 		{
 			case true:
-			var parent = $element.parents($element.data('parent')).eq(levels);
+			switch($element.data('parent') != undefined)
+			{
+				case true:
+				var parent = $element.parents($element.data('parent')).eq(levels);
+				break;
+				
+				default:
+				var parent = $element.parents($element.data('parent'));
+				break;
+			}
+			break;
+			
+			default:
+			var parent = $element.parents().eq(levels);
 			break;
 		}
 		parent.remove();

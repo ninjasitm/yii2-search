@@ -1551,6 +1551,7 @@ class Configer extends Model
 	  */
 	 private function container($container=null)
 	 {
+		 $ret_val = $this->containerModel;
 		 switch($this->location)
 		 {
 			case 'file':
@@ -1566,10 +1567,15 @@ class Configer extends Model
 					$model = Container::find()
 						->where(['or', "name='$container'", "id='$container'"])
 						->one();
-					$this->containerModel = $model instanceof Container ? $model : null;
-					static::$_cache[$this->containerModel->name] = $ret_val;
+					switch($model instanceof Container)
+					{
+						case true:
+						$this->containerModel = $model;
+						static::$_cache[$this->containerModel->name] = $ret_val;
+						$ret_val = $this->containerModel;
+						break;
+					}
 				}
-				$ret_val = $this->containerModel;
 				break;
 				
 				default:
