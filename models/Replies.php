@@ -238,7 +238,7 @@ class Replies extends BaseWidget
 			];
 			break;
 		}
-		if(!empty($message) && !empty($event->sender->getId()))
+		if(!empty($message) && $event->sender->getId())
 		{
 			static::$_alerts->criteria([
 				'remote_for',

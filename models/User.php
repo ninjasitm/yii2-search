@@ -153,6 +153,11 @@ class User extends \dektrium\user\models\User
 		return \yii\helpers\Html::tag('a', $text, $htmlOptions);
 	}
 	
+	public function profile()
+	{
+		return $this->profile instanceof Profile ? $this->profile : new Profile;
+	}
+	
 	/**
 	 * Get the avatar
 	 * @param mixed $options
