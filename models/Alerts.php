@@ -52,11 +52,10 @@ class Alerts extends Data
     public function rules()
     {
         return [
-            [['remote_type', 'action', 'remote_for'], 'required', 'on' => ['create']],
+            [['action', 'remote_type', 'priority'], 'required', 'on' => ['create', 'update']],
             [['remote_id', 'user_id', 'global', 'disabled'], 'integer'],
             [['created_at', 'remote_for'], 'safe'],
-            [['remote_type', 'action'], 'string', 'max' => 64],
-            [['remote_id', 'remote_type', 'user_id', 'action'], 'unique', 'targetAttribute' => ['remote_id', 'remote_type', 'user_id', 'action'], 'message' => 'The combination of Remote ID, Remote Type, User ID and Action has already been taken.'],
+            [['remote_id', 'remote_type', 'user_id', 'action'], 'unique', 'targetAttribute' => ['remote_id', 'remote_type', 'user_id', 'action'], 'message' => 'This exact alert is already configured for you.', 'on' => ['create']],
 			[['remote_for'], 'validateRemoteFor'],
 			[['methods'], 'filter', 'filter' => [$this, 'filterMethods']]
         ];

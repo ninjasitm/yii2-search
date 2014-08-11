@@ -12,12 +12,14 @@ class DefaultController extends BaseController
 	use \nitm\traits\Widgets;
 	
 	public $boolResult;
+	public static $currentUser;
 	
 	const ELEM_TYPE_PARAM = '__elemType';
 	
 	public function init()
 	{
 		parent::init();
+		static::$currentUser =  \Yii::$app->user->identity;
 	}
 	
 	public function behaviors()
@@ -508,12 +510,12 @@ class DefaultController extends BaseController
 						}
 						break;
 					}
-					$viewFile = '/'.$this->model->isWhat().'/view';
+					$viewFile = 'view';
 					$ret_val['success'] = true;
 					switch($this->getResponseFormat())
 					{
 						case 'json':
-						if(file_exists($this->getViewPath() . DIRECTORY_SEPARATOR . ltrim($viewFile, '/')))
+						if(file_exists($this->getViewPath() . DIRECTORY_SEPARATOR . ltrim($viewFile, '/').'.php'))
 							$ret_val['data'] = $this->renderAjax($viewFile, ["model" => $this->model]);
 						break;
 						

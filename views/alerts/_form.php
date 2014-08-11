@@ -10,17 +10,18 @@ use kartik\widgets\DepDrop;
 /* @var $model nitm\models\Alerts */
 /* @var $form kartik\widgets\ActiveForm */
 $action = $model->getIsNewRecord() ? 'create' : 'update';
-$model->setScenario('create');
+$model->setScenario($action);
 $uniqid = uniqid();
 ?>
 
-<div class="alerts-form" >
-
+<div id="alerts-form-container<?=$model->getId();?>" >
+	<?= Html::tag('div', '', ['id' => 'alert']); ?>
 	<?php $form = ActiveForm::begin([
-		'action' => '/alerts/create',
+		'action' => "/alerts/$action".($action=='update' ? '/'.$model->getId() : ''),
 		"type" => ActiveForm::TYPE_INLINE,
 		'options' => [
-			"role" => "createAlert"
+			"role" => $action."Alert",
+			'id' => $model->isWhat().'_form'.$model->getId()
 		],
 		'fieldConfig' => [
 			'inputOptions' => ['class' => 'form-control'],
@@ -40,7 +41,10 @@ $uniqid = uniqid();
 		$form->field($model, 'remote_type')->widget(DepDrop::className(), [
 			'value' => $model->remote_type,
 			'data' => [$model->remote_type => $model->properName($model->remote_type)],
-			'options' => ['placeholder' => ' type of ', 'id' => 'alert-type'.$uniqid],
+			'options' => [
+				'placeholder' => ' select something ', 
+				'id' => 'alert-type'.$uniqid
+			],
 			'type' => DepDrop::TYPE_SELECT2,
 			'select2Options'=>['id' => 'alert-remote-type'.$uniqid, 'pluginOptions'=>['allowClear'=>true]],
 			'pluginOptions'=>[
@@ -54,7 +58,10 @@ $uniqid = uniqid();
 		$form->field($model, 'remote_for')->widget(DepDrop::className(), [
 			'value' => $model->remote_for,
 			'data' => [$model->remote_for => $model->properName($model->remote_for)],
-			'options' => ['placeholder' => ' for ', 'id' => 'alert-for'.$uniqid, ],
+			'options' => [
+				'placeholder' => ' for ', 
+				'id' => 'alert-for'.$uniqid
+			],
 			'type' => DepDrop::TYPE_SELECT2,
 			'select2Options'=>['id' => 'alert-remote-type'.$uniqid, 'pluginOptions'=>['allowClear'=>true]],
 			'pluginOptions'=>[
@@ -68,7 +75,7 @@ $uniqid = uniqid();
 		$form->field($model, 'priority')->widget(DepDrop::className(), [
 			'value' => $model->priority,
 			'data' => [$model->priority => $model->properName($model->priority)],
-			'options' => ['placeholder' => 'that is', 'id' => 'priority'.$uniqid],
+			'options' => ['placeholder' => 'that has a priority of ', 'id' => 'priority'.$uniqid],
 			'type' => DepDrop::TYPE_SELECT2,
 			'select2Options'=>['id' => 'alert-priority'.$uniqid, 'pluginOptions'=>['allowClear'=>true]],
 			'pluginOptions'=>[
@@ -81,7 +88,7 @@ $uniqid = uniqid();
 	<?=
 		$form->field($model, 'methods')->widget(Select2::className(), [
 			'value' => explode(',', $model->methods),
-			'options' => ['id' => 'alert-methods'.$uniqid, 'placeholder' => 'using'],
+			'options' => ['id' => 'alert-methods'.$uniqid, 'placeholder' => ' alert me using'],
 			'data' => \nitm\helpers\alerts\Dispatcher::supportedMethods(),
 			
 		])->label("Priority");
@@ -97,3 +104,8 @@ $uniqid = uniqid();
 	<?php ActiveForm::end(); ?>
 
 </div>
+<script type='text/javascript'>
+$nitm.onModuleLoad('alerts', function () {
+	$nitm.module('alerts').initForms('<?= $model->isWhat();?>-form-container<?=$model->getId();?>');
+});
+</script>

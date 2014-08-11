@@ -1562,12 +1562,11 @@ class Configer extends Model
 			switch(isset(static::$_cache[$container]))
 			{
 				case false:
-				if(!($this->containerModel instanceof Container))
+				if(!$this->containerModel instanceof Container)
 				{
 					$model = Container::find()
 						->where(['or', "name='$container'", "id='$container'"])
 						->one();
-<<<<<<< HEAD
 					switch($model instanceof Container)
 					{
 						case true:
@@ -1575,12 +1574,6 @@ class Configer extends Model
 						static::$_cache[$this->containerModel->name] = $ret_val;
 						$ret_val = $this->containerModel;
 						break;
-=======
-					if($model)
-					{
-						$this->containerModel = $model instanceof Container ? $model : null;
-						static::$_cache[$this->containerModel->name] = $this->containerModel;
->>>>>>> a15793d4f18fbd9422e4cedbff5f1625e45dc82d
 					}
 				}
 				break;

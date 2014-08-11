@@ -1,6 +1,6 @@
 <?php
 	extract($data);
-	//$value = is_array($value) ? json_encode($value) : $value;
+	$value = is_array($value) ? json_encode($value) : $value;
 	use yii\helpers\Html;
 	use yii\widgets\ActiveForm;
 ?>

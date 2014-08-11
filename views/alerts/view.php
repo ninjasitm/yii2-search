@@ -42,7 +42,8 @@ use nitm\helpers\Icon;
 		<?= Html::a(Icon::forAction('delete'), '#', [
 			'class' => 'btn btn-danger',
 			'role' => 'removeAlert',
-			'data-action' => '/alerts/delete/'.$model->getId()
+			'data-action' => '/alerts/delete/'.$model->getId(),
+			'data-parent' => "#alert".$model->getId(),
 			]); ?>
 	</div>
 </div>
