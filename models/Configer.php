@@ -1561,13 +1561,16 @@ class Configer extends Model
 			switch(isset(static::$_cache[$container]))
 			{
 				case false:
-				if(!$this->containerModel instanceof Container)
+				if(!($this->containerModel instanceof Container))
 				{
 					$model = Container::find()
 						->where(['or', "name='$container'", "id='$container'"])
 						->one();
-					$this->containerModel = $model instanceof Container ? $model : null;
-					static::$_cache[$this->containerModel->name] = $ret_val;
+					if($model)
+					{
+						$this->containerModel = $model instanceof Container ? $model : null;
+						static::$_cache[$this->containerModel->name] = $this->containerModel;
+					}
 				}
 				$ret_val = $this->containerModel;
 				break;
