@@ -290,7 +290,7 @@ class DefaultController extends BaseController
 				);
 				break;
 			}
-			$result['message'] = "Succesfully updated ".$model->isWhat();
+			$result['message'] = "Succesfully updated ".$this->model->isWhat();
 			Response::$viewOptions["view"] = '/'.$this->model->isWhat().'/view';
         } else {
 			if(!empty($post)) {
