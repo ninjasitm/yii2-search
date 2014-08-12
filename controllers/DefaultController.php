@@ -196,6 +196,7 @@ class DefaultController extends BaseController
     {
 		$this->action->id = 'create';
 		$ret_val = false;
+		$result = [];
 		$modelClass = !$modelClass ? $this->model->className() : $modelClass;
 		$post = \Yii::$app->request->post();
         $this->model =  new $modelClass(['scenario' => 'create']);
@@ -233,18 +234,15 @@ class DefaultController extends BaseController
 			Response::$viewOptions["view"] = '/'.$this->model->isWhat().'/view';
         } else {
 			if(!empty($post)) {
-				\Yii::$app->getSession()->setFlash(
-					'error',
-					implode('<br>', array_map(function ($errors) {
-							return implode("<br>", $errors);
-						}, \yii\widgets\ActiveForm::validate($this->model))
-					)
-				);
+				$result['message'] = implode('<br>', array_map(function ($value) {
+					return array_shift($value);
+				}, $this->model->getErrors()));
+				\Yii::$app->getSession()->setFlash('error', $result['message']);
 			}
 			Response::$viewOptions["view"] = '/'.$this->model->isWhat().'/create'; 
         }
 		Response::$viewOptions["args"] = array_merge($viewOptions, ["model" => $this->model]);
-		return $this->finalAction($ret_val);
+		return $this->finalAction($ret_val, $result);
     }
 	
 	/**
@@ -257,6 +255,7 @@ class DefaultController extends BaseController
     {
 		$this->action->id = 'update';
 		$ret_val = false;
+		$result = [];
 		$modelClass = !$modelClass ? $this->model->className() : $modelClass;
 		$post = \Yii::$app->request->post();
         $this->model =  $this->findModel($modelClass, $id, $with);
@@ -291,12 +290,19 @@ class DefaultController extends BaseController
 				);
 				break;
 			}
+			$result['message'] = "Succesfully updated ".$model->isWhat();
 			Response::$viewOptions["view"] = '/'.$this->model->isWhat().'/view';
         } else {
+			if(!empty($post)) {
+				$result['message'] = implode('<br>', array_map(function ($value) {
+					return array_shift($value);
+				}, $this->model->getErrors()));
+				\Yii::$app->getSession()->setFlash('error', $result['message']);
+			}
 			Response::$viewOptions["view"] = '/'.$this->model->isWhat().'/update'; 
         }
 		Response::$viewOptions["args"] = array_merge($viewOptions, ["model" => $this->model]);
-		return $this->finalAction($ret_val);
+		return $this->finalAction($ret_val, $result);
     }
 
     /**

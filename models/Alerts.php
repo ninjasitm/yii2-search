@@ -4,6 +4,7 @@ namespace nitm\models;
 
 use Yii;
 use yii\db\ActiveRecord;
+use \yii\base\Event;
 
 /**
  * This is the model class for table "alerts".
@@ -24,6 +25,17 @@ class Alerts extends Data
 {
 	public static $usersWhere = [];
 	public $requiredFor;
+	
+	public function init()
+	{
+		parent::init();
+		$this->initEvents();
+	}
+	
+	protected function initEvents()
+	{
+		Event::on(ActiveRecord::className(), ActiveRecord::EVENT_BEFORE_VALIDATE, [$this, 'beforeValidateEvent']);
+	}
 	
     /**
      * @inheritdoc
@@ -52,12 +64,13 @@ class Alerts extends Data
     public function rules()
     {
         return [
-            [['action', 'remote_type', 'priority'], 'required', 'on' => ['create', 'update']],
+            [['action', 'remote_type'], 'required', 'on' => ['create', 'update']],
             [['remote_id', 'user_id', 'global', 'disabled'], 'integer'],
             [['created_at', 'remote_for'], 'safe'],
-            [['remote_id', 'remote_type', 'user_id', 'action'], 'unique', 'targetAttribute' => ['remote_id', 'remote_type', 'user_id', 'action'], 'message' => 'This exact alert is already configured for you.', 'on' => ['create']],
+            [['action'], 'unique', 'targetAttribute' => ['remote_id', 'remote_type', 'user_id', 'action', 'priority'], 'message' => 'This exact alert is already configured for you.', 'on' => ['create']],
 			[['remote_for'], 'validateRemoteFor'],
-			[['methods'], 'filter', 'filter' => [$this, 'filterMethods']]
+			[['methods'], 'filter', 'filter' => [$this, 'filterMethods']],
+			[['priority'], 'filter', 'filter' => [$this, 'filterPriority']]
         ];
     }
 	
@@ -73,6 +86,33 @@ class Alerts extends Data
 	public function filterMethods($value)
 	{
 		return \nitm\helpers\alerts\Dispatcher::filterMethods($value);
+	}
+	
+	public function filterPriority($value)
+	{
+		switch($value)
+		{
+			case 'important':
+			case 'critical':
+			case 'normal':
+			$ret_val = $value;
+			break;
+			
+			default:
+			$ret_val = 'any';
+			break;
+		}
+		return $ret_val;
+	}
+	
+	/**
+	* This method is invoked before validation starts.
+	*/
+	public function beforeValidateEvent($event)
+	{
+		$event->sender->user_id = \Yii::$app->user->getId();
+		$event->sender->priority = $this->filterPriority($event->sender->priority);
+		return $event->isValid;
 	}
 	
 	public function validateRemoteFor($attribute, $params)

@@ -18,7 +18,21 @@ trait Configer {
 	 */
 	public static function setting($setting)
 	{
-		@eval("\$ret_val = static::\$settings['".Helper::splitf(explode('.', $setting), "']['")."'];");
+		$hierarchy = explode('.', $setting);
+		switch($hierarchy[0])
+		{
+			case '@':
+			array_pop($hierarchy[0]);
+			break;
+			
+			case static::isWhat():
+			break;
+			
+			default:
+			array_unshift($hierarchy, static::isWhat());
+			break;
+		}
+		@eval("\$ret_val = static::\$settings['".Helper::splitf($hierarchy, "']['")."'];");
 		return $ret_val;
 	}
 	

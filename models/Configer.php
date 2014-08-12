@@ -68,11 +68,6 @@ class Configer extends Model
 	private $_objects = [];
 	private $types = ['ini' => 'cfg', 'xml' => 'xml', 'file' => 'cfg'];
 	private $location = "file";
-	private $configTables = [
-		"containers" => "config_containers",
-		"sections" => "config_sections",
-		"values" => "config_values"
-	];
 	private $supported = ["file" => "File", "db" => "Database"];
 	private $event;
 	private static $hasNew;
@@ -271,10 +266,9 @@ class Configer extends Model
 		$this->config['current']['type_text'] = 'a section';
 		$this->config['current']['container'] = $container;
 		$this->config['current']['sections'] = null;
-		@$this->config['containers'][$container]['selected'] = "selected='selected'";
 		$this->config['current']['selected_text'] = "selected='selected'";
 		$this->config['load']['types'] = !is_array($this->supported) ? false : true;
-		$this->config['containers'] = $this->getContainers();
+		$this->getContainers();
 		switch(isset($this->config['from'][$from]))
 		{
 			case true:
@@ -1125,7 +1119,7 @@ class Configer extends Model
 					'containerid' => $container->id,
 					'name' => $sectionName
 				];
-				$model = new Value($value);
+				$model = new Section($value);
 				$message = "Added section ".$sectionName;
 				break;
 				

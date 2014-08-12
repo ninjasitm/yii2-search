@@ -16,6 +16,10 @@ use Yii;
  */
 class Notification extends BaseWidget
 {
+	protected $link = [
+		'user_id' => 'user_id',
+	];
+	
     /**
      * @inheritdoc
      */

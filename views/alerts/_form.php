@@ -14,7 +14,7 @@ $model->setScenario($action);
 $uniqid = uniqid();
 ?>
 
-<div id="alerts-form-container<?=$model->getId();?>" >
+<div id="alerts-form-container<?=$model->getId();?>">
 	<?= Html::tag('div', '', ['id' => 'alert']); ?>
 	<?php $form = ActiveForm::begin([
 		'action' => "/alerts/$action".($action=='update' ? '/'.$model->getId() : ''),
@@ -104,8 +104,10 @@ $uniqid = uniqid();
 	<?php ActiveForm::end(); ?>
 
 </div>
+<?php if(\Yii::$app->request->isAjax): ?>
 <script type='text/javascript'>
 $nitm.onModuleLoad('alerts', function () {
 	$nitm.module('alerts').initForms('<?= $model->isWhat();?>-form-container<?=$model->getId();?>');
 });
 </script>
+<?php endif; ?>

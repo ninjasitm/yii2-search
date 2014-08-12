@@ -13,23 +13,13 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="notification-index" role="notificationListForm">
 <div class="wrapper">
-
     <h1><?= Html::encode($this->title) ?></h1>
     <?= ListView::widget([
         'dataProvider' => $dataProvider,
 		'itemView' => function ($model, $key, $index, $widget) {
-			$widget->itemOptions['id'] = 'notification'.$model->getId();
-			$widget->itemOptions['class'] =  'alert '.\nitm\helpers\Statuses::getListIndicator($model->getPriority());
-			return Html::tag('div', 
-				$model->message.
-				Html::button(
-				Html::tag('span', '&times;', ['aria-hidden' => true]), [
-					'class' => 'close',
-					'onclick' => '$.post("/alerts/mark-notification-read/'.$model->getId().'");',
-					'role' => 'removeParent',
-					'data-parent' => 'li'
-				])
-			);
+			return $this->render('view-notification', [
+				'model' => $model
+			]);
 		},
 		'summary' => false,
 		"layout" => "{summary}\n{items}",

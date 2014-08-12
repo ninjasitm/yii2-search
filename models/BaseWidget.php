@@ -39,9 +39,18 @@ class BaseWidget extends Data implements DataInterface
 		'critical' => 'error'
 	];
 	
+	protected $link = [
+		'parent_type' => 'parent_type',
+		'parent_id' => 'parent_id'
+	];
 	protected $_new; 
 	protected static $userLastActive;
 	protected static $currentUser;
+	protected $_supportedConstraints =  [
+		'parent_id' => [0, 'id', 'parent_id'],
+		'parent_type' => [1, 'type', 'parent_type'],
+		'user_id' => [2, 'user_id'],
+	];
 	
 	private static $_dateFormat = "D M d Y h:iA";
 	
@@ -99,8 +108,13 @@ class BaseWidget extends Data implements DataInterface
 		switch(empty($this->constraints))
 		{
 			case true:
-			$this->constraints['parent_id'] = $this->parent_id;
-			$this->constraints['parent_type'] = $this->parent_type;
+			foreach($this->_supportedConstraints as $attribute=>$supported)
+			{
+				if($this->hasAttribtue($attribute))
+				{
+					$this->constraints[$attribute] = $this->$attribute;
+				}
+			}
 			$this->queryFilters = array_merge($this->queryFilters, $this->constraints);
 			break;
 		}
@@ -113,48 +127,24 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function setConstraints($using)
 	{
-		$this->queryFilters = [];
-		switch(1)
+		foreach($this->_supportedConstraints as $attribute=>$supported)
 		{
-			case isset($using[0]):
-			case isset($using['id']):
-			case isset($using['parent_id']):
-			switch(1)
+			foreach($supported as $attr)
 			{
-				case isset($using[0]):
-				$id = $using[0];
-				break;
-				
-				case isset($using['id']):
-				$id = $using['id'];
-				break;
-				
-				case isset($using['parent_id']):
-				$id = $using['parent_id'];
-				break;
+				switch(isset($using[$attr]))
+				{
+					case true:
+					switch($attribute)
+					{
+						case 'parent_type':
+						$using[$attr] = strtolower(array_pop(explode('\\', $using[$attr])));
+						break;
+					}
+					$this->constraints[$attribute] = $using[$attr];
+					$this->$attribute = $using[$attr];
+					break;
+				}
 			}
-			$this->constraints['parent_id'] = $id;
-			$this->parent_id = $this->constraints['parent_id'];
-			case isset($using[1]):
-			case isset($using['type']):
-			case isset($using['parent_type']):
-			switch(1)
-			{
-				case isset($using[1]):
-				$type = $using[1];
-				break;
-				
-				case isset($using['type']):
-				$type = $using['type'];
-				break;
-				
-				case isset($using['parent_type']):
-				$type = $using['parent_type'];
-				break;
-			}
-			$this->constraints['parent_type'] = strtolower(array_pop(explode('\\', $type)));
-			$this->parent_type = $this->constraints['parent_type'];
-			break;
 		}
 		$this->queryFilters = array_replace($this->queryFilters, $this->constraints);
 	}
@@ -194,10 +184,7 @@ class BaseWidget extends Data implements DataInterface
 	 public function getCount()
 	 {
 		$primaryKey = $this->primaryKey()[0];
-		$ret_val = parent::getCount([
-			'parent_type' => 'parent_type',
-			'parent_id' => 'parent_id'
-		]);
+		$ret_val = parent::getCount($this->link);
 		switch(isset($this->queryFilters['value']))
 		{
 			case true:
@@ -228,10 +215,7 @@ class BaseWidget extends Data implements DataInterface
     public function getFetchedValue()
     {
 		$primaryKey = $this->primaryKey()[0];
-		$ret_val = $this->hasOne(static::className(), [
-			'parent_type' => 'parent_type',
-			'parent_id' => 'parent_id'
-		]);
+		$ret_val = $this->hasOne(static::className(), $this->link);
 		$valueFilter = @$this->queryFilters['value'];
 		unset($this->queryFilters['value']);
 		switch(static::$allowMultiple)
@@ -273,10 +257,7 @@ class BaseWidget extends Data implements DataInterface
 	protected function getNewCount()
 	{
 		$primaryKey = $this->primaryKey()[0];
-		$ret_val = $this->hasOne(static::className(), [
-			'parent_type' => 'parent_type',
-			'parent_id' => 'parent_id'
-		]);
+		$ret_val = $this->hasOne(static::className(), $this->link);
 		$andWhere = ['or', 'UNIX_TIMESTAMP(created_at)>='.static::$currentUser->lastActive()];
 		$ret_val->select([
 				'_new' => 'COUNT('.$primaryKey.')'
@@ -312,10 +293,7 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function getLast()
 	{
-		$ret_val = $this->hasOne(static::className(), [
-				'parent_id' => 'parent_id',
-				'parent_type' => 'parent_type'
-			])
+		$ret_val = $this->hasOne(static::className(), $this->link)
 			->orderBy([array_shift($this->primaryKey()) => SORT_DESC])
 			->with('author');
 		return $ret_val;

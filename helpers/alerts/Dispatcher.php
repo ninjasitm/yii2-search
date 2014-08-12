@@ -24,6 +24,7 @@ class Dispatcher extends \yii\base\Component
 	protected $_criteria = [];
 	protected $_originUserId;
 	protected $_message;
+	protected $_notifications = [];
 	
 	private $_prepared = false;
 	private $_variables = [];
@@ -277,6 +278,7 @@ class Dispatcher extends \yii\base\Component
 					}
 				}
 			}
+			$this->sendNotifications();
 			break;
 		}
 		$this->reset();
@@ -301,6 +303,7 @@ class Dispatcher extends \yii\base\Component
 			self::$_subject = $this->replaceCommon(is_array($compose['subject']) ? \Yii::$app->mailer->render($compose['subject']['view']) : $compose['subject']);
 			foreach($types as $type=>$unMappedAddresses)
 			{
+				$addresses = $this->getAddressNameMap($unMappedAddresses);
 				$params = [
 					"content" => $this->replaceCommon(is_array($compose['message'][$type]) ? \Yii::$app->mailer->render($compose['message'][$type]['view']) : $compose['message'][$type])
 				];
@@ -333,7 +336,6 @@ class Dispatcher extends \yii\base\Component
 					$view = ['text' => '@nitm/views/alerts/message/mobile'];
 					break;
 				}
-				$addresses = $this->getAddressNameMap($unMappedAddresses);
 				$this->_message = \Yii::$app->mailer->compose($view, $params)->setTo(array_slice($addresses, 0, 1));
 				switch($type)
 				{
@@ -349,7 +351,7 @@ class Dispatcher extends \yii\base\Component
 				}
 				$this->send();
 				$notificationText = $this->replaceCommon($subject." by %who% on %when%");
-				$this->sendNotifications($notificationText, $unMappedAddresses);
+				$this->addNotification($notifiactionText, $unMappedAddresses);
 			}
 			break;
 		}
@@ -417,7 +419,7 @@ class Dispatcher extends \yii\base\Component
 					}
 					$this->send();
 					$notificationText = $this->replaceCommon($subject." by %who% on %when%");
-					$this->sendNotifications($notificationText, [$this->_alerts[current($unMappedAddresses)['user']->getId()]]);
+					$this->addNotification($notificationText, [current($unMappedAddresses)['user']->getId()]);
 				}
 			}
 			break;
@@ -461,30 +463,37 @@ class Dispatcher extends \yii\base\Component
 			return false;
 	}
 	
-	protected function sendNotifications($message, $alerts)
+	protected function addNotification($message, array $userIds)
 	{
-		switch(is_array($alerts) && !empty($alerts))
+		foreach($userIds as $userId)
+		{
+			switch(isset($this->_notifications[$userId]))
+			{
+				case false:
+				$this->_notifications[$userId] = [
+					$message,
+					$this->criteria('priority'),
+					$userId 
+				];
+				break;
+			}
+		}
+	}
+	
+	protected function sendNotifications()
+	{
+		switch(is_array($this->_notifications) && !empty($this->_notifications))
 		{
 			case true:
-			$notifications = [];
 			$keys = [
-				'user_id',
 				'message',
-				'priority'
+				'priority',
+				'user_id'
 			];
-			foreach($alerts as $alert)
-			{
-				$notification = [
-					$alert->user->getId(),
-					$message,
-					$alert->priority
-				];
-				$notifications[] = $notification;
-			}
 			\nitm\models\Notification::find()->createCommand()->batchInsert(
 				\nitm\models\Notification::tableName(), 
 				$keys, 
-				$notifications
+				array_values($this->_notifications)
 			)->execute();
 			break;
 		}
@@ -497,6 +506,18 @@ class Dispatcher extends \yii\base\Component
 		{
 			unset($address['user']);
 			$ret_val[key($address)] = $address[key($address)];
+		}
+		return $ret_val;
+	}
+	
+	protected function getAddressIdMap($addresses)
+	{
+		$ret_val = [];
+		foreach($addresses as $address)
+		{
+			$user = $address['user'];
+			unset($address['user']);
+			$ret_val[key($address)] = $user->getId();
 		}
 		return $ret_val;
 	}

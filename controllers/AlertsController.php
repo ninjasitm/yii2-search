@@ -37,7 +37,7 @@ class AlertsController extends DefaultController
 				//'class' => \yii\filters\AccessControl::className(),
 				'rules' => [
 					[
-						'actions' => ['notifications', 'mark-notification-read'],
+						'actions' => ['notifications', 'mark-notification-read', 'get-new-notifications'],
 						'allow' => true,
 						'roles' => ['@'],
 					],
@@ -87,6 +87,61 @@ class AlertsController extends DefaultController
 		}
 		$this->setResponseFormat('json');
 		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
+    } 
+	
+	/**
+     * Lists all new Replies models according to user activity.
+	 * @param string $type The parent type of the issue
+	 * @param int $id The id of the parent
+	 * @param string $key The key of the parent
+     * @return mixed
+     */
+    public function actionGetNewNotifications()
+    {
+		$this->model = new \nitm\models\Notification(['constrain' => 
+			[
+				'user_id' => \Yii::$app->user->getId()
+			]
+		]);
+		$ret_val = false;
+		$new = $this->model->hasNew();
+		switch($new >= 1)
+		{
+			case true:
+			$ret_val = [
+				'data' => '',
+				'count' => $new,
+				'success' => true
+			];
+			$ret_val['message'] = $ret_val['count']." new notifications";
+			$searchModel = new \nitm\models\search\Notification([
+				'queryOptions' => [
+					'andWhere' => new \yii\db\Expression('UNIX_TIMESTAMP(created_at)>='.\Yii::$app->userMeta->lastActive())
+				]
+			]);
+			$dataProvider = $searchModel->search($this->model->constraints);
+			$dataProvider->setSort([
+				'defaultOrder' => [
+					'id' => SORT_DESC,
+				]
+			]);
+			$newReplies = $dataProvider->getModels();
+			foreach($newReplies as $newReply)
+			{
+				$ret_val['data'] .= $this->renderAjax('@nitm/views/alerts/view-notification', ['model' => $newReply, 'isNew' => true]);
+			}
+			Response::$viewOptions = [
+				'args' => [
+					"content" => $ret_val['data'],
+				],
+				'modalOptions' => [
+					'contentOnly' => true
+				]
+			];
+			break;
+		}
+		$this->setResponseFormat(\Yii::$app->request->isAjax ? 'json' : 'html');
+		return $this->renderResponse($ret_val, null, \Yii::$app->request->isAjax);
     }
 	
 	/*
@@ -129,7 +184,8 @@ class AlertsController extends DefaultController
 			switch($dependsOn)
 			{
 				case 'issue':
-				$types = Alerts::$settings[$this->model->isWhat()]['for'];
+				case 'replies':
+				$types = Alerts::setting('for');
 				$ret_val = [
 					"output" => array_map(function ($key, $value) {
 						return [
@@ -149,15 +205,11 @@ class AlertsController extends DefaultController
 			break;	
 			
 			case 'priority':
-			switch($dependsOn)
+			switch(1)
 			{
-				case 'chat':
-				case 'replies':
-				$ret_val = ["output" => [['id' => 'any', 'name' => "Ignore priority"]], "selected" => "any"];
-				break;
-				
-				default:
-				$types = Alerts::$settings[$this->model->isWhat()]['priorities'];
+				case in_array($dependsOn, (array)Alerts::setting('priorities_allowed')):
+				case $dependsOn == 'chat':
+				$types = Alerts::setting('priorities');
 				$ret_val = [
 					"output" => array_map(function ($key, $value) {
 						return [
@@ -167,7 +219,10 @@ class AlertsController extends DefaultController
 					}, array_keys($types), array_values($types)), 
 					"selected" => ''
 				];
-				//array_unshift($ret_val['output'], ['id' => 'any', 'name' => "Any"]);
+				break;
+				
+				default:
+				$ret_val = ["output" => [['id' => 'any', 'name' => "Ignore priority"]], "selected" => "any"];
 				break;
 			}
 			break;
@@ -177,12 +232,12 @@ class AlertsController extends DefaultController
 			{
 				case 'create':
 				case 'update':
-				$types = Alerts::$settings[$this->model->isWhat()]['allowed'];
+				$types = Alerts::setting('allowed');
 				break;
 				
 				case 'reply_my':
 				case 'reply':
-				$types = Alerts::$settings[$this->model->isWhat()]['reply_allowed'];
+				$types = Alerts::setting('reply_allowed');
 				break;
 			
 				default:

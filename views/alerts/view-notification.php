@@ -1,0 +1,25 @@
+<?php
+
+use yii\helpers\Html;
+use yii\widgets\ListView;
+use nitm\models\Notification;
+
+/* @var $this yii\web\View */
+/* @var $searchModel nitm\models\search\Notification */
+/* @var $dataProvider yii\data\ActiveDataProvider */
+$itemOptions = [
+	'id' => 'notification'.$model->getId(),
+	'class' => 'alert '.\nitm\helpers\Statuses::getListIndicator($model->getPriority())
+];
+echo Html::tag('li', 
+	((isset($isNew) && ($isNew === true) || $model->isNew()) ? \nitm\widgets\activityIndicator\ActivityIndicator::widget() : '').$model->message.
+	Html::button(
+		Html::tag('span', '&times;', ['aria-hidden' => true]), 
+		[
+			'class' => 'close',
+			'onclick' => '$.post("/alerts/mark-notification-read/'.$model->getId().'", function () {$("#'.$itemOptions['id'].'").remove()});',
+			'data-parent' => 'li'
+		]
+	), 
+	$itemOptions
+);

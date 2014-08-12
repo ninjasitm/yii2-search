@@ -18,7 +18,7 @@ function Nitm ()
 		warning: 'alert alert-warning',
 		success: 'alert alert-success',
 		information: 'alert alert-info',
-		error: 'alert alert-info',
+		error: 'alert alert-danger',
 	};
 	
 	/* gap is in millisecs */

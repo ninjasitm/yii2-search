@@ -401,7 +401,7 @@ function Tools ()
 			var parent = $element.parents().eq(levels);
 			break;
 		}
-		parent.remove();
+		parent.hide('slow').remove();
 	}
 	
 	/**
