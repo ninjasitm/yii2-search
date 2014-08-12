@@ -398,7 +398,7 @@ class Dispatcher extends \yii\base\Component
 					{
 						case 'email':
 						$view = ['html' => '@nitm/views/alerts/message/email'];
-						$params['content'] = nl2br($params['content'].$this->getFooter($scope, $this->_alerts[current($unMappedAddresses)['user']->getId()]->getAttributes()));
+						$params['content'] = nl2br($params['content'].$this->getFooter($scope, isset($this->_alerts[current($unMappedAddresses)['user']->getId()]) ? $this->_alerts[current($unMappedAddresses)['user']->getId()]->getAttributes() : null));
 						break;
 						
 						case 'mobile':
