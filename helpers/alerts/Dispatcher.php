@@ -15,6 +15,7 @@ class Dispatcher extends \yii\base\Component
 	public $mode;
 	public $useFullnames = true;
 	public $reportedAction;
+	public static $usersWhere = [];
 	
 	protected static $is = 'alerts';
 	protected static $_subject;
@@ -213,11 +214,15 @@ class Dispatcher extends \yii\base\Component
 		$anyPriority = array_replace($criteria, [
 			'priority' => 'any'
 		]);
+		$anyAction = array_replace($criteria, [
+			'action' => 'any'
+		]);
 		return Alerts::find()->select('*')
 			->orWhere($criteria)
 			->orWhere($anyRemoteType)
 			->orWhere($anyRemoteFor)
 			->orWhere($anyPriority)
+			->orWhere($anyAction)
 			->indexBy('user_id')
 			->with('user');
 	}
@@ -244,7 +249,7 @@ class Dispatcher extends \yii\base\Component
 					 * Only send global emails based on what the user preferrs in their profile. 
 					 * For specific alerts those are based ont he alert settings
 					 */
-					$to['global'] = array_merge_recursive($to['global'], $this->getAddresses($alert->user->profile->contact_methods, $this->getUsers(), true));
+					$to['global'] = array_merge_recursive($to['global'], $this->getAddresses($alert->methods, $this->getUsers(), true));
 					break;
 					
 					case $alert->user->getId() == $this->_originUserId:
@@ -419,6 +424,28 @@ class Dispatcher extends \yii\base\Component
 		}
 		return $ret_val;
 	}
+
+    /**
+     * @return array
+     */
+    protected function getUsers($options=[])
+    {
+		$userClass = \Yii::$app->user->identity->className();
+		$key = 'alerts.users';
+        switch(Cache::exists($key))
+		{
+			case true:
+			$ret_val = Cache::getModelArray($key, $options);
+			break;
+			
+			default:
+			$ret_val = $userClass::find()->with('profile')->where(static::$usersWhere)->all();
+			Cache::setModelArray($key, $ret_val);
+			break;
+		}
+		return $ret_val;
+    }
+	
 	
 	protected function send()
 	{

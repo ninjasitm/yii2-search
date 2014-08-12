@@ -122,26 +122,6 @@ class Alerts extends Data
     {
         return $this->hasOne(User::className(), ['id' => 'user_id'])->where(static::$usersWhere)->with('profile');
     }
-
-    /**
-     * @return array
-     */
-    public function getUsers()
-    {
-        switch(Cache::exists('alerts.users'))
-		{
-			case true:
-			$ret_val = Cache::getModelArray($key, $options);
-			break;
-			
-			default:
-			$ret_val = User::find()->with('profile')->where(static::$usersWhere)->all();
-			Cache::setModelArray('alerts.users', $ret_val);
-			break;
-		}
-		return $ret_val;
-    }
-	
 	public function getPriority()
 	{
 		switch($this->priority)
