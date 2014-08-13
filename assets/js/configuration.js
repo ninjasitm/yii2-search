@@ -7,8 +7,9 @@ function Configuration()
 			section: 'sections_container',
 			configuration: 'configuration_container',
 			showSection: 'show_section',
-			createValue: 'create_value_container'
-		}
+			createValue: 'create_value_container',
+		},
+		alerts: 'configuration-alerts'
 	};
 	this.type = {
 		default: 'db',
@@ -176,45 +177,48 @@ function Configuration()
 		switch(!$(form).attr('action'))
 		{
 			case false:
-			$nitm.animateSubmit(form);
+			$($nitm).trigger('nitm-animate-submit-start', [form]);
 			var request = $nitm.doRequest($(form).attr('action'), 
-					data,
-					function (result) {
-						switch(result.action)
-						{
-							case 'get':
-							self.afterGet(result);
-							break;
-								
-							case 'update':
-							self.afterUpdate(result);
-							break;
-								
-							case 'delete':
-							self.afterDelete(result, form);
-							break;
-								
-							case 'create':
-							case 'undelete':
-							self.afterCreate(result, form);
-							break;
-						}
-					},
-					function () {
-						$nitm.notify('Error Could not perform configuration action. Please try again', $nitm.classes.error, false);
-						//try { self.restore(form);} catch(error) {}
+				data,
+				function (result) {
+					switch(result.action)
+					{
+						case 'get':
+						self.afterGet(result, form);
+						break;
+							
+						case 'update':
+						self.afterUpdate(result, form);
+						break;
+							
+						case 'delete':
+						self.afterDelete(result, form);
+						break;
+							
+						case 'create':
+						case 'undelete':
+						self.afterCreate(result, form);
+						break;
 					}
-				);
-				break;
+				},
+				function () {
+					$nitm.notify('Error Could not perform configuration action. Please try again', $nitm.classes.error, self.views.alerts);
+					//try { self.restore(form);} catch(error) {}
+				}
+			);
+			request.done(function () {
+				$($nitm).trigger('nitm-animate-submit-stop', [form]);
+			});
+			break;
 		}
 	}
 	
 	this.afterGet = function(result) {
-		var nClass = $nitm.classes.warning;
+		var newClass = $nitm.classes.warning;
 		if(result.data)
 		{
-			message = 'Successfully loaded clean configuration information';
-			nClass = $nitm.classes.success;
+			var message = !result.message ? 'Successfully loaded clean configuration information' : result.message;
+			newClass = $nitm.classes.success;
 			var container = $('#'+self.views.containers.section).html(result.data);
 			var triggers = ['updateFieldDiv', 'updateFieldButton'];
 			$.map(triggers, function (v) {
@@ -244,18 +248,18 @@ function Configuration()
 		}
 		else
 		{
-			message = 'Error empty configuration information';
+			var message = !result.message ? 'Error empty configuration information' : result.message;
 		}
-		$nitm.notify(message, nClass, false);
+		$nitm.notify(message, newClass, self.views.alerts);
 	}
 	
 	this.afterCreate = function(result, form) {
-		var nClass = $nitm.classes.warning;
+		var newClass = $nitm.classes.warning;
 		if(result.success)
 		{
-			nClass = $nitm.classes.success;
+			newClass = $nitm.classes.success;
 		}
-		$nitm.notify(result.message, nClass, false);
+		$nitm.notify(result.message, newClass, self.views.alerts);
 		var _form = $(form);
 		switch(_form.attr('role'))
 		{
@@ -283,28 +287,28 @@ function Configuration()
 	}
 	
 	this.afterUpdate = function (result) {
-		var nClass = $nitm.classes.warning;
-		var iClass = $nitm.classes.information;
+		var newClass = $nitm.classes.warning;
+		var oldClass = $nitm.classes.information;
 		if(result.success)
 		{
-			nClass = $nitm.classes.success;
+			newClass = $nitm.classes.success;
 		}
 		else
 		{
-			iClass = $nitm.classes.warning;
+			oldClass = $nitm.classes.warning;
 			$nitm.getObj(result.container+'.div').html(result.old_value);
 		}
-		$nitm.getObj(result.container+'.div').removeClass().addClass(iClass);
-		$nitm.notify(result.message, nClass, false);
+		$nitm.getObj(result.container+'.div').removeClass().addClass(oldClass);
+		$nitm.notify(result.message, newClass, self.views.alerts);
 	}
 	
 	this.afterDelete = function(result, form) {
-		var nClass = $nitm.classes.warning;
+		var newClass = $nitm.classes.warning;
 		if(result.success)
 		{
-			nClass = $nitm.classes.success;
+			newClass = $nitm.classes.success;
 		}
-		$nitm.notify(result.message, nClass, false);
+		$nitm.notify(result.message, newClass, self.views.alerts);
 		switch(result.success)
 		{
 			case true:
@@ -363,12 +367,12 @@ function Configuration()
 		if(!newData)
 		{
 			stop = true;
-			$nitm.notify('Empty Data\nNo Update', 'alert', false);
+			$nitm.notify('Empty Data\nNo Update', 'alert', self.views.alerts);
 		}
 		if(newData.localeCompare(oldData) == 0)
 		{
 			stop = true;
-			$nitm.notify('Duplicate Data\nNo Update', 'alert', false);
+			$nitm.notify('Duplicate Data\nNo Update', 'alert', self.views.alerts);
 		}
 		if (stop)
 		{

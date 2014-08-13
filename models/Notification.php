@@ -20,6 +20,12 @@ class Notification extends BaseWidget
 		'user_id' => 'user_id',
 	];
 	
+	public function init()
+	{
+		$this->_supportedConstraints['read'] = ['read'];
+		parent::init();
+	}
+	
     /**
      * @inheritdoc
      */

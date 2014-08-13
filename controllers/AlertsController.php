@@ -98,10 +98,11 @@ class AlertsController extends DefaultController
      */
     public function actionGetNewNotifications()
     {
-		$this->model = new \nitm\models\Notification(['constrain' => 
-			[
-				'user_id' => \Yii::$app->user->getId()
-			]
+		$this->model = new \nitm\models\Notification([
+			'constrain' => [
+				'user_id' => \Yii::$app->user->getId(),
+				'read' => 0
+			],
 		]);
 		$ret_val = false;
 		$new = $this->model->hasNew();

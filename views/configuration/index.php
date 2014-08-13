@@ -8,6 +8,7 @@ $this->title = "Edit configration parameters";
 	<div class="row">
         <div class="configuration-actions">
         <?= \nitm\widgets\alert\Alert::widget(); ?>
+		<div id='configuration-alerts'></div>
         <?php
             echo $this->render('containers/index',
                        array("model" => $model)

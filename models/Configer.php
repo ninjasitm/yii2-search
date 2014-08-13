@@ -224,14 +224,14 @@ class Configer extends Model
 			{
 				$this->config['current']['config'] = $this->getConfig($engine, $container, $getValues, true);
 				Session::set(self::dm.'.'.$this->location.'.config', $this->config['current']['config']);
-				$this->config['current']['sections'] = array_merge(["" => "Select section..."], array_combine(array_keys($this->config['current']['config']), array_keys($this->config['current']['config'])));
+				$this->config['current']['sections'] = array_merge(["" => "Select section..."], $this->getSections());
 			}
 			//otherwise just get the current loaded config
 			else
 			{
 				$this->config['current']['config'] = Session::getVal(self::dm.'.'.$this->location.'.config');
 				$config = is_array($this->config['current']['config']) ? $this->config['current']['config'] : [];
-				$this->config['current']['sections'] = array_merge(["" => "Select section..."], array_combine(array_keys($config), array_keys($config)));
+				$this->config['current']['sections'] = array_merge(["" => "Select section..."], $this->getSections());
 			}
 			switch($getValues)
 			{
@@ -450,7 +450,7 @@ class Configer extends Model
 			switch($this->location)
 			{
 				case 'db':
-				$this->container($cotnainer);
+				$this->container($container);
 				switch(!$this->container($container))
 				{
 					case true:
@@ -620,8 +620,7 @@ class Configer extends Model
 				switch($force || self::hasNew())
 				{
 					case true:
-					$result = !$this->container($container) ? [] : $this->container($container)->values;
-					$ret_val = $result;
+					$ret_val = !$this->container($container) ? [] : $this->container($container)->values;
 					break;
 				}
 				break;
@@ -1449,13 +1448,22 @@ class Configer extends Model
 	 * @param boolean $containers_objectsnly
 	 * @return mixed
 	 */
-	protected function getSections($in)
+	protected function getSections($in=null)
 	{
 		$ret_val = [];
 		switch($this->location)
 		{
 			case 'db':
-			$result = $this->container($in)->getSections()->select(['id', 'name'])->all();
+			switch(is_null($in))
+			{
+				case true:
+				$result = (array)$this->container()->sections;
+				break;
+				
+				default:
+				$result = (array)$this->container($in)->getSections()->select(['id', 'name'])->all();
+				break;
+			}
 			array_walk($result, function ($val, $key) use(&$ret_val) {
 				$ret_val[$val->name] = $val->name;
 			});
@@ -1556,10 +1564,13 @@ class Configer extends Model
 			switch(isset(static::$_cache[$container]))
 			{
 				case false:
-				if(!$this->containerModel instanceof Container)
+				switch(1)
 				{
+					case !$this->containerModel instanceof Container:
+					case !is_null($container) && (is_object($this->modelContainer) && !($this->containerModel->name == $container || $this->containerModel->id == $container)):
 					$model = Container::find()
 						->where(['or', "name='$container'", "id='$container'"])
+						->with('sections')
 						->one();
 					switch($model instanceof Container)
 					{

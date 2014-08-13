@@ -145,16 +145,27 @@ function Nitm ()
 		element.removeAttr('disabled');
 	}
 	
-	this.notify = function (nMsg, nClass, nObj)
+	this.notify = function (newMessage, newClass, newObject)
 	{
-		var nMessage = new String(nMsg);
-		var obj = nObj instanceof jQuery ? nObj : this.getObj(this.responseSection);
+		var newMessage = new String(newMessage);
+		switch(true)
+		{
+			case newObject instanceof jQuery:
+			var obj = newObject;
+			break;
+			
+			case typeof newObject == 'string':
+			var obj = this.getObj(newObject);
+			break;
+			
+			default:
+			var obj = this.getObj(this.responseSection);
+			break;
+		}
 		if(obj instanceof jQuery)
 		{
-			obj.html('').fadeOut().fadeIn(function () {
-				obj.removeClass().addClass(nClass);
-				obj.html(nMessage);
-			}).delay(10000).fadeOut();
+			var message = $('<div>').html(newMessage).addClass(newClass);
+			obj.append(message).fadeIn().delay(3000).fadeOut();
 		}
 		return obj;
 	}
@@ -257,16 +268,6 @@ function Nitm ()
 			});
 			break;
 		}
-	}
-	//function to hcndle element visibility and hide others
-	this.handleVisHideOther = function (iSub, iRowObj)
-	{
-		if((this.getObj(iSub).data('hideThis').length > 0))
-		{
-			handleVis(this.getObj(iSub).data('hideThis'));
-		}
-		this.getObj(iSub).data('hideThis', {0:iSub, 1:iRowObj});
-		handleVis(iSub);
 	}
 	
 	//get the object information
@@ -372,24 +373,6 @@ function Nitm ()
 		return new String(val).replace(/[-{}()*+?.,\\^$|]/g, '\\$&');
 	}
 	
-	function charsLeft(field, cntfield, maxlimit) 
-	{
-		field = this.getObj(field).get(0);
-		cntfield = this.getObj(cntfield).get(0);
-		switch(field.value.length >= maxlimit+1)
-		{
-			case true:
-				field.value = field.value.substring(0, maxlimit);
-				cntfield.innerHTML = maxlimit - field.value.length;
-				alert("You've maxed out the "+maxlimit+" character limit\n\nPlease shorten your message. :-).");
-				break;
-				
-			default:
-				cntfield.innerHTML = maxlimit - field.value.length;
-				break;
-		}
-	}
-	
 	this.doRequest = function (rUrl, rData, success, error, timeout, headers, useGet)
 	{
 		switch(this.r.hasOwnProperty('token'))
@@ -436,42 +419,6 @@ function Nitm ()
 		return data;
 	}
 	
-	this.toHex = function (dec)
-	{ 
-		var result = (parseInt(dec).toString(16)); 
-		if(result.length ==1)
-		{ 
-			result= ("0" +result); 
-		}
-		return result.toUpperCase(); 
-	}
-	
-	this.rgbToHex = function (rgbInput)
-	{
-		var r, g, b; 
-		var commaFirst, commaSec; 
-		var output; 
-		if(rgbInput.indexOf("rgb(") == -1 || rgbInput.indexOf(")") == -1) 
-		{
-			return rgbInput;
-		}
-		var tempStr = rgbInput.substring(rgbInput.indexOf("rgb(")); 
-		var tempStrIndex = rgbInput.indexOf(tempStr); 
-		var rgb = rgbInput.substring(tempStrIndex+4, tempStrIndex+ tempStr.indexOf(")"));
-		commaFirst = rgb.indexOf(","); commaSec = rgb.lastIndexOf(",");
-		r = rgb.substring(0, commaFirst); 
-		g = rgb.substring(commaFirst+1, commaSec); 
-		b = rgb.substring(commaSec+1);
-		output = rgbInput.substring(0, rgbInput.indexOf("rgb(")); 
-		output += "#"+toHex(r)+toHex(g)+toHex(b); 
-		output += rgbInput.substring(tempStrIndex+tempStr.indexOf(")")+1);
-		if(output.indexOf("rgb(")>0) 
-		{
-			output= rgbToHex(output);
-		} 
-		return output;
-	}
-	
 	this.visibility = function (id, pour, caller)
 	{
 		data = {};
@@ -498,98 +445,6 @@ function Nitm ()
 				}
 			}
 		});
-	}
-	
-	this.place = function (newElem, data, addToElem, format, clear)
-	{
-		switch(typeof(newElem))
-		{
-			case 'object':
-				var addTo = self.getObj(addToElem);
-				var scrollToPos = 0;
-				switch(format)
-				{
-					case 'text':
-						var newElement = $('<div style="width:100%; padding:10px;" id="text_result"><br>'+data+'</div>');
-						scrollToPos = newElement.get(0).id;
-						break;
-						
-					default:
-						var newElement = $(data);
-						scrollToPos = newElement.get(0).id;
-						break;
-				}
-				switch(typeof clear)
-				{
-					case 'string':
-						addTo.find(clear).html('');
-						break;
-						
-					case 'boolean':
-						if(clear === true) {addTo.html('')};
-						break;
-				}
-				if(newElem.prepend === true) {
-					try 
-					{
-						switch(1)
-						{
-							case 1:
-								switch(addTo.find(':first-child').attr('id'))
-								{
-									case 'noreplies':
-										addTo.find(':first-child').remove();
-										break;
-								}
-								newElement.appendTo(addTo);
-								addTo.hide().slideDown('fast').effect('pulsate', {times:1}, 150);
-								break;
-						}
-						self.animateScroll(scrollToPos, addTo);
-					}catch(error){}
-				} else if(newElem.replace === true) {
-					try 
-					{
-						addTo.replaceWith(data).effect('pulsate', {times:1}, 150);
-						//self.animateScroll(scrollToPos, addTo);
-					}catch(error){}
-				} else {
-					try 
-					{
-						switch(addTo.children().length)
-						{
-							case 0:
-								addTo.append(newElement).next().hide().slideDown('fast').effect('pulsate', {times:1}, 150);
-								break;
-								
-							default:
-								switch(addTo.find(':first-child').attr('id'))
-								{
-									case 'noreplies':
-										addTo.find(':first-child').hide();
-										newElement.prependTo('#'+addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
-										break;
-										
-									default:
-										switch(newElem.index)
-										{
-											case -1:
-												newElement.prependTo(addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
-												break;
-												
-											default:
-												addTo.children().eq(newElem.index).after(newElement).next().hide().slideDown('fast').effect('pulsate', {times:2}, 150);
-												break;
-										}
-										break;
-								}
-								break;
-						}
-						self.animateScroll(scrollToPos, addTo);
-					} catch(error){}
-				}
-				break;
-		}
 	}
 	
 	this.safeFunctionName = function (input) {
@@ -721,3 +576,13 @@ String.prototype.ucfirst = function() {
 }
 
 $nitm = (window.$nitm == undefined) ? new Nitm() : $nitm;
+
+/**
+ * Setup some common event handlers here
+ */
+$($nitm).on('nitm-animate-submit-start', function (event, form) {
+	$nitm.animateSubmit(form);
+});
+$($nitm).on('nitm-animate-submit-stop', function (event, form) {
+	$nitm.animateSubmit(form, true);
+});

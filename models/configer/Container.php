@@ -19,9 +19,7 @@ use Yii;
  * @property Value[] $values
  */
 class Container extends BaseConfiger
-{
-	public $sections = [];
-	
+{	
     /**
      * @inheritdoc
      */

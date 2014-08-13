@@ -110,7 +110,7 @@ class BaseWidget extends Data implements DataInterface
 			case true:
 			foreach($this->_supportedConstraints as $attribute=>$supported)
 			{
-				if($this->hasAttribtue($attribute))
+				if($this->hasProperty($attribute))
 				{
 					$this->constraints[$attribute] = $this->$attribute;
 				}
@@ -251,7 +251,7 @@ class BaseWidget extends Data implements DataInterface
 	 */
 	public function hasNew()
 	{
-		return $this->hasAttribute('_new') ? $this->newCount->_new : 0;
+		return $this->newCount instanceof static ? $this->newCount->_new : 0;
 	}
 	
 	protected function getNewCount()
@@ -262,7 +262,8 @@ class BaseWidget extends Data implements DataInterface
 		$ret_val->select([
 				'_new' => 'COUNT('.$primaryKey.')'
 			])
-			->andWhere($andWhere);
+			->andWhere($andWhere)
+			->andWhere($this->getConstraints());
 		static::$currentUser->updateActivity();
 		return $ret_val;
 	}
