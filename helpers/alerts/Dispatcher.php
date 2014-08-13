@@ -37,9 +37,9 @@ class Dispatcher extends \yii\base\Component
 	public static function supportedMethods()
 	{
 		return [
-			'any' => 'Any',
+			'any' => 'Any Method',
 			'email' => 'Email',
-			'mobile' => 'Mobile'
+			'mobile' => 'Mobile/SMS'
 		];
 	}
 	

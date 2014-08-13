@@ -67,7 +67,7 @@ class Alerts extends Data
             [['action', 'remote_type'], 'required', 'on' => ['create', 'update']],
             [['remote_id', 'user_id', 'global', 'disabled'], 'integer'],
             [['created_at', 'remote_for'], 'safe'],
-            [['action'], 'unique', 'targetAttribute' => ['remote_id', 'remote_type', 'user_id', 'action', 'priority'], 'message' => 'This exact alert is already configured for you.', 'on' => ['create']],
+            [['action'], 'unique', 'targetAttribute' => ['remote_id', 'remote_type', 'user_id', 'action', 'priority', 'methods'], 'message' => 'This exact alert is already configured for you.', 'on' => ['create']],
 			[['remote_for'], 'validateRemoteFor'],
 			[['methods'], 'filter', 'filter' => [$this, 'filterMethods']],
 			[['priority'], 'filter', 'filter' => [$this, 'filterPriority']]

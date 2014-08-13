@@ -164,8 +164,10 @@ function Nitm ()
 		}
 		if(obj instanceof jQuery)
 		{
-			var message = $('<div>').html(newMessage).addClass(newClass);
-			obj.append(message).fadeIn().delay(3000).fadeOut();
+			var id = 'alert'+Date.now();
+			var message = $('<div id="'+id+'">').html(newMessage).addClass(newClass);
+			obj.append(message).fadeIn();
+			setTimeout(function () {$('#'+id).fadeOut();$('#'+id).remove()}, 10000);
 		}
 		return obj;
 	}

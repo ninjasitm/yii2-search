@@ -177,7 +177,7 @@ class AlertsController extends DefaultController
 	public function actionList($id)
 	{
 		$this->setResponseFormat('json');
-		$options = [];
+		$types = [];
 		$dependsOn = \Yii::$app->request->post('depdrop_parents')[0];
 		switch($id)
 		{	
@@ -186,7 +186,7 @@ class AlertsController extends DefaultController
 			{
 				case 'issue':
 				case 'replies':
-				$types = Alerts::setting('for');
+				$types = (array)Alerts::setting('for');
 				$ret_val = [
 					"output" => array_map(function ($key, $value) {
 						return [
@@ -208,7 +208,7 @@ class AlertsController extends DefaultController
 			case 'priority':
 			switch(1)
 			{
-				case in_array($dependsOn, (array)Alerts::setting('priorities_allowed')):
+				case in_array($dependsOn, (array)Alerts::setting('priority_allowed')):
 				case $dependsOn == 'chat':
 				$types = Alerts::setting('priorities');
 				$ret_val = [
@@ -233,18 +233,21 @@ class AlertsController extends DefaultController
 			{
 				case 'create':
 				case 'update':
-				$types = Alerts::setting('allowed');
+				case 'update_my':
+				$types = (array)Alerts::setting('allowed');
 				break;
 				
 				case 'reply_my':
 				case 'reply':
-				$types = Alerts::setting('reply_allowed');
+				$types =(array) Alerts::setting('reply_allowed');
+				$types['chat'] = 'Chat';
 				break;
 			
 				default:
 				$types = ['any' => 'Anything'];
 				break;
 			}
+			ksort($types);
 			$ret_val = [
 				"output" => array_map(function ($key, $value) {
 					return [

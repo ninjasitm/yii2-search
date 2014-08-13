@@ -1567,7 +1567,7 @@ class Configer extends Model
 				switch(1)
 				{
 					case !$this->containerModel instanceof Container:
-					case !is_null($container) && (is_object($this->modelContainer) && !($this->containerModel->name == $container || $this->containerModel->id == $container)):
+					case !is_null($container) && (is_object($this->containerModel) && !($this->containerModel->name == $container || $this->containerModel->id == $container)):
 					$model = Container::find()
 						->where(['or', "name='$container'", "id='$container'"])
 						->with('sections')
