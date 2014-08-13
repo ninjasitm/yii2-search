@@ -49,7 +49,6 @@ class BaseWidget extends Data implements DataInterface
 	protected $_supportedConstraints =  [
 		'parent_id' => [0, 'id', 'parent_id'],
 		'parent_type' => [1, 'type', 'parent_type'],
-		'user_id' => [2, 'user_id'],
 	];
 	
 	private static $_dateFormat = "D M d Y h:iA";

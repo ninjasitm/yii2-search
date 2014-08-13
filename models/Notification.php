@@ -23,6 +23,7 @@ class Notification extends BaseWidget
 	public function init()
 	{
 		$this->_supportedConstraints['read'] = ['read'];
+		$this->_supportedConstraints['user_id'] = [2, 'user_id'];
 		parent::init();
 	}
 	

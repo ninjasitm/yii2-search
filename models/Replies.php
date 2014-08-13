@@ -36,7 +36,15 @@ class Replies extends BaseWidget
 	
 	public function init()
 	{
+		$this->_supportedConstraints['key'] = [3, 'key'];
 		parent::init();
+		//constrain for admin user
+		switch(\Yii::$app->user->identity->isAdmin())
+		{
+			case false:
+			$this->queryFilters['hidden'] = 0;
+			break;
+		}
 	}
 	
 	public function behaviors()
@@ -111,31 +119,6 @@ class Replies extends BaseWidget
 			'default' => []
 		];
 		return array_merge(parent::scenarios(), $scenarios);
-	}
-	
-	/*
-	 * Set the constrining parameters
-	 * @param mixed $using
-	 */
-	public function setConstraints($using)
-	{
-		parent::setConstraints($using);
-		switch(1)
-		{
-			case !empty($using[2]):
-			case !empty($using['key']):
-			//$this->constraints['parent_key'] = date($this->_dateFormat, strtotime(isset($using['key']) ? $using['key'] : $using[2]));
-			//$this->queryFilters['parent_key'] = $this->constraints['parent_key'];
-			//$this->parent_key = $this->constraints['parent_key'];
-			break;
-		}
-		//constrain for admin user
-		switch(\Yii::$app->user->identity->isAdmin())
-		{
-			case false:
-			$this->queryFilters['hidden'] = 0;
-			break;
-		}
 	}
 	
 	/*

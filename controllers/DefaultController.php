@@ -317,19 +317,22 @@ class DefaultController extends BaseController
 		$deleted = false;
 		$modelClass = !$modelClass ? $this->model->className() : $modelClass;
         $this->model =  $this->findModel($modelClass, $id);
-		switch(1)
+		if(is_object($this->model))
 		{
-			case \Yii::$app->user->identity->isAdmin():
-			case $this->model->hasProperty('author_id') && $this->model->author_id == \Yii::$app->user->getId():
-			case $this->model->hasProperty('user_id') && $this->model->user_id == \Yii::$app->user->getId():
-			if($this->model && $this->model->delete())
+			switch(1)
 			{
+				case \Yii::$app->user->identity->isAdmin():
+				case $this->model->hasAttribute('author_id') && ($this->model->author_id == \Yii::$app->user->getId()):
+				case $this->model->hasAttribute('user_id') && ($this->model->user_id == \Yii::$app->user->getId()):
+				if($this->model->delete())
+				{
+					$deleted = true;
+					$this->model = new $modelClass;
+					$this->model->id = $id;
+				}
 				$deleted = true;
-				$this->model = new $modelClass;
-				$this->model->id = $id;
+				break;
 			}
-			$deleted = true;
-			break;
 		}
 		switch(\Yii::$app->request->isAjax)
 		{

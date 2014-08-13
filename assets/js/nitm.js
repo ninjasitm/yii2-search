@@ -449,6 +449,98 @@ function Nitm ()
 		});
 	}
 	
+	this.place = function (newElem, data, addToElem, format, clear)
+	{
+		switch(typeof(newElem))
+		{
+			case 'object':
+			var addTo = self.getObj(addToElem);
+			var scrollToPos = 0;
+			switch(format)
+			{
+				case 'text':
+				var newElement = $('<div style="width:100%; padding:10px;" id="text_result"><br>'+data+'</div>');
+				scrollToPos = newElement.get(0).id;
+				break;
+					
+				default:
+				var newElement = $(data);
+				scrollToPos = newElement.get(0).id;
+				break;
+			}
+			switch(typeof clear)
+			{
+				case 'string':
+				addTo.find(clear).html('');
+				break;
+					
+				case 'boolean':
+				if(clear === true) {addTo.html('')};
+				break;
+			}
+			if(newElem.prepend === true) {
+				try 
+				{
+					switch(1)
+					{
+						case 1:
+							switch(addTo.find(':first-child').attr('id'))
+							{
+								case 'noreplies':
+									addTo.find(':first-child').remove();
+									break;
+							}
+							newElement.appendTo(addTo);
+							addTo.hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+							break;
+					}
+					self.animateScroll(scrollToPos, addTo);
+				}catch(error){}
+			} else if(newElem.replace === true) {
+				try 
+				{
+					addTo.replaceWith(data).effect('pulsate', {times:1}, 150);
+					//self.animateScroll(scrollToPos, addTo);
+				}catch(error){}
+			} else {
+				try 
+				{
+					switch(addTo.children().length)
+					{
+						case 0:
+							addTo.append(newElement).next().hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+							break;
+							
+						default:
+						switch(addTo.find(':first-child').attr('id'))
+						{
+							case 'noreplies':
+								addTo.find(':first-child').hide();
+								newElement.prependTo('#'+addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+								break;
+								
+							default:
+								switch(newElem.index)
+								{
+									case -1:
+										newElement.prependTo(addTo).hide().slideDown('fast').effect('pulsate', {times:1}, 150);
+										break;
+										
+									default:
+										addTo.children().eq(newElem.index).after(newElement).next().hide().slideDown('fast').effect('pulsate', {times:2}, 150);
+										break;
+								}
+								break;
+						}
+						break;
+					}
+					self.animateScroll(scrollToPos, addTo);
+				} catch(error){}
+			}
+			break;
+		}
+	}
+	
 	this.safeFunctionName = function (input) {
 		var array = new String(input).split('-');
 		var string = $.map(array, function (value, index) {
