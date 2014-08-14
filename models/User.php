@@ -26,6 +26,8 @@ use nitm\helpers\Cache;
  */
 class User extends \dektrium\user\models\User
 {
+	use \nitm\traits\Data, \nitm\traits\Query;
+	
 	public $updateActivity;
 	public $useFullnames;
 	

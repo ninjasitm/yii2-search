@@ -5,6 +5,49 @@ namespace nitm\traits;
  * Traits defined for expanding query scopes until yii2 resolves traits issue
  */
 trait Query {
+	
+	protected $success;
+	
+	/*
+	 * Sets the successfull parameter for query
+	 */
+	public function successful()
+	{
+		return $this->success === true;
+	}
+	
+	public static function filters()
+	{
+		return [
+				'author' => null, 
+				'editor' => null,
+				'status' => null,
+				'order' => null,
+				'order_by' => null,
+				'index_by' => null,
+				'show' => null,
+				'limit' => null,
+				'unique' => null,
+				'boolean' => null,
+		];
+	}
+	
+	public static function has()
+	{
+		return [
+			'created_at' => null,
+			'updated_at' => null,
+		];
+	}
+	
+	/*
+	 * Function to return the columns to be selected
+	 *
+	 */
+	public static function columns()
+	{
+		return array_keys(static::getTableSchema()->columns);
+	}
 
 	/*
 	 * Apply the filters specified by the end user
@@ -174,14 +217,15 @@ trait Query {
 				{
 					case true:
 					$o = new \nitm\models\User;
-					$filters = $o->getAll();
+					$o->addWith('profile');
+					$filters = $o->getList(['profile.name', 'username'], ['(', ')', ' ']);
 					break;
 					
 					default:
 					$filters = call_user_func_array(array($class, $method), $args);
 					break;
 				}
-				$ret_val = ($default === true) ? array_merge(['' => 'Select User'], $filters) : $filters;
+				$ret_val = $filters;
 				break;
 				
 				case 'status':

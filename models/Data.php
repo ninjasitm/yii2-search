@@ -27,18 +27,11 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	use \nitm\traits\Configer,
 	\nitm\traits\Query,
 	\nitm\traits\Relations,
-	\nitm\traits\Cache;
+	\nitm\traits\Cache,
+	\nitm\traits\Data;
 	
 	//public members
 	public $unique;
-	public $author_hr;
-	public $editor_hr;
-	public $added_hr;
-	public $edited_hr;
-	public $data;
-	public $queryFilters = [];
-	public $withThese = [];
-	public $filter;
 	public $requestModel;
 	public static $settings;
 	public static $active = [
@@ -59,8 +52,6 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 		]
 	];
 	
-	protected $_count;
-	protected $success;
 	protected $connection;
 	protected static $is;
 	protected static $tableName;
@@ -96,7 +87,6 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	public function behaviors()
 	{
 		$behaviors = [
-           // \yii\base\Behavior::className()
 		];
 		$has = is_array(static::has()) ? static::has() : [];
 		foreach($has as $name=>$dataProvider)
@@ -198,39 +188,6 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 			break;
 		}
 		return (isset($thisSupports[$what]) &&  ($thisSupports[$what] == true));
-	}
-	
-	public static function filters()
-	{
-		return [
-				'author' => null, 
-				'editor' => null,
-				'status' => null,
-				'order' => null,
-				'order_by' => null,
-				'index_by' => null,
-				'show' => null,
-				'limit' => null,
-				'unique' => null,
-				'boolean' => null,
-		];
-	}
-	
-	public static function has()
-	{
-		return [
-			'created_at' => null,
-			'updated_at' => null,
-		];
-	}
-	
-	/*
-	 * Function to return the columns to be selected
-	 *
-	 */
-	public static function columns()
-	{
-		return array_keys(static::getTableSchema()->columns);
 	}
 	
 	/*
@@ -430,148 +387,6 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	{
 		$key = $this->primaryKey();
 		return $this->$key[0];
-	}
-	
-	/*
-	 * Sets the successfull parameter for query
-	 */
-	public function successful()
-	{
-		return $this->success === true;
-	}
-	
-	public function addWith($with)
-	{
-		$with = is_array($with) ? $with : [$with];
-		$this->withThese = array_merge($this->withThese, $with);
-	}
-	
-	/**
-	 * Overriding default find function
-	 */
-	public static function find($model=null, $options=null)
-	{
-		$query = parent::find($options);
-		static::aliasColumns($query);
-		if($model)
-		{
-			static::applyFilters($query, $model->queryFilters);
-			switch(empty($model->withThese))
-			{
-				case false:
-				$query->with($model->withThese);
-				break;
-			}
-		}
-		return $query;
-	}
-
-    /**
-	 * This is here to allow base classes to modify the query before finding the count
-     * @return \yii\db\ActiveQuery
-     */
-    public function getCount($link)
-    {
-		$primaryKey = $this->primaryKey()[0];
-		$link = is_array($link) ? $link : [$primaryKey => $primaryKey];
-		$tableName = static::tableName();
-		$tableNameAlias = $tableName.'_alias';
-        return $this->hasOne(static::className(), $link)
-			->select([
-				'_count' => "COUNT(".$primaryKey.")",
-			])
-			->andWhere($this->queryFilters);
-    }
-	
-	public function count()
-	{
-		return $this->hasProperty('count') && isset($this->count) ? $this->count->_count : 0;
-	}
-
-	/*
-	 * Get the array of arrays
-	 * @return mixed
-	 */
-	public function getArrays()
-	{
-		$query = $this->find($this);
-		$ret_val = $query->asArray()->all();
-		$this->success = (sizeof($ret_val) >= 1) ? true : false;
-		return $ret_val;
-	}
-	
-	public function getList($label='name')
-	{
-		$ret_val = [];
-		$label = empty($label) ? 'name' : $label;
-		$items = $this->getModels();
-		switch(empty($items))
-		{
-			case false:
-			foreach($items as $item)
-			{
-				$ret_val[$item->getId()] = $item->$label;
-			}
-			break;
-			
-			default:
-			$ret_val[] = ["No ".static::isWhat()." found"];
-			break;
-		}
-		return $ret_val;
-	}
-	
-	public function getJsonList($labelField='name')
-	{
-		$ret_val = [];
-		$items = $this->getModels();
-		switch(is_array($items))
-		{
-			case true:
-			foreach($items as $item)
-			{
-				$_ = [
-					"id" => $item->getId(),
-					"value" => $item->getId(), 
-					"text" =>  $item->$labelField, 
-					"label" => $item->$labelField
-				];
-				$ret_val[] = $_;
-				break;
-			}
-		}
-		return $ret_val;
-	}
-
-	/*
-	 * Get array of objects
-	 * @return mixed
-	 */
-	public function getModels()
-	{
-		$query = $this->find($this);
-		$ret_val = $query->all();
-		$this->success = (sizeof($ret_val) >= 1) ? true : false;
-		return $ret_val;
-	}
-
-	/*
-	 * Get a single record
-	 */
-	public function getOne()
-	{
-		$query = $this->find($this);
-		$ret_val = $query->one();
-		$this->success = (!is_null($ret_val)) ? true : false;
-		return $ret_val;
-	}
-	
-	/*
-	 *
-	 */
-	public function grouping()
-	{
-		return null;
 	}
 	
 	/*

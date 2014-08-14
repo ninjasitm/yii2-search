@@ -53,25 +53,44 @@ use yii\widgets\ActiveField;
 		);
 	?>
 	<?=
-		$form->field($model, 'filter[type]')->widget(Select2::className(), [
+		$form->field($model, 'filter[text]')->textInput()->label("Search");
+	?>
+	<?=
+		$form->field($model, 'filter[type_id]')->widget(Select2::className(), [
+			'options' => [
+				'placeholder' => 'Select type...',
+				'multiple' => true
+			],
 			'data' => $model->getCategoryList($model->isWhat().'-categories'),
 		])->label("Type");
 	?>
 
 	<?=
-		$form->field($model, 'filter[request_for]')->widget(Select2::className(), [
+		$form->field($model, 'filter[request_for_id]')->widget(Select2::className(), [
+			'options' => [
+				'placeholder' => 'Select request for...',
+				'multiple' => true
+			],
 			'data' => $model->getCategoryList($model->isWhat().'-for'),
 		])->label("Request For");
 	?>
 
 	<?=
 		$form->field($model, 'filter[status]')->widget(Select2::className(), [
+			'options' => [
+				'placeholder' => 'Select priority...',
+				'multple' => true
+			],
 			'data' => $model->getStatuses(),
 		])->label("Status");
 	?>
 
 	<?=
-		$form->field($model, 'filter[author]')->widget(Select2::className(), [
+		$form->field($model, 'filter[autho_id]')->widget(Select2::className(), [
+			'options' => [
+				'placeholder' => 'Select author...',
+				'multiple' => true
+			],
 			'data' => $model->getFilter('author'),
 		])->label("Author");
 	?>
