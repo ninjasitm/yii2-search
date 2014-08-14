@@ -77,18 +77,28 @@ class User extends \dektrium\user\models\User
 	public function getAll($idsOnly=true)
 	{
 		$ret_val = array();
-		$users = $this->find()->asArray()->all();
-		switch($idsOnly)
+		switch(Cache::cache()->exists('nitm-user-list'))
 		{
-			case true:
-			foreach($users as $user)
+			case false:
+			$users = $this->find()->asArray()->all();
+			switch($idsOnly)
 			{
-				$ret_val[$user['id']] = $user['f_name'].' '.$user['l_name'];
+				case true:
+				foreach($users as $user)
+				{
+					$ret_val[$user['id']] = $user['f_name'].' '.$user['l_name'];
+				}
+				break;
+				
+				default:
+				$ret_val = $users;
+				break;
 			}
+			Cache::cache()->set('nitm-user-list', urlencode($url), 3600);
 			break;
 			
 			default:
-			$ret_val = $users;
+			$ret_val = urldecode(Cache::cache()->get('nitm-user-list'));
 			break;
 		}
 		return $ret_val;
@@ -153,11 +163,6 @@ class User extends \dektrium\user\models\User
 		return \yii\helpers\Html::tag('a', $text, $htmlOptions);
 	}
 	
-	public function profile()
-	{
-		return $this->profile instanceof Profile ? $this->profile : new Profile;
-	}
-	
 	/**
 	 * Get the avatar
 	 * @param mixed $options
@@ -204,7 +209,7 @@ class User extends \dektrium\user\models\User
 				$url = "http://gravatar.com/avatar/$key";
 				break;
 			}
-			Cache::cache()->set('user-avatar'.$this->getId(), urlencode($url));
+			Cache::cache()->set('user-avatar'.$this->getId(), urlencode($url), 3600);
 			break;
 			
 			default:
