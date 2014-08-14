@@ -23,7 +23,6 @@ class Token extends \nitm\models\BaseWidget
 	private $_create;		                                           //Tokens which need to be createed
 	private $_update;		                                          //Tokens which need to be updateed
 	private $_toggle;	                                         //Tokens which need to be toggled
-	private $_count;	                                          //The number of tokens for this user
 	private $_tokenKey;
 
 	protected static $is = 'token';

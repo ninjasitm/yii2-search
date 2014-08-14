@@ -38,6 +38,11 @@ class User extends \dektrium\user\models\User
 		if($this->updateActivity) $this->updateActivity();
 	}
 	
+	public function isWhat() 
+	{
+		return 'user';
+	}
+	
 	/**
 	 * Get the status value for a user
 	 * @return string
