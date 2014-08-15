@@ -69,7 +69,7 @@ $nitm.onModuleLoad('replies', function () {
 	$nitm.module('replies').init("chat");
 	$nitm.module('replies').initChatTabs("chat-navigation");
 	<?php if($updateOptions['enabled']): ?>
-	$nitm.module('replies').initChatActivity("chat-navigation", "<?= $updateOptions['url'] ?>", <?= $updateOptions['interval']; ?>);
+	$nitm.module('replies').initActivity("chat-navigation", "<?= $updateOptions['url'] ?>", <?= $updateOptions['interval']; ?>);
 	<?php endif; ?>
 });
 </script>
