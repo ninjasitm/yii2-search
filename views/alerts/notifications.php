@@ -24,11 +24,11 @@ $this->params['breadcrumbs'][] = $this->title;
 		'summary' => false,
 		"layout" => "{summary}\n{items}",
 		'itemOptions' => [
-			'tag' => 'li'
+			'tag' => false,
 		],
 		'options' => [
 			'id' => 'notification-list-container',
-			'tag' => 'ul',
+			'tag' => 'div',
 			'class' => 'list-group',
 			'role' => 'notificationList'
 		]

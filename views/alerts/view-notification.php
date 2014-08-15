@@ -9,16 +9,16 @@ use nitm\models\Notification;
 /* @var $dataProvider yii\data\ActiveDataProvider */
 $itemOptions = [
 	'id' => 'notification'.$model->getId(),
-	'class' => 'alert '.\nitm\helpers\Statuses::getListIndicator($model->getPriority())
+	'class' => 'list-group-item '.\nitm\helpers\Statuses::getListIndicator($model->getPriority())
 ];
-echo Html::tag('li', 
+echo Html::tag('div', 
 	((isset($isNew) && ($isNew === true) || $model->isNew()) ? \nitm\widgets\activityIndicator\ActivityIndicator::widget() : '').$model->message.
 	Html::button(
 		Html::tag('span', '&times;', ['aria-hidden' => true]), 
 		[
 			'class' => 'close',
 			'onclick' => '$.post("/alerts/mark-notification-read/'.$model->getId().'", function () {$("#'.$itemOptions['id'].'").remove()});',
-			'data-parent' => 'li'
+			'data-parent' => '#notification'.$model->getId()
 		]
 	), 
 	$itemOptions
