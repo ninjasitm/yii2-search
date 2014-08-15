@@ -110,8 +110,11 @@ class Alerts extends Data
 	*/
 	public function beforeValidateEvent($event)
 	{
-		$event->sender->user_id = \Yii::$app->user->getId();
-		$event->sender->priority = $this->filterPriority($event->sender->priority);
+		if($event->sender instanceof static)
+		{
+			$event->sender->user_id = \Yii::$app->user->getId();
+			$event->sender->priority = $this->filterPriority($event->sender->priority);
+		}
 		return $event->isValid;
 	}
 	
