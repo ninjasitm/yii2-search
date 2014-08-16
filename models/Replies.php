@@ -204,6 +204,8 @@ class Replies extends BaseWidget
 	
 	public static function afterSaveEvent($event)
 	{
+		if($event->sender->className() != static::className())
+			return;
 		$message = [];
 		static::$_alerts->addVariables([
 			'%id%' => $event->sender->getId(),

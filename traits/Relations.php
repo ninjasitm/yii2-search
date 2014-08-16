@@ -276,11 +276,45 @@ use nitm\helpers\Cache;
 		]);
     }
 	
-	protected function getRelatedWidgetModel($className, $options=[])
+	public function followModel()
 	{
-        $ret_val = $this->hasOne($className, ['parent_id' => 'id'])
-			->select(['id', 'parent_type', 'parent_id'])
-			->andWhere([$className::tableName().".parent_type" => $this->isWhat()]);
+		return $this->followModel instanceof \nitm\models\Alerts ? $this->followModel : new \nitm\models\Alerts([
+			'remote_id' => $this->getId(), 
+			'remote_type' => $this->isWhat()
+		]);
+	}
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getFollowModel()
+    {
+        return $this->getRelatedWidgetModel(\nitm\models\Alerts::className(), [
+			//Disabled due to Yii framework inability to return statistical relations
+			//'with' => ['currentUserVoted', 'fetchedValue']
+			'andWhere' => [
+				'remote_type' => $this->isWhat(),
+				'user_id' => \Yii::$app->user->getId()
+			]
+		], [
+			'remote_id' => 'id'
+		]);
+    }
+	
+	protected function getRelatedWidgetModel($className, $options=[], $link=[])
+	{
+		switch(empty($link))
+		{
+			case true:
+			$ret_val = $this->hasOne($className, ['parent_id' => 'id'])
+				->select(['id', 'parent_type', 'parent_id'])
+				->andWhere([$className::tableName().".parent_type" => $this->isWhat()]);
+			break;
+			
+			default:
+			$ret_val = $this->hasOne($className, $link);
+			break;
+		}
 		//Disabled due to Yii framework inability to return statistical relations
 		//if(static::className() != $className)
 			//$ret_val->with(['count', 'newCount']);

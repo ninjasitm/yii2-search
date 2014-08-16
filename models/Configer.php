@@ -268,7 +268,7 @@ class Configer extends Model
 		$this->config['current']['sections'] = null;
 		$this->config['current']['selected_text'] = "selected='selected'";
 		$this->config['load']['types'] = !is_array($this->supported) ? false : true;
-		$this->getContainers();
+		$this->getContainers($container);
 		switch(isset($this->config['from'][$from]))
 		{
 			case true:
@@ -1150,8 +1150,9 @@ class Configer extends Model
 				break;
 				
 				default:
-				//print_r($model->getErrors());
-				//exit;
+				$result['message'] = implode('<br>', array_map(function ($value) {
+					return array_shift($value);
+				}, $model->getErrors()));
 				break;
 			}
 			break;
@@ -1249,6 +1250,12 @@ class Configer extends Model
 					$ret_val['success'] = true;
 					$ret_val['message'] = $message;
 					break;
+					
+					default:
+					$result['message'] = implode('<br>', array_map(function ($value) {
+						return array_shift($value);
+					}, $model->getErrors()));
+					break;
 				}
 				break;
 			}
@@ -1335,6 +1342,12 @@ class Configer extends Model
 				$ret_val['success'] = true;
 				$ret_val['message'] = $message;
 				break;
+				
+				default:
+				$result['message'] = implode('<br>', array_map(function ($value) {
+					return array_shift($value);
+				}, $model->getErrors()));
+				break;
 			}
 			break;
 			
@@ -1403,7 +1416,7 @@ class Configer extends Model
 	 * Get the configuration containers: file or database
 	 * @param string $in
 	 * @param boolean $multi
-	 * @param boolean $containers_objectsnly
+	 * @param boolean $objectsOnly
 	 * @return mixed
 	 */
 	protected function getContainers($in=null, $objectsOnly=false)
@@ -1418,7 +1431,9 @@ class Configer extends Model
 				case false:
 				$result = Container::find()->select(['id', 'name'])->indexBy('name')->all();
 				static::$_cache = $result;
-				array_walk($result, function ($val, $key) use(&$ret_val) {
+				array_walk($result, function ($val, $key) use(&$ret_val, $in) {
+					if($in == $val->name)
+						$this->containerModel = $val;
 					$ret_val[$val->name] = $val->name;
 				});
 				static::$_containers = $ret_val;
@@ -1451,6 +1466,7 @@ class Configer extends Model
 	protected function getSections($in=null)
 	{
 		$ret_val = [];
+		$in = is_null($in) ? $this->container : $in;
 		switch($this->location)
 		{
 			case 'db':

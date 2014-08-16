@@ -37,7 +37,13 @@ class AlertsController extends DefaultController
 				//'class' => \yii\filters\AccessControl::className(),
 				'rules' => [
 					[
-						'actions' => ['notifications', 'mark-notification-read', 'get-new-notifications'],
+						'actions' => [
+							'notifications', 
+							'mark-notification-read', 
+							'get-new-notifications',
+							'un-follow',
+							'follow'
+						],
 						'allow' => true,
 						'roles' => ['@'],
 					],
@@ -87,7 +93,47 @@ class AlertsController extends DefaultController
 		}
 		$this->setResponseFormat('json');
 		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
-    } 
+    }
+	
+	public function actionFollow($type, $id, $key)
+	{
+		$_REQUEST['do'] = true;
+		\Yii::$app->request->setBodyParams([
+			$this->model->formName() => [
+				'remote_id' => $id,
+				'remote_type' => $type,
+				'methods' => $key,
+				'action' => 'any'
+			],
+		]);
+		$ret_val = parent::actionCreate();
+		$ret_val['data'] = '';
+		switch($this->model->methods)
+		{
+			case 'email':
+			$methods = 'envelope';
+			break;
+			
+			case 'mobile':
+			$methods = 'mobile';
+			break;
+			
+			default:
+			$methods = 'send';
+			break;
+		}
+		$ret_val['actionHtml'] = 'Unfollow '.\nitm\helpers\Icon::show($methods);
+		$ret_val['class'] = 'btn-primary';
+		return $ret_val;
+	}
+	
+	public function actionUnFollow($id)
+	{
+		$ret_val = parent::actionDelete($id);
+		$ret_val['actionHtml'] = 'Follow';
+		$ret_val['class'] = 'btn-default';
+		return $ret_val;
+	}
 	
 	/**
      * Lists all new Replies models according to user activity.

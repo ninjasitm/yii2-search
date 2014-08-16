@@ -18,6 +18,7 @@ use nitm\helpers\Icon;
 		<?php
 			echo "<b>".$model::setting($model->isWhat().'.allowed.'.$model->remote_type)."</b>";
 			if(!is_null($model->remote_for) && ($model->remote_for != 'any')) echo " for <b>".$model::setting('for.'.$model->remote_for)."</b>";
+			if(!is_null($model->remote_id)) echo " with id <b>".$model->remote_id."</b>";
 		?>
 	</div>
 	<div class="col-md-3 col-lg-3">

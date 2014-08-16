@@ -166,94 +166,99 @@ function Tools ()
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);
 		//enable hide/unhide functionality with optional data retrieval
 		container.find("[role~='dynamicValue']").map(function(e) {
-			switch($(this).data('id') != undefined)
+			switch(($(this).data('id') != undefined) || ($(this).data('type') != undefined))
 			{
 				case true:
-				var ret_val = null;
-				var dynamicFunction = function (object) {
-					var id = $(object).data('id');
-					var element = $nitm.getObj(id);
-					var url = $(object).data('url');
-					var on = $(object).data('on');
-					switch((url != '#') && (url.length >= 2))
-					{
-						case true:
-						element.removeAttr('disabled');
-						element.empty();	
-						var selected = !$(object).find(':selected').val() ? '' : $(object).find(':selected').val();
-						switch(on != undefined)
-						{
-							case true:
-							if($(on).get(0) == undefined) return false;
-							break;
-						}
-						switch($(object).data('type'))
-						{
-							case 'html':
-							var ret_val = $.ajax({
-								url: url+selected, 
-								dataType: 'html',
-								complete: function (result) {
-									self.evalScripts(result.responseText, function (responseText) {
-										element.html(responseText);
-									});
-								}
-							});
-							break;
-							
-							case 'callback':
-							var callback = $(object).data('callback');
-							var ret_val = $.ajax({
-								url: url+selected, 
-								dataType: 'json',
-								complete: function (result) {
-									callback(result);
-								}
-							});
-							break;
-							
-							default:
-							var ret_val = $.ajax({
-								url: url+selected, 
-								dataType: 'text',
-								complete: function (result) {
-									element.val(result.responseText);
-								}
-							});
-							break;
-						}
-						break;
-					}
-					return ret_val; 
-				}
-				switch($(this).data('run-once'))
+				self.dynamicValue(this);
+				break;
+			}
+		});
+	}
+	
+	this.dynamicValue = function (elem) {
+		var ret_val = null;
+		var dynamicFunction = function (object) {
+			var id = !$(object).data('id') ? $(object).attr('id') : $(object).data('id');
+			var element = $nitm.getObj(id);
+			var url = $(object).data('url');
+			url = !url ? $(object).attr('href') : url;
+			var on = $(object).data('on');
+			switch((url != '#') && (url.length >= 2))
+			{
+				case true:
+				element.removeAttr('disabled');
+				element.empty();	
+				var selected = !$(object).find(':selected').val() ? '' : $(object).find(':selected').val();
+				switch(on != undefined)
 				{
 					case true:
-					case 1:
-					$(this).one('click', function (e) {
-						var element = this;
-						e.preventDefault();
-						$nitm.startSpinner(this);
-						$.when(dynamicFunction(this)).done(function () {
-							$nitm.stopSpinner(element);
-						});
+					if($(on).get(0) == undefined) return false;
+					break;
+				}
+				switch($(object).data('type'))
+				{
+					case 'html':
+					var ret_val = $.ajax({
+						url: url+selected, 
+						dataType: 'html',
+						complete: function (result) {
+							self.evalScripts(result.responseText, function (responseText) {
+								element.html(responseText);
+							});
+						}
+					});
+					break;
+					
+					case 'callback':
+					eval("var callback = "+$(object).data('callback'));
+					var ret_val = $.ajax({
+						url: url+selected, 
+						dataType: 'json',
+						complete: function (result) {
+							callback(result, element.get(0));
+						}
 					});
 					break;
 					
 					default:
-					$(this).on('click', function (e) {
-						var element = this;
-						e.preventDefault();
-						$nitm.startSpinner(this);
-						$.when(dynamicFunction(this)).done(function () {
-							$nitm.stopSpinner(element);
-						});
+					var ret_val = $.ajax({
+						url: url+selected, 
+						dataType: 'text',
+						complete: function (result) {
+							element.val(result.responseText);
+						}
 					});
 					break;
 				}
 				break;
 			}
-		});
+			return ret_val; 
+		}
+		switch($(elem).data('run-once'))
+		{
+			case true:
+			case 1:
+			$(elem).one('click', function (e) {
+				var element = this;
+				e.preventDefault();
+				$nitm.startSpinner(this);
+				$.when(dynamicFunction(this)).done(function () {
+					$nitm.stopSpinner(element);
+				});
+			});
+			break;
+			
+			default:
+			$(elem).on('click', function (e) {
+				var element = this;
+				e.preventDefault();
+				$nitm.startSpinner(this);
+				$.when(dynamicFunction(this)).done(function () {
+					$nitm.stopSpinner(element);
+				});
+			});
+			break;
+		}
 	}
 	
 	/**

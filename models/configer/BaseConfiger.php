@@ -30,6 +30,7 @@ class BaseConfiger extends ActiveRecord
 	public $unique_name;
 	public $section_name;
 	public $container_name;
+	protected static $is;
 	
 	public function behaviors()
 	{
@@ -53,5 +54,29 @@ class BaseConfiger extends ActiveRecord
 			'value' => new \yii\db\Expression('NOW()')
 		];
 		return array_merge(parent::behaviors(), $behaviors);
+	}
+	
+	/*
+	 * What does this claim to be?
+	 */
+	public static function isWhat()
+	{
+		switch(empty(static::$is))
+		{
+			case true:
+			static::$is = strtolower(array_pop(explode('\\', static::className())));
+			break;
+		}
+		return static::$is;
+	}
+	
+	/**
+	 * Get the unique ID of this object
+	 * @return string|int
+	 */
+	public function getId()
+	{
+		$key = $this->primaryKey();
+		return $this->$key[0];
 	}
 }
