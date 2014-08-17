@@ -9,31 +9,34 @@ use yii\widgets\ActiveField;
 	echo $this->context->alertWidget();
 	echo $this->context->legendWidget();
 ?>
-<h3 class="header text-left">
-		<?=
-			 Html::a(
-					strtoupper("Add New ".$model->isWhat()), 
-					$model->isWhat()."/form/create?__format=modal",
-					[
-						'class' => "", 
-						'title' => "Add a new ".$model->isWhat(),
-						'data-toggle' => 'modal',
-						'data-target' => '#view'
-					]
-				);
-		?>
-</h3>
+<?= 
+	\nitm\widgets\modal\Modal::widget([
+		'toggleButton' => [
+			'tag' => 'a',
+			'label' => Html::tag('h3', strtoupper("Add New ".$model->isWhat())), 
+			'href' => \Yii::$app->urlManager->createUrl([$model->isWhat().'/form/create', '__format' => 'modal']),
+			'title' => Yii::t('yii', "Add a new ".$model->isWhat()),
+			'role' => 'dynamicAction createAction disabledOnClose',
+		],
+		'contentOptions' => [
+			"class" => "modal-full"
+		],
+		'dialogOptions' => [
+			"class" => "modal-full"
+		]
+	]);
+?>
 <h3 class="header text-left">FILTER USING THE FOLLOWING</h3>
 <div id="filters">
 
 <?php $form = ActiveForm::begin(['id' => 'filter',
 	'type' => ActiveForm::TYPE_HORIZONTAL,
-	'method' => 'get',
 	'action' => '/'.$model->isWhat().'/search?__format=json',
+	'method' => 'get',
 	'options' => [
 		'class' => 'form-horizontal',
 		"role" => "filter",
-		'data-id' => 'requests'
+		'data-id' => $model->isWhat()
 	],
 	'fieldConfig' => [
 		'inputOptions' => ['class' => 'form-control'],
@@ -54,45 +57,6 @@ use yii\widgets\ActiveField;
 	?>
 	<?=
 		$form->field($model, 'filter[text]')->textInput()->label("Search");
-	?>
-	<?=
-		$form->field($model, 'filter[type_id]')->widget(Select2::className(), [
-			'options' => [
-				'placeholder' => 'Select type...',
-				'multiple' => true
-			],
-			'data' => $model->getCategoryList($model->isWhat().'-categories'),
-		])->label("Type");
-	?>
-
-	<?=
-		$form->field($model, 'filter[request_for_id]')->widget(Select2::className(), [
-			'options' => [
-				'placeholder' => 'Select request for...',
-				'multiple' => true
-			],
-			'data' => $model->getCategoryList($model->isWhat().'-for'),
-		])->label("Request For");
-	?>
-
-	<?=
-		$form->field($model, 'filter[status]')->widget(Select2::className(), [
-			'options' => [
-				'placeholder' => 'Select priority...',
-				'multple' => true
-			],
-			'data' => $model->getStatuses(),
-		])->label("Status");
-	?>
-
-	<?=
-		$form->field($model, 'filter[autho_id]')->widget(Select2::className(), [
-			'options' => [
-				'placeholder' => 'Select author...',
-				'multiple' => true
-			],
-			'data' => $model->getFilter('author'),
-		])->label("Author");
 	?>
 
 	<?=

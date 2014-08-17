@@ -235,7 +235,9 @@ trait Query {
 				
 				case 'boolean':
 				$ret_val = ['0' => 'No', '1' => 'Yes'];
-				//$ret_val = ($default === true) ? array_merge(['' => 'Any'], $ret_val) : $ret_val;
+				break;
+				
+				case 'rating':
 				break;
 				
 				case 'order':
@@ -243,10 +245,20 @@ trait Query {
 				break;
 				
 				case 'order_by':
-				$pkey = $this->primaryKey();
-				$default = [$pkey[0] => "Unique"];
-				$filters = static::$settings[static::isWhat()]['filter'][$name];
-				$ret_val = is_array($filters) ? array_merge($default, $filters) : $default;
+				foreach(static::getTableSchema()->columns as $colName=>$info)
+				{
+					switch($info->type)
+					{
+						case 'text':
+						case 'binary':
+						break;
+						
+						default:
+						$ret_val[$colName] = $this->properName($colName);
+						break;
+					}
+				}
+				ksort($ret_val);
 				break;
 				
 				default:

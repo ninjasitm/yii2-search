@@ -12,6 +12,10 @@ $this->title = $model->title;
 $this->params['breadcrumbs'][] = ['label' => 'Requests', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
+<?php 
+	if(!\Yii::$app->request->isAjax && !isset($noBreadcrumbs))
+		echo \yii\widgets\Breadcrumbs::widget(['links' => $this->params['breadcrumbs']]);
+?>
 <div class="requests-view">
 
     <h1><?= Html::encode($this->title) ?></h1>

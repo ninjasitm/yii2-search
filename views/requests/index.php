@@ -18,6 +18,7 @@ $this->params['breadcrumbs'][] = $this->title;
 		echo $this->render("data", [
 				'dataProvider' => $dataProvider,
 				'searchModel' => $searchModel,
+				'primaryModel' => $model
 			]
 		); 
 	?>

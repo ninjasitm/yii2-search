@@ -16,10 +16,7 @@ $this->params['breadcrumbs'][] = ['label' => 'Requests', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 $action = $model->getIsNewRecord() ? 'create' : 'update';
 ?>
-
-<?= Html::tag('div', '', ['id' => 'alert']); ?>
-
-<div id="<?= $model->isWhat()?>_form_container" class="row">
+<div id="<?= $model->isWhat()?>_form_container" class='row'>
 	<?php if (!$model->getIsNewRecord()) : ?>
 	<div class="col-md-7 col-lg-7">
 	<?= $this->render('meta_info', ['model' => $model]); ?>
@@ -27,11 +24,12 @@ $action = $model->getIsNewRecord() ? 'create' : 'update';
 	<?php endif ?>
 	
 	<?php if (!$model->getIsNewRecord()) : ?>
-	<div class="col-md-5 col-lg-5 full-height col-md-offset-7 col-lg-offset-7">
+	<div class="col-md-5 col-lg-5 full-height absolute col-md-offset-7 col-lg-offset-7">
+	<br><br>
 	<?php else: ?>
 	<div class="col-md-12 col-lg-12">
 	<?php endif ?>
-		<div id="<?= $model->isWhat()?>_form">
+	<?= Html::tag('div', '', ['id' => 'alert']); ?>
 		<?php $form = ActiveForm::begin([
 			"action" => "/".$model->isWhat()."/$action/".$model->id,
 			"type" => ActiveForm::TYPE_HORIZONTAL,
@@ -50,7 +48,7 @@ $action = $model->getIsNewRecord() ? 'create' : 'update';
 		<?= $form->field($model, 'title') ?>
 	
 		<?=
-			$form->field($model, 'type')->widget(Select2::className(), [
+			$form->field($model, 'type_id')->widget(Select2::className(), [
 				'data' => $model->getCategoryList($model->isWhat().'-categories'),
 			])->label("Type");
 		?>
@@ -66,19 +64,20 @@ $action = $model->getIsNewRecord() ? 'create' : 'update';
 				'data' => $model->getStatuses(),
 			])->label("Status");
 		?>
-		<div class="form-group wrapper">
+		<div class="wrapper">
 			<div class="row">
-			<div class="col-md-12 col-lg-12">
-			<?php
-				echo $this->context->RevisionsInputWidget([
-					"parentId" => $model->getId(),
-					"parentType" => $model->isWhat(),
-					'name' => 'request',
-					'model' => $model,
-					'value' => $model->request
-				]);
-			?>
-			</div>
+				<div class="col-md-12 col-lg-12">
+				<?php
+					echo $this->context->RevisionsInputWidget([
+						"parentId" => $model->getId(),
+						"parentType" => $model->isWhat(),
+						'name' => 'request',
+						'revisionsModel' => $model->revisionModel(),
+						'model' => $model,
+						'value' => $model->request
+					]);
+				?>
+				</div>
 			</div>
 		</div>
 		
@@ -89,15 +88,12 @@ $action = $model->getIsNewRecord() ? 'create' : 'update';
 		<?php endif; ?>
 	
 		<?php ActiveForm::end(); ?>
-		</div>
 	</div>
 </div>
-<?php if (!$model->getIsNewRecord()) : ?>
-<?php endif ?>
 <script type='text/javascript'>
-$nitm.onModuleLoad('nitm:requests', function () {
-	$nitm.module('nitm').initForms('<?= $model->isWhat();?>_form_container', 'nitm:requests');
-	$nitm.module('nitm').initMetaActions('#<?= $model->isWhat();?>_form_container', 'nitm:requests');
+$nitm.onModuleLoad('lab1:requests', function () {
+	$nitm.module('lab1').initForms('<?= $model->isWhat();?>_form_container', 'lab1:requests');
+	$nitm.module('lab1').initMetaActions('#<?= $model->isWhat();?>_form_container', 'lab1:requests');
 	<?php if(\Yii::$app->request->isAjax): ?>
 	$nitm.module('tools').initVisibility('#<?= $model->isWhat();?>_form_container');
 	<?php endif; ?>

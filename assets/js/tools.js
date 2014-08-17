@@ -36,6 +36,7 @@ function Tools ()
 	 * Submit a form on change of dropdown input
 	 */
 	this.initSubmitSelect = function (containerId) {
+		//May not be necesary when using Bootstrap Nav menu
 		var container = $nitm.getObj((containerId == undefined) ? 'body' : containerId);	
 		container.find("[role~='changeSubmit']").map(function(e) {
 			$(this).off('change');
@@ -97,9 +98,9 @@ function Tools ()
 					$(this).one('click', function (e) {
 						var element = this;
 						e.preventDefault();
-						$nitm.startSpinner(this);
+						$($nitm).trigger('nitm-animate-submit-start', [element]);
 						$.when(dynamicFunction(this)).done(function () {
-							$nitm.stopSpinner(element);
+							$($nitm).trigger('nitm-animate-submit-stop', [element]);
 						});
 					});
 					break;
@@ -108,9 +109,9 @@ function Tools ()
 					$(this).on('click', function (e) {
 						var element = this;
 						e.preventDefault();
-						$nitm.startSpinner(this);
+						$($nitm).trigger('nitm-animate-submit-start', [element]);
 						$.when(dynamicFunction(this)).done(function () {
-							$nitm.stopSpinner(element);
+							$($nitm).trigger('nitm-animate-submit-stop', [element]);
 						});
 					});
 					break;
@@ -241,9 +242,9 @@ function Tools ()
 			$(elem).one('click', function (e) {
 				var element = this;
 				e.preventDefault();
-				$nitm.startSpinner(this);
+				$($nitm).trigger('nitm-animate-submit-start', [element]);;
 				$.when(dynamicFunction(this)).done(function () {
-					$nitm.stopSpinner(element);
+					$($nitm).trigger('nitm-animate-submit-stop', [element]);;
 				});
 			});
 			break;
@@ -252,9 +253,9 @@ function Tools ()
 			$(elem).on('click', function (e) {
 				var element = this;
 				e.preventDefault();
-				$nitm.startSpinner(this);
+				$($nitm).trigger('nitm-animate-submit-start', [element]);;
 				$.when(dynamicFunction(this)).done(function () {
-					$nitm.stopSpinner(element);
+					$($nitm).trigger('nitm-animate-submit-stop', [element]);;
 				});
 			});
 			break;

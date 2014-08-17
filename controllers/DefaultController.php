@@ -47,7 +47,7 @@ class DefaultController extends BaseController
 			'verbs' => [
 				'class' => \yii\filters\VerbFilter::className(),
 				'actions' => [
-					'index' => ['get'],
+					'index' => ['get', 'post'],
 					'list' => ['get', 'post'],
 					'add' => ['get'],
 					'view' => ['get'],
@@ -92,8 +92,7 @@ class DefaultController extends BaseController
 	{
 		$ret_val = [
 			"success" => false, 
-			'action' => 'filter', 
-			"pour" => $this->model->isWhat(),
+			'action' => 'filter',
 			"format" => $this->getResponseFormat(),
 			'message' => "No data found for this filter"
 		];
@@ -113,11 +112,30 @@ class DefaultController extends BaseController
 			$serchModel = new \nitm\models\search\BaseSearch($searchOptions);
 			break;
 		}
-		//$search->setScenario('filter');
         $dataProvider = $searchModel->search($_REQUEST);
-		$this->setResponseFormat('html');
+		
+		switch(\Yii::$app->request->isAjax)
+		{
+			case true:
+			switch(Response::formatSpecified())
+			{
+				case false:
+				$this->setResponseFormat(\Yii::$app->request->get('_pjax') ? 'html' : 'json');
+				break;
+			}
+			break;
+			
+			default:
+			$this->setResponseFormat('html');
+			break;
+		}
+		$ret_val['data'] = $this->renderAjax('data', [
+			"dataProvider" => $dataProvider,
+			'searchModel' => $searchModel,
+			'primaryModel' => $this->model
+		]);
 		Response::$viewOptions['args'] = [
-			"content" => $this->renderAjax('data', ["dataProvider" => $dataProvider]),
+			"content" => $ret_val['data'],
 		];
 		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
 	}

@@ -17,8 +17,9 @@ function Nitm ()
 	this.classes = {
 		warning: 'alert alert-warning',
 		success: 'alert alert-success',
-		information: 'alert alert-info',
+		info: 'alert alert-info',
 		error: 'alert alert-danger',
+		hidden: 'hidden',
 	};
 	
 	/* gap is in millisecs */
@@ -73,7 +74,7 @@ function Nitm ()
 	
 	this.animateSubmit = function (form, after)
 	{
-		var $form = $nitm.getObj(form);
+		var $form = $nitm.getObj(form);		$form.fin
 		switch(true)
 		{				
 			case $form.find("[type='image']").get(0) != undefined:
@@ -95,13 +96,35 @@ function Nitm ()
 		switch(after)
 		{
 			case true:
-			self.stopSpinner($button.get(0));
+			self.stopSpinner($button);
 			break
 				
 			default:
-			self.startSpinner($button.get(0));
+			self.startSpinner($button);
 			break;
 		}
+	}
+	
+	this.startSpinner = function (elements) {
+		elements.each(function (elem, key) {
+			var element = self.getObj(this);
+			var style = $(element).css(['font-size', 'line-height', 'width']);
+			element.data('old-contents', element.html());
+			element.html('');
+			element.append("<span class='spinner'><i class='fa fa-spin fa-spinner'></i></span>");
+			element.addClass('has-spinner active');
+			element.attr('disabled', true);
+		});
+	}
+	
+	this.stopSpinner = function (elements) {
+		elements.each(function (elem, key) {
+			var element = self.getObj(this);
+			element.html(element.data('old-contents'));
+			element.removeClass('has-spinner active');
+			element.data('old-contents', '');
+			element.removeAttr('disabled');
+		});
 	}
 	
 	this.getEvents = function(elem, type) {
@@ -127,29 +150,20 @@ function Nitm ()
 		} catch (error) {}
 	}
 	
-	this.startSpinner = function (elem) {
-		var element = this.getObj(elem);
-		var style = $(element).css(['font-size', 'line-height', 'width']);
-		element.data('old-contents', element.html());
-		element.html('');
-		element.append("<span class='spinner'><i class='fa fa-spin fa-spinner'></i></span>");
-		element.addClass('has-spinner active');
-		element.attr('disabled', true);
-	}
-	
-	this.stopSpinner = function (elem) {
-		var element = this.getObj(elem);
-		element.html(element.data('old-contents'));
-		element.removeClass('has-spinner active');
-		element.data('old-contents', '');
-		element.removeAttr('disabled');
-	}
-	
 	this.notify = function (newMessage, newClass, newObject)
 	{
 		var newMessage = new String(newMessage);
 		switch(true)
 		{
+			case newObject instanceof HTMLElement:
+			var obj = $(newObject).parents().find('#alert').last();
+			break;
+			
+			case newObject instanceof Array:
+			case newObject instanceof Object:
+			var obj = $(newObject[0]).parents().find(newObject[1]).last();
+			break;
+			
 			case newObject instanceof jQuery:
 			var obj = newObject;
 			break;
@@ -165,7 +179,7 @@ function Nitm ()
 		if(obj instanceof jQuery)
 		{
 			var id = 'alert'+Date.now();
-			var message = $('<div id="'+id+'">').html(newMessage).addClass(newClass);
+			var message = $('<div id="'+id+'" class="'+newClass+'">').html(newMessage);
 			obj.append(message).fadeIn();
 			setTimeout(function () {$('#'+id).fadeOut();$('#'+id).remove()}, 10000);
 		}

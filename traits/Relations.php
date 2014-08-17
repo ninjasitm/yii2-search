@@ -1,7 +1,6 @@
 <?php
 namespace nitm\traits;
 
-use nitm\models\Data;
 use nitm\helpers\Cache;
 
 /**

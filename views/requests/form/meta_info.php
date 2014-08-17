@@ -4,10 +4,6 @@ use yii\grid\GridView;
 use yii\data\ArrayDataProvider;
 use nitm\helpers\Icon;
 use \yii\bootstrap\Tabs;
-
-$model->replies = \nitm\models\Replies::findModel([$model->getId(), $model->isWhat(), $model->created_at]);
-$model->issues = \nitm\models\Issues::findModel([$model->getId(), $model->isWhat()]);
-$model->revisions = \nitm\models\Revisions::findModel([$model->getId(), $model->isWhat()]);
 ?>
 
 <?php
@@ -29,10 +25,10 @@ $model->revisions = \nitm\models\Revisions::findModel([$model->getId(), $model->
 				)
 			],
 			[
-				'label' => 'Issues '.Html::tag('span', (int)$model->issues->getCount(), ['class' => 'badge']),
+				'label' => 'Issues '.Html::tag('span', (int)$model->issueModel()->count(), ['class' => 'badge']),
 				'content' =>Html::tag('div', '',
 					[
-						'class' => "row ".\nitm\helpers\Statuses::getIndicator($model->getStatus()),
+						'class' => \nitm\helpers\Statuses::getIndicator($model->getStatus()),
 						'role' => 'statusIndicator'.$uniqid,
 						'id' => 'request-issues'.$uniqid,
 						'style' => 'display:none'
@@ -47,7 +43,7 @@ $model->revisions = \nitm\models\Revisions::findModel([$model->getId(), $model->
 				]
 			],
 			[
-				'label' => 'Comments '.Html::tag('span', (int)$model->replies->getCount(), ['class' => 'badge']),
+				'label' => 'Comments '.Html::tag('span', (int)$model->replyModel()->count(), ['class' => 'badge']),
 				'content' => Html::tag('div', '',
 					[
 						'class' => "col-lg-12 col-md-12 ".\nitm\helpers\Statuses::getIndicator($model->getStatus()),
@@ -65,7 +61,7 @@ $model->revisions = \nitm\models\Revisions::findModel([$model->getId(), $model->
 				]
 			],
 			[
-				'label' => 'Revisions '.Html::tag('span', (int)$model->revisions->getCount(), ['class' => 'badge']),
+				'label' => 'Revisions '.Html::tag('span', (int)$model->revisionModel()->count(), ['class' => 'badge']),
 				'content' => Html::tag('div', '',
 					[
 						'class' => "col-lg-12 col-md-12 ".\nitm\helpers\Statuses::getIndicator($model->getStatus()),
@@ -84,18 +80,4 @@ $model->revisions = \nitm\models\Revisions::findModel([$model->getId(), $model->
 			]
 		]
 	]);
-?>
-<?php
-	switch(\Yii::$app->request->isAjax)
-	{
-		case false:
-		echo $this->context->issueModalWidget();
-		echo $this->context->issueModalWidget([
-			'options' => [
-				'id' => 'issue-tracker-modal-form',
-				'style' => 'z-index: 100002',
-			]
-		]);
-		break;
-	}
 ?>

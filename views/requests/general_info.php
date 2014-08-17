@@ -23,13 +23,14 @@ echo GridView::widget([
 		[
 			'attribute' => 'rating',
 			'label' => '%',
-			'format' => 'html',
+			'format' => 'raw',
 			'value' => function ($model, $index, $widget) {
 				$rating = Html::tag('div',
 					$this->context->VoteWidget([
-					'parentType' => $model->isWhat(), 
-					'parentId' => $model->getId(),
-					'model' => $model])
+						'model' => $model->voteModel(),
+						'parentType' => $model->isWhat(), 
+						'parentId' => $model->getId(),
+					])
 				);
 				return $rating;
 			},
@@ -101,7 +102,7 @@ echo GridView::widget([
 		$statusInfo = \lab1\widgets\StatusInfo::widget([
 			'items' => [
 				[
-					'blamable' => $model->authorUser,
+					'blamable' => $model->author(),
 					'date' => $model->created_at,
 					'value' => $model->created_at,
 					'label' => [
@@ -109,7 +110,7 @@ echo GridView::widget([
 					]
 				],
 				[
-					'blamable' => $model->completedBy,
+					'blamable' => $model->completedBy(),
 					'date' => $model->completed_at,
 					'value' => $model->completed,
 					'label' => [
@@ -118,7 +119,7 @@ echo GridView::widget([
 					]
 				],
 				[
-					'blamable' => $model->closedBy,
+					'blamable' => $model->closedBy(),
 					'date' => $model->closed_at,
 					'value' => $model->closed,
 					'label' => [

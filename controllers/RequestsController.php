@@ -50,12 +50,18 @@ class RequestsController extends DefaultController
     {
         $searchModel = new RequestSearch;
         $dataProvider = $searchModel->search(Yii::$app->request->getQueryParams(), ['type', 'requestFor']);
-
-        return $this->render('index', [
-            'dataProvider' => $dataProvider,
-            'searchModel' => $searchModel,
-			'model' => $this->model,
-        ]);
+		$ret_val = [
+			'success' => true,
+			'data' => $this->renderAjax('index', [
+				'dataProvider' => $dataProvider,
+				'searchModel' => $searchModel,
+				'model' => $this->model,
+			])
+		];
+		Response::$viewOptions['args'] = [
+			"content" => $ret_val['data'],
+		];
+		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
     }
 	
 	/**
