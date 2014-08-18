@@ -14,8 +14,6 @@ class DefaultController extends BaseController
 	public $boolResult;
 	public static $currentUser;
 	
-	const ELEM_TYPE_PARAM = '__elemType';
-	
 	public function init()
 	{
 		parent::init();

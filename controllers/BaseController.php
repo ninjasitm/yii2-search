@@ -19,6 +19,8 @@ class BaseController extends Controller
 	private $_cssFiles = array();
 	private $_jsFiles = array();
 	
+	const ELEM_TYPE_PARAM = '__elemType';
+	
 	public function behaviors()
 	{ 
 		$behaviors = array(
