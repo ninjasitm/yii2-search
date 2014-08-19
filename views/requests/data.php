@@ -21,7 +21,7 @@ $this->params['breadcrumbs'][] = $this->title;
 	'filterModel' => $searchModel,
 	'filterUrl' => 'index',
 	'tableOptions' => [
-		'class' => 'table table-striped table-bordered'
+		'class' => 'table'
 	],
 	'dataProvider' => $dataProvider,
 	//'filterModel' => $searchModel,
@@ -109,7 +109,7 @@ $this->params['breadcrumbs'][] = $this->title;
 			'format' => 'html',
 			'filter' => $primaryModel->getFilter('author'),
 			'value' => function ($model, $index, $widget) {
-				return $model->author()->url(\Yii::$app->getModule('lab1')->fullUsernames, \Yii::$app->request->url, [$model->formname().'[author]' => $model->author_id]);
+				return $model->author()->url(\Yii::$app->getModule('nitm')->useFullnames, \Yii::$app->request->url, [$model->formname().'[author]' => $model->author_id]);
 			}
 		],
 		'created_at:datetime',
@@ -217,12 +217,13 @@ $this->params['breadcrumbs'][] = $this->title;
 				'class' => 'col-md-12 col-lg-12'
 			]
 		);
-		$shortLink = Html::tag('div', \lab1\widgets\ShortLink::widget([
+		/*$shortLink = Html::tag('div', \lab1\widgets\ShortLink::widget([
 			'url' => \Yii::$app->urlManager->createAbsoluteUrl([$model->isWhat().'/view/'.$model->getId()]),
 			'header' => $model->title,
 			'type' => 'modal',
 			'size' => 'large'
-		]));
+		]));*/
+		$shortLink = '';
 		$metaInfo = Html::tag('div', 
 			Html::tag('div', 
 				$title.$shortLink."<br>".$activityInfo

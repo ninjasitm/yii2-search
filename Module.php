@@ -6,7 +6,9 @@ use nitm\helpers\Session;
 use nitm\models\DB;
 
 class Module extends \yii\base\Module
-{	
+{
+	public $useFullnames;
+	
 	/**
 	 * @string the module id
 	 */

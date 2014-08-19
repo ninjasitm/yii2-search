@@ -10,13 +10,13 @@ namespace nitm\models;
  * @property string $completed_by
  * @property string $closed_by
  * @property string $title
- * @property string $author
+ * @property string $author_id
  * @property string $edited
- * @property string $editor
+ * @property string $editor_id
  * @property integer $edits
  * @property string $request
- * @property string $type_id
- * @property string $request_for_id
+ * @property string $type
+ * @property string $request_for
  * @property string $status
  * @property integer $completed
  * @property string $completed_on
@@ -25,13 +25,17 @@ namespace nitm\models;
  * @property integer $rating
  * @property string $rated_on
  */
-class Request extends \nitm\models\Data
-{
-	use \nitm\traits\Nitm;
-	
+class Request extends Entity
+{	
 	public $requestModel;
 	
 	protected static $is = 'requests';
+	
+	protected static $urgency = [
+		'normal',
+		'important',
+		'critical'
+	];
 	
     /**
      * @inheritdoc
@@ -47,6 +51,7 @@ class Request extends \nitm\models\Data
 	public function init()
 	{
 		parent::init();
+		$this->initConfig(static::isWhat());
 	}
 
     /**
@@ -55,22 +60,22 @@ class Request extends \nitm\models\Data
     public function rules()
     {
         return [
-            [['added', 'completed_by', 'closed_by', 'title', 'author', 'editor', 'request', 'type_id', 'request_for_id', 'status', 'completed', 'closed'], 'required'],
+            [['title','request', 'type_id', 'request_for_id'], 'required'],
             [['added', 'edited', 'completed_on', 'closed_on', 'rated_on'], 'safe'],
-            [['title', 'request', 'type_id', 'request_for_id'], 'string'],
-            [['edits', 'completed', 'closed', 'rating'], 'integer'],
-            [['completed_by', 'closed_by', 'author', 'editor'], 'string', 'max' => 64],
-            [['status'], 'string', 'max' => 16]
+            [['title', 'request', 'type', 'request_for'], 'string'],
+            [['edits', 'completed', 'closed', 'rating', 'status'], 'integer'],
+            [['completed_by', 'closed_by'], 'string', 'max' => 64],
+			[['title'], 'unique', 'targetAttribute' => ['title', 'type_id', 'request_for_id'], 'message' => 'There is a request exactly matching this one. Please update that one instead']
         ];
     }
 	
 	public function scenarios()
 	{
 		$scenarios = [
-			'create' => ['author', 'title', 'request', 'type_id', 'request_for_id', 'status'],
-			'update' => ['author', 'title', 'request', 'type_id', 'request_for_id', 'status'],
+			'create' => ['title', 'request', 'type_id', 'request_for_id', 'status'],
+			'create' => ['title', 'request', 'type_id', 'request_for_id', 'status'],
 		];
-		return array_merge(parent::scenarios(), array_merge($this->nitmScenarios(), $scenarios));
+		return array_merge(parent::scenarios(), $scenarios);
 	}
 
     /**
@@ -84,13 +89,13 @@ class Request extends \nitm\models\Data
             'completed_by' => 'Completed By',
             'closed_by' => 'Closed By',
             'title' => 'Title',
-            'author' => 'Author',
+            'author_id' => 'Author',
             'edited' => 'Edited',
-            'editor' => 'Editor',
+            'editor_id' => 'Editor',
             'edits' => 'Edits',
             'request' => 'Request',
-            'type_id' => 'Type',
-            'request_for_id' => 'Request For',
+            'type' => 'Type',
+            'request_for' => 'Request For',
             'status' => 'Status',
             'completed' => 'Completed',
             'completed_on' => 'Completed On',
@@ -106,8 +111,8 @@ class Request extends \nitm\models\Data
 		return array_merge(
 			parent::filters(),
 			[
-				'type_id' => null,
-				'request_for_id' => null,
+				'type' => null,
+				'request_for' => null,
 				'completed' => null,
 				'closed' => null,
 				'order_by' => null,
@@ -119,15 +124,7 @@ class Request extends \nitm\models\Data
 	
 	public function getUrgency()
 	{
-		$ret_val = "normal";
-		switch($this->status)
-		{
-			case 'important':
-			case 'critical':
-			$ret_val = $this->status;
-			break;
-		}
-		return ucfirst($ret_val);
+		return @ucfirst(static::$urgency[$this->status]);
 	}
 
     /**
@@ -135,11 +132,23 @@ class Request extends \nitm\models\Data
      */
     public function getRequestFor()
     {
-        return $this->hasOne(Category::className(), ['id' => 'request_for_id_id']);
+        return $this->hasOne(Category::className(), ['id' => 'request_for_id']);
     }
 	
 	public function requestFor()
 	{
 		return $this->requestFor instanceof Category ? $this->requestFor : new Category();
+	}
+	
+	public function afterSaveEvent($event)
+	{
+		$this->_alerts->addVariables([
+			'%type%' => $event->sender->type()->name,
+			'%requestFor%' => $event->sender->requestFor()->name,
+			'%urgency%' => $event->sender->getUrgency(),
+			'%title%' => $event->sender->title,
+		]);
+		$message = parent::afterSaveEvent($event);
+		if(!empty($message) && !$event->handled) static::processAlerts($event, $message);
 	}
 }
