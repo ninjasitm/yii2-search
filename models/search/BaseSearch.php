@@ -353,13 +353,13 @@ class BaseSearch extends \nitm\models\Data
 				{
 					switch($filterName)
 					{
-						case '_sort':
-						$direction = isset($params['_order']) ? $params['_order'] : SORT_DESC;
-						$this->dataProvider->query->orderBy([$filterValue => $direction]);
-						$useEmptyParams = true;
+						case 'inclusive':
+						$this->inclusiveSearch = (bool)$filterValue;
 						break;
 						
-						case '_order':
+						case 'sort':
+						$direction = isset($params['order']) ? $params['order'] : SORT_DESC;
+						$this->dataProvider->query->orderBy([$filterValue => $direction]);
 						$useEmptyParams = true;
 						break;
 					}

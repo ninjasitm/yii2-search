@@ -90,7 +90,7 @@ trait Widgets
 		return \nitm\widgets\replies\RepliesModal::widget($options);
 	}
 	
-	public function alertWidget(array $options)
+	public function alertWidget(array $options=[])
 	{
 		return \nitm\widgets\alert\Alert::widget($options);
 	}

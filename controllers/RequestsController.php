@@ -65,6 +65,21 @@ class RequestsController extends DefaultController
     }
 	
 	/**
+	 * Add some custom values for the search model
+	 */
+	public function actionSearch()
+	{
+		return parent::actionSearch([
+			'inclusiveSearch' => false,
+			'withThese' => [
+				'author', 'type', 'requestFor', 
+				'completedBy', 'closedBy', 'replyModel', 
+				'issueModel', 'revisionModel', 'voteModel'
+			]
+		]);
+	}
+	
+	/**
      * Updates an existing Category model.
      * If update is successful, the browser will be redirected to the 'view' page.
      * @param integer $id

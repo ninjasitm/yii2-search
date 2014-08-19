@@ -1,7 +1,7 @@
 <?php
 
 namespace nitm\controllers;
-use yii\widgets\Pjax;
+use \yii\helpers\Html;
 use nitm\models\Category;
 use nitm\helpers\Icon;
 use nitm\helpers\Response;
@@ -114,6 +114,11 @@ class DefaultController extends BaseController
 		}
         $dataProvider = $searchModel->search($_REQUEST);
 		
+		$ret_val['data'] = $this->renderAjax('data', [
+			"dataProvider" => $dataProvider,
+			'searchModel' => $searchModel,
+			'primaryModel' => $this->model
+		]);
 		switch(\Yii::$app->request->isAjax)
 		{
 			case true:
@@ -126,15 +131,22 @@ class DefaultController extends BaseController
 			break;
 			
 			default:
+			$ret_val['data'] = Html::tag('div',
+				\yii\widgets\Breadcrumbs::widget(['links' => [
+					[
+						'label' => $searchModel->primaryModel->properName($searchModel->primaryModel->isWhat()), 
+						'url' => $searchModel->primaryModel->isWhat()
+					],
+					[
+						'label' => 'Search',
+					]
+				]]).
+				$ret_val['data'], ['class' => 'col-md-12 col-lg-12']
+			);
 			$this->setResponseFormat('html');
 			break;
 		}
 		$ret_val['message'] = !$dataProvider->getCount() ? $ret_val['message'] : "Found ".$dataProvider->getCount()." results matching your search";
-		$ret_val['data'] = $this->renderAjax('data', [
-			"dataProvider" => $dataProvider,
-			'searchModel' => $searchModel,
-			'primaryModel' => $this->model
-		]);
 		Response::$viewOptions['args'] = [
 			"content" => $ret_val['data'],
 		];
