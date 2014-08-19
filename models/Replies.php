@@ -207,7 +207,7 @@ class Replies extends BaseWidget
 		if($event->sender->className() != static::className())
 			return;
 		$message = [];
-		static::$_alerts->addVariables([
+		$this->_alerts->addVariables([
 			'%id%' => $event->sender->getId(),
 			"%viewLink%" => \yii\helpers\Html::a(\Yii::$app->urlManager->createAbsoluteUrl($event->sender->parent_type."/view/".$event->sender->parent_id), \Yii::$app->urlManager->createAbsoluteUrl($event->sender->parent_type."/view/".$event->sender->parent_id))
 		]);
@@ -225,7 +225,7 @@ class Replies extends BaseWidget
 		}
 		if(!empty($message) && $event->sender->getId())
 		{
-			static::$_alerts->criteria([
+			$this->_alerts->criteria([
 				'remote_for',
 				'remote_id',
 				'action'
@@ -237,7 +237,7 @@ class Replies extends BaseWidget
 			switch($event->sender->getScenario())
 			{
 				case 'create':
-				static::$_alerts->reportedAction = 'replied';
+				$this->_alerts->reportedAction = 'replied';
 				break;
 			}
 			$message['owner_id'] = $event->sender->hasAttribute('author_id') ? $event->sender->author_id : null;
