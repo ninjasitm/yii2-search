@@ -342,12 +342,12 @@ class BaseWidget extends Data implements DataInterface
 		return $model;
 	}
 	
-	public static function beforeSaveEvent($event)
+	public function beforeSaveEvent($event)
 	{
 		static::prepareAlerts($event);
 	}
 	
-	public static function afterSaveEvent($event)
+	public function afterSaveEvent($event)
 	{
 	}
 }

@@ -400,11 +400,11 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 		return implode(' ', array_map('ucfirst', explode(' ', $ret_val)));
 	}
 	
-	public static function beforeSaveEvent($event)
+	public function beforeSaveEvent($event)
 	{
 	}
 	
-	public static function afterSaveEvent($event)
+	public function afterSaveEvent($event)
 	{
 	}
 	

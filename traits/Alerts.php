@@ -15,18 +15,18 @@ use nitm\models\Alerts as AlertModel;
 
 trait Alerts
 {
-	protected static $_alerts;
+	protected $_alerts;
 	
 	protected function prepareAlerts($event, $for='any', $priority='any')
 	{
 		if($event->handled)
 			return;
-		static::$_alerts = \Yii::$app->getModule('nitm')->alerts;
+		$this->_alerts = \Yii::$app->getModule('nitm')->alerts;
 		$alerts = [];
 		$alerts['remote_type'] = $event->sender->isWhat();
 		$alerts['remote_for'] = $for;
 		$alerts['priority'] = $priority;
-		static::$_alerts->prepare($event->sender->getIsNewRecord(), $alerts);
+		$this->_alerts->prepare($event->sender->getIsNewRecord(), $alerts);
 	}
 	
 	/**
@@ -45,14 +45,14 @@ trait Alerts
 	{
 		if($event->handled)
 			return;
-		switch(!static::$_alerts->criteria('action'))
+		switch(!$this->_alerts->criteria('action'))
 		{
 			case false:
-			switch(static::$_alerts->isPrepared())
+			switch($this->_alerts->isPrepared())
 			{
 				case true:
 				//First check to see if this specific alert exits
-				static::$_alerts->sendAlerts($options, $options['owner_id']);
+				$this->_alerts->sendAlerts($options, $options['owner_id']);
 				$event->handled = true;
 				break;
 				

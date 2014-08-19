@@ -374,8 +374,8 @@ function Nitm ()
 				switch(alert_obj)
 				{
 					case true:
-						alert(selector+" -> "+obj);
-						break;
+					alert(selector+" -> "+obj);
+					break;
 				}
 				break;
 		}
@@ -389,7 +389,7 @@ function Nitm ()
 		return new String(val).replace(/[-{}()*+?.,\\^$|]/g, '\\$&');
 	}
 	
-	this.doRequest = function (rUrl, rData, success, error, timeout, headers, useGet)
+	this.doRequest = function (options, rData, success, error, timeout, headers, useGet)
 	{
 		switch(this.r.hasOwnProperty('token'))
 		{
@@ -397,16 +397,27 @@ function Nitm ()
 			this.r.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Basic "+this.r.token);};
 			break;
 		}
-		if (rUrl != undefined) {
-			//code
-			this.r.url = rUrl;
+		switch(options instanceof Object)
+		{
+			case true:
+			for(var property in options)
+			{
+				this.r[property] = options[property];
+			}
+			this.r.timeout = (options.hasOwnProperty('timeout')) ? options.timeout : 30000;
+			break;
+			
+			default:
+			this.r.url =  options;
+			this.r.data =  rData;
+			this.r.success =  success;
+			this.r.timeout = timeout != undefined ? timeout : 30000;
+			this.r.error = (error == undefined) ? function (e) { console.log(e) } : error;
+			this.r.type = (useGet === true) ? 'GET' : 'POST';
+			break;
 		}
-		this.r.data = rData;
-		this.r.success = success;
-		this.r.error = (error == undefined) ? function (e) { console.log(e) } : error;
-		this.r.timeout = (timeout !== undefined) ? timeout : 30000;
-		this.r.type = (useGet === true) ? 'GET' : 'POST';
-		if(headers != undefined)
+		var headers = (options instanceof Object) ? options.headers : headers;
+		if(headers instanceof Object)
 		{
 			for(var key in headers)
 			{

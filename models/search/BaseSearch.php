@@ -85,7 +85,7 @@ class BaseSearch extends \nitm\models\Data
     {
 		foreach($this->primaryModelAttributes as $attr)
 		{
-			$ret_val[$attr] = \Yii::t('app', array_map('ucfirst', preg_split("/[_-]/", $attr)));
+			$ret_val[$attr] = \Yii::t('app', $this->properName($attr));
 		}
 		return $ret_val;
 	}
@@ -106,11 +106,11 @@ class BaseSearch extends \nitm\models\Data
 				case 'integer':
 				case 'boolean':
 				case 'double':
-        		if(is_numeric($this->{$column->name})) $this->addCondition($column->name, $value);
+        		$this->addCondition($column->name, $value);
 				break;
 				
 				case 'string':
-        		if(is_string($this->{$column->name})) $this->addCondition($column->name, $value, $this->booleanSearch);
+        		$this->addCondition($column->name, $value, $this->booleanSearch);
 				break;
 			}
 		}
@@ -141,7 +141,7 @@ class BaseSearch extends \nitm\models\Data
 				break;
 				
 				default:
-				array_unshift($condition,( $this->inclusiveSearch ? 'or' : 'and'));
+				array_unshift($condition, ($this->inclusiveSearch ? 'or' : 'and'));
 				$this->dataProvider->query->andWhere($condition);
 				break;
 			}
@@ -155,13 +155,14 @@ class BaseSearch extends \nitm\models\Data
         } else {
             $modelAttribute = $attribute;
         }
-        if (trim($value) === '') {
+        if (is_string($value) && trim($value) === '') {
             return;
         }
 		switch(1)
 		{
 			case is_numeric($value) && !$partialMatch:
 			case is_bool($value) && !$partialMatch:
+			case is_array($value) && !$partialMatch:
             switch($this->inclusiveSearch)
 			{
 				case true:
@@ -264,27 +265,32 @@ class BaseSearch extends \nitm\models\Data
 		return $ret_val;
 	}
 	
-	protected function expand($value)
+	protected function expand($values)
 	{
-		switch($this->expand)
+		$values = (array)$values;
+		foreach($values as $idx=>$value)
 		{
-			case 'right':
-			$value = $value."%";
-			break;
-			
-			case 'left':
-			$value = "%".$value;
-			break;
-			
-			case 'none':
-			$value = $value;
-			break;
-			
-			default:
-			$value = "%".$value."%";
-			break;
+			switch($this->expand)
+			{
+				case 'right':
+				$value = $value."%";
+				break;
+				
+				case 'left':
+				$value = "%".$value;
+				break;
+				
+				case 'none':
+				$value = $value;
+				break;
+				
+				default:
+				$value = "%".$value."%";
+				break;
+			}
+			$values[$idx] = strtolower($value);
 		}
-		return strtolower($value);
+		return sizeof($values) == 1 ? array_pop($values) : $values;
 	}
 	
 	private function setProperties($names=[], $values=[])

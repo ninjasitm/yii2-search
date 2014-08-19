@@ -202,7 +202,7 @@ class Replies extends BaseWidget
 		return $ret_val;
 	}
 	
-	public static function afterSaveEvent($event)
+	public function afterSaveEvent($event)
 	{
 		if($event->sender->className() != static::className())
 			return;

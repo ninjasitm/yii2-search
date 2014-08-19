@@ -86,7 +86,7 @@ class DefaultController extends BaseController
 		return parent::beforeAction($action);
 	}
 	
-	public function actionSearch()
+	public function actionSearch($options=[], $searchOptions=[])
 	{
 		$ret_val = [
 			"success" => false, 
@@ -94,20 +94,22 @@ class DefaultController extends BaseController
 			"format" => $this->getResponseFormat(),
 			'message' => "No data found for this filter"
 		];
-		$searchOptions = [
+		$searchModelOptions = array_merge([
 			'inclusiveSearch' => true,
 			'booleanSearch' => true
-		];
-		$class = '\nitm\models\search\\'.$this->model->formName();
+		], $searchOptions);
+		$class = (isset($options['namespace']) ? $options['namespace'] : '\nitm\models\search\\').$this->model->formName();
 		switch(class_exists($class))
 		{
 			case true:
 			$className = $class::className();
-			$searchModel = new $className($searchOptions);
+			$searchModel = new $className($searchModelOptions);
 			break;
 			
 			default:
-			$serchModel = new \nitm\models\search\BaseSearch($searchOptions);
+			$class = (isset($options['namespace']) ? rtrim($options['namespace'], '\\')."\BaseSearch" : '\nitm\models\search\BaseSearch');
+			$className = $class::className();
+			$serchModel = new $className($searchModelOptions);
 			break;
 		}
         $dataProvider = $searchModel->search($_REQUEST);
@@ -127,6 +129,7 @@ class DefaultController extends BaseController
 			$this->setResponseFormat('html');
 			break;
 		}
+		$ret_val['message'] = !$dataProvider->getCount() ? $ret_val['message'] : "Found ".$dataProvider->getCount()." results matching your search";
 		$ret_val['data'] = $this->renderAjax('data', [
 			"dataProvider" => $dataProvider,
 			'searchModel' => $searchModel,
