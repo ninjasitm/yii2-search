@@ -408,7 +408,7 @@ class Dispatcher extends \yii\base\Component
 					{
 						case 'email':
 						$view = ['html' => '@nitm/views/alerts/message/email'];
-						$params['content'] = $this->getEmailMessage($params['content'], current($unMappedAddresses)['user']);
+						$params['content'] = $this->getEmailMessage($params['content'], current($unMappedAddresses)['user'], $scope);
 						break;
 						
 						case 'mobile':
@@ -561,7 +561,7 @@ class Dispatcher extends \yii\base\Component
 		return strlen($original) <= 140 ? $original : substr($original, 0, 136).'...';
 	}
 	
-	protected function getEmailMessage($original, $user)
+	protected function getEmailMessage($original, $user, $scope)
 	{
 		//140 characters to be able to send a single SMS
 		return nl2br($original.$this->getFooter($scope, isset($this->_alerts[$user->getId()]) ? $this->_alerts[$user->getId()]->getAttributes() : null));
