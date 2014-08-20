@@ -26,7 +26,8 @@ trait Nitm
 		$htmlOptions = [
 			'href' => \Yii::$app->urlManager->createUrl($urlOptions), 
 			'role' => $this->formName().'Link', 
-			'id' => $this->isWhat().'-link-'.uniqid()
+			'id' => $this->isWhat().'-link-'.uniqid(),
+			'data-pjax' => 1
 		];
 		return \yii\helpers\Html::tag('a', $text, $htmlOptions);
 	}

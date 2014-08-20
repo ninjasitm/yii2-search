@@ -235,7 +235,7 @@ class ReplyController extends DefaultController
 			$searchModel = new \nitm\models\search\Replies([
 				'withThese' => ['replyTo', 'authorUser'],
 				'queryOptions' => [
-					'andWhere' => new \yii\db\Expression('UNIX_TIMESTAMP(created_at)>='.\Yii::$app->userMeta->lastActive())
+					'andWhere' => new \yii\db\Expression('UNIX_TIMESTAMP(created_at)>='.\Yii::$app->user->identity->lastActive())
 				]
 			]);
 			$dataProvider = $searchModel->search($this->model->constraints);
