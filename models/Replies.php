@@ -215,10 +215,10 @@ class Replies extends BaseWidget
 		{
 			case 'create':
 			$message = [
-				'subject' => " %priority% %remoteFor% was %action% to by %who% on %when%",
+				'subject' => " %priority% %remoteFor%, with id: %id%, was %action% to by %who% on %when%",
 				'message' => [
-					'email' => " %priority% %remoteFor% was %action% to  by %who%. %who% said:\n\t".$event->sender->message,
-					'mobile' => " %priority% %remoteFor% was %action% to  by %who%. %who% said:\n\t".$event->sender->message,
+					'email' => " %priority% %remoteFor%, with id: %id%, was %action% to by %who%. %who% said:\n\t".$event->sender->message,
+					'mobile' => " %who% %action% to your %remoteType%, id %id%: ".$event->sender->message,
 				]
 			];
 			break;

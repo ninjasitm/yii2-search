@@ -123,6 +123,7 @@ class Dispatcher extends \yii\base\Component
 	 */
 	public static function findSpecific(array $criteria)
 	{
+		unset($criteria['user_id']);
 		return Alerts::find()->select('*')
 			->where($criteria)
 			->andWhere([
@@ -170,7 +171,12 @@ class Dispatcher extends \yii\base\Component
 		unset($criteria['user_id']);
 		$listenerCriteria = array_intersect_key($criteria, [
 			'remote_type' => null,
+			'remote_id' => null,
+			'remote_for' => null,
 			'action' => null
+		]);
+		$anyRemoteAction = array_merge($listenerCriteria, [
+			'action' => 'any'
 		]);
 		$anyRemoteType = array_merge($listenerCriteria, [
 			'remote_type' => 'any'
@@ -184,6 +190,7 @@ class Dispatcher extends \yii\base\Component
 		return Alerts::find()->select('*')
 			->orWhere($anyRemoteFor)
 			->orWhere($anyRemoteType)
+			->orWhere($anyRemoteAction)
 			->orWhere($anyPriority)
 			->orWhere($criteria)
 			->andWhere([
@@ -326,12 +333,13 @@ class Dispatcher extends \yii\base\Component
 				{
 					case 'email':
 					$view = ['html' => '@nitm/views/alerts/message/email'];
-					$params['content'] = nl2br($params['content'].$this->getFooter($scope));
+					$params['content'] = $this->getEmailMessage($params['content']);
 					break;
 					
 					case 'mobile':
 					//140 characters to be able to send a single SMS
-					$params['content'] = substr(self::$_body, 0, 140);
+					
+					$params['content'] = $this->getMobileMessage($params['content']);
 					$params['title'] = '';
 					$view = ['text' => '@nitm/views/alerts/message/mobile'];
 					break;
@@ -400,12 +408,12 @@ class Dispatcher extends \yii\base\Component
 					{
 						case 'email':
 						$view = ['html' => '@nitm/views/alerts/message/email'];
-						$params['content'] = nl2br($params['content'].$this->getFooter($scope, isset($this->_alerts[current($unMappedAddresses)['user']->getId()]) ? $this->_alerts[current($unMappedAddresses)['user']->getId()]->getAttributes() : null));
+						$params['content'] = $this->getEmailMessage($params['content'], current($unMappedAddresses)['user']);
 						break;
 						
 						case 'mobile':
 						//140 characters to be able to send a single SMS
-						$params['content'] = substr(self::$_body, 0, 140);
+						$params['content'] = $this->getMobileMessage($params['content']);
 						$params['title'] = '';
 						$view = ['text' => '@nitm/views/alerts/message/mobile'];
 						break;
@@ -415,6 +423,10 @@ class Dispatcher extends \yii\base\Component
 					{
 						case 'email':
 						$this->_message->setSubject($subject);
+						break;
+						
+						case 'mobile':
+						$this->_message->setTextBody($params['content']);
 						break;
 					}
 					$this->send();
@@ -453,7 +465,6 @@ class Dispatcher extends \yii\base\Component
 	{
 		if(!is_null($this->_message))
 		{
-			
 			$this->_message->setFrom(\Yii::$app->params['components.alerts']['sender'])
 				->send();
 			$this->_message = null;
@@ -544,6 +555,18 @@ class Dispatcher extends \yii\base\Component
 		return str_replace(array_keys($variables), array_values($variables), $string);
 	}
 	
+	protected function getMobileMessage($original)
+	{
+		//140 characters to be able to send a single SMS
+		return strlen($original) <= 140 ? $original : substr($original, 0, 136).'...';
+	}
+	
+	protected function getEmailMessage($original, User $user)
+	{
+		//140 characters to be able to send a single SMS
+		return nl2br($original.$this->getFooter($scope, isset($this->_alerts[$user->getId()]) ? $this->_alerts[$user->getId()]->getAttributes() : null));
+	}
+	
 	private function defaultVariables()
 	{
 		return [ 
@@ -570,12 +593,13 @@ class Dispatcher extends \yii\base\Component
 			break;
 		}
 		$methods = ($method == 'any' || is_null($method)) ? array_keys(static::supportedMethods()) : explode(',', $method);
-		unset($methods[array_search('any', $methods)]);
+		if(in_array('any', $methods))
+			unset($methods[array_search('any', $methods)]);
 		foreach($users as $user)
 		{
 			foreach($methods as $method)
 			{
-				if($user->getId() == $this->_originUserId)
+				if($user->getId() == \Yii::$app->user->getId())
 					continue;
 				switch($method)
 				{
