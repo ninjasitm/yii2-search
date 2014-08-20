@@ -32,16 +32,6 @@ class RequestsController extends DefaultController
 		return array_merge_recursive(parent::behaviors(), $behaviors);
     }
 	
-	public static function has()
-	{
-		return [
-			'\nitm\widgets\replies',
-			'\nitm\widgets\activityIndicator',
-			'\nitm\widgets\vote',
-			'\nitm\widgets\issueTracker'
-		];
-	}
-
     /**
      * Lists all Request models.
      * @return mixed
@@ -49,6 +39,11 @@ class RequestsController extends DefaultController
     public function actionIndex()
     {
         $searchModel = new RequestSearch;
+		$searchModel->addWith([
+			'author', 'type', 'requestFor', 
+			'completedBy', 'closedBy', 'replyModel', 
+			'issueModel', 'revisionModel', 'voteModel'
+		]);
         $dataProvider = $searchModel->search(Yii::$app->request->getQueryParams(), ['type', 'requestFor']);
 		$ret_val = [
 			'success' => true,

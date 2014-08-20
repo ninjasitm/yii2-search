@@ -27,7 +27,7 @@ class DefaultController extends BaseController
 				'class' => \yii\filters\AccessControl::className(),
 				'rules' => [
 					[
-						'actions' => ['login', 'error'],
+						'actions' => ['login', 'findExisting'],
 						'allow' => true,
 						'roles' => ['?']
 					],
@@ -67,6 +67,9 @@ class DefaultController extends BaseController
         return [
             'error' => [
                 'class' => 'yii\web\ErrorAction',
+            ],
+            'findExisting' => [
+                'class' => 'yii\web\findExistingAction',
             ]
         ];
     }
@@ -267,8 +270,8 @@ class DefaultController extends BaseController
 			if(!empty($post)) {
 				$result['message'] = implode('<br>', array_map(function ($value) {
 					return array_shift($value);
-				}, $this->model->getErrors()));
-				\Yii::$app->getSession()->setFlash('error', $result['message']);
+				}, $this->model->getfindExistings()));
+				\Yii::$app->getSession()->setFlash('findExisting', $result['message']);
 			}
 			Response::$viewOptions["view"] = '/'.$this->model->isWhat().'/create'; 
         }
@@ -327,8 +330,8 @@ class DefaultController extends BaseController
 			if(!empty($post)) {
 				$result['message'] = implode('<br>', array_map(function ($value) {
 					return array_shift($value);
-				}, $this->model->getErrors()));
-				\Yii::$app->getSession()->setFlash('error', $result['message']);
+				}, $this->model->getfindExistings()));
+				\Yii::$app->getSession()->setFlash('findExisting', $result['message']);
 			}
 			Response::$viewOptions["view"] = '/'.$this->model->isWhat().'/update'; 
         }
