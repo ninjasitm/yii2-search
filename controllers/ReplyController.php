@@ -100,18 +100,17 @@ class ReplyController extends DefaultController
 			default:
 			$replies = RepliesWidget::widget([
 				"model" => $this->model, 
-				'uniqid' => $uniqid
-			]);
-			$form = RepliesForm::widget([
-				"model" => $this->model, 
-				'useModal' => false, 
-				'uniqid' => $uniqid
+				'uniqid' => $uniqid,
+				'formOptions' => [
+					'useModal' => false,
+					'uniqid' => $uniqid,
+				]
 			]);
 			break;
 		}
 		Response::$viewOptions = [
 			'args' => [
-				"content" => $replies.$form,
+				"content" => $replies,
 			],
 			'modalOptions' => [
 				'contentOnly' => true

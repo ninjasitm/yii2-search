@@ -474,7 +474,7 @@ class Dispatcher extends \yii\base\Component
 			return false;
 	}
 	
-	protected function addNotification($message, array $userIds)
+	protected function addNotification($message, $userIds)
 	{
 		foreach($userIds as $userId)
 		{
@@ -561,7 +561,7 @@ class Dispatcher extends \yii\base\Component
 		return strlen($original) <= 140 ? $original : substr($original, 0, 136).'...';
 	}
 	
-	protected function getEmailMessage($original, User $user)
+	protected function getEmailMessage($original, $user)
 	{
 		//140 characters to be able to send a single SMS
 		return nl2br($original.$this->getFooter($scope, isset($this->_alerts[$user->getId()]) ? $this->_alerts[$user->getId()]->getAttributes() : null));
