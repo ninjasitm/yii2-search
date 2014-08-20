@@ -154,20 +154,25 @@ class ReplyController extends DefaultController
 			switch($this->model->reply())
 			{
 				case true:
+				$viewOptions = [
+					'model' => $this->model, 
+					'isNew' => true,
+					'uniqid' => $this->model->getId()
+				];
 				switch($type)
 				{
 					case 'chat':
-					$ret_val['data'] = $this->renderAjax('@nitm/views/chat/view', ['model' => $this->model, 'isNew' => true]);
+					$ret_val['data'] = $this->renderAjax('@nitm/views/chat/view', $viewOptions);
 					break;
 					
 					default:
-					$ret_val['data'] = $this->renderAjax('@nitm/views/replies/view', ['model' => $this->model, 'isNew' => true]);
+					$ret_val['data'] = $this->renderAjax('@nitm/views/replies/view', $viewOptions);
 					break;
 				}
 				$ret_val['success'] = true;
-				$ret_val['message'] = "Reply saved";
-				$ret_val['id'] = $this->model->id;
-				$ret_val['unique_id'] = 'message'.$this->model->id;
+				$ret_val['message'] = "Successfully saved your reply";
+				$ret_val['id'] = $this->model->getId();
+				$ret_val['unique_id'] = 'message'.$this->model->getId();
 				$this->setResponseFormat(\Yii::$app->request->isAjax ? 'json' : 'html');
 				Response::$viewOptions['args']['content'] = $ret_val['data'];
 				break;

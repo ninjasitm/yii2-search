@@ -12,6 +12,7 @@ use kartik\icons\Icon;
 //$this->title = $model->title;
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+$uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 ?>
 <div id="message<?= $model->getId() ?>" class="message <?= $model->hidden ? 'message-hidden' : '';?> <?= \nitm\helpers\Statuses::getIndicator($model->getStatus()) ?>">
 	<?php

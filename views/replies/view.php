@@ -12,10 +12,9 @@ use kartik\icons\Icon;
 //$this->title = $model->title;
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
-$localUniqid = uniqid();
 $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 ?>
-<div id="message<?= $localUniqid ?>" class="message <?= $model->hidden ? 'message-hidden' : '';?>">
+<div id="message<?= $uniqid ?>" class="message <?= $model->hidden ? 'message-hidden' : '';?>">
 	<?php
 		switch(isset($isNew) && ($isNew === true) || $model->isNew())
 		{
@@ -27,19 +26,19 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 	<div class="message-avatar">
 		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar avatar-small" alt="<? $model->author()->username; ?>" src="<?= $model->author()->avatar(); ?>" />
 	</div>
-	<div id="messageHeader<?= $localUniqid ?>" class="message-header">
+	<div id="messageHeader<?= $uniqid ?>" class="message-header">
 		<?php if($model->replyTo != null): ?>
 			<a class="reply-to-author" href="#message<?= $model->replyTo->id ?>">@<?= $model->replyTo->author()->username ?></a><span class="reply-to-author"><?= $model->replyTo->title ?></span>
 		<?php endif; ?>
 	</div>
-	<div id="messageBody<?= $localUniqid ?>" class="message-body">
+	<div id="messageBody<?= $uniqid ?>" class="message-body">
 		<div role='message'> <?= \nitm\helpers\Helper::parseLinks($model->message); ?> </div>
 	</div>
-	<div id="messageFooter<?= $localUniqid ?>" class="message-footer">
-		<div id="messageMeta<?= $localUniqid ?>" class="message-meta">
+	<div id="messageFooter<?= $uniqid ?>" class="message-footer">
+		<div id="messageMeta<?= $uniqid ?>" class="message-meta">
 			Posted on <?= $model->created_at ?> by<a class="author" href="#" role="usernameLink"><?= $model->author()->username ?></a>
 		</div>
-		<div id="messageActions<?= $localUniqid ?>" class="message-actions">
+		<div id="messageActions<?= $uniqid ?>" class="message-actions">
 		<?php
 			if(\Yii::$app->user->identity->isAdmin())
 			{

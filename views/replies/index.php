@@ -21,15 +21,6 @@ switch(\Yii::$app->request->isAjax)
 	break;
 }
 $this->params['breadcrumbs'][] = $title;
-if($useModal == true) {
-	$modalOptions =[
-		'class' => 'btn btn-success',
-		'data-toggle' => 'modal',
-		'data-target' => '#replies-modal-form'
-	];
-} else {
-	$modalOptions = ['class' => 'btn btn-success'];
-}
 ?>
 <h3>Comments</h3>
 <div class="wrapper">
@@ -52,11 +43,9 @@ if($useModal == true) {
 			'pager' => ['class' => \kop\y2sp\ScrollPager::className()]
 		
 		]);
-	?>
-	<?php
-		if(isset($modal))
+		if(!isset($formOptions['enabled']) || (isset($formOptions['enabled']) && $formOptions['enabled'] !== false))
 		{
-			echo $modal;
+			echo \nitm\widgets\replies\RepliesForm::widget($formOptions);
 		}
 	?>
 </div>

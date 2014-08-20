@@ -89,34 +89,26 @@ a.desc:after { content: /*"\e114"*/"\e152"; }
 
 .modal-dialog.modal-xlg {
   	width: 95%;
+	height: 100%;
 	position: fixed;
 	top: 0; bottom: 0; left: 0; right: 0;
 }
 
-.modal {
+.modal, .modal-body {
     overflow: hidden;
 }
-
-.modal-body {
-    overflow: visible;
-}
-
 
 .modal-auto {
 	width: auto;
 	height: auto;
 }
 
-.modal-body.modal-full {
+.modal-body.modal-full, .modal-content.modal-full {
 	height: 90%;
 }
 
-.modal-content.modal-full {
-	height: 95%;
-}
-
 .modal-dialog.modal-full {
-	height: 95%;
+	height: 100%;
 }
 
 .modal-vertical-centered {

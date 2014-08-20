@@ -20,15 +20,6 @@ switch(\Yii::$app->request->isAjax)
 	break;
 }
 $this->params['breadcrumbs'][] = $title;
-if($useModal == true) {
-	$modalOptions =[
-		'class' => 'btn btn-success',
-		'data-toggle' => 'modal',
-		'data-target' => '#replies-modal-form'
-	];
-} else {
-	$modalOptions = ['class' => 'btn btn-success'];
-}
 
 $withForm = isset($withForm) ? $withForm : \Yii::$app->request->get(Replies::FORM_PARAM);
 
@@ -56,17 +47,11 @@ $withForm = isset($withForm) ? $withForm : \Yii::$app->request->get(Replies::FOR
 	
 	]);
 	$form = ($withForm == true) ? \nitm\widgets\replies\ChatForm::widget(['model' => $primaryModel]) : '';
-	echo (\Yii::$app->request->isAjax) ? $messages.$form : Html::tag('div', $messages.$form, $options);
-?>
-<?php
-	if(isset($modal))
-	{
-		echo $modal;
-	}
+	echo Html::tag('div', $messages.$form, $options);
 ?>
 <script type="text/javascript">
 $nitm.onModuleLoad('replies', function () {
-	$nitm.module('replies').init("chat");
+	$nitm.module('replies').init(<?= $options['id']?>);
 	$nitm.module('replies').initChatTabs("chat-navigation");
 	<?php if($updateOptions['enabled']): ?>
 	$nitm.module('replies').initActivity("chat-navigation", "<?= $updateOptions['url'] ?>", <?= $updateOptions['interval']; ?>);
