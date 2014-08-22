@@ -196,7 +196,7 @@ class Replies extends BaseWidget
 			break;
 			
 			default:
-			$ret_val = strlen(strip_tags($this->message)) > $this->maxLength;
+			$ret_val = ($this->remote_type == 'chat') ? strlen(strip_tags($this->message)) > $this->maxLength : false;
 			break;
 		}
 		return $ret_val;
@@ -214,13 +214,38 @@ class Replies extends BaseWidget
 		switch($event->sender->getScenario())
 		{
 			case 'create':
-			$message = [
-				'subject' => " %priority% %remoteFor%, with id: %id%, was %action% to by %who% on %when%",
-				'message' => [
-					'email' => " %priority% %remoteFor%, with id: %id%, was %action% to by %who%. %who% said:\n\t".$event->sender->message,
-					'mobile' => " %who% %action% to your %remoteType%, id %id%: ".$event->sender->message,
-				]
-			];
+			switch($event->sender->parent_type)
+			{
+				case 'chat':
+				switch(empty($event->sender->reply_to))
+				{
+					case false:
+					$text = " %who% to @".$event->sender->getReplyTo()->one()->author()->username.": ".$event->sender->message;
+					break;
+					
+					default:
+					$text = $event->sender->message;
+					break;
+				}
+				$message = [
+					'subject' => "%who% posted a %priority% chat message",
+					'message' => [
+						'email' => $text,
+						'mobile' => "(%priority%)".$text,
+					]
+				];
+				break;
+				
+				default:
+				$message = [
+					'subject' => "%who% replied to %subjectDt% %priority% %remoteFor%, with id: %id%, on %when%",
+					'message' => [
+						'email' => "%who% replied to %subjectDt% %priority% %remoteFor%, with id: %id%, was %action% to by %who%. %who% said:\n\t".$event->sender->message,
+						'mobile' => "%who% %action% to %subjectDt% %remoteFor% with id %id%: ".$event->sender->message,
+					]
+				];
+				break;
+			}
 			break;
 		}
 		if(!empty($message) && $event->sender->getId())
@@ -228,11 +253,13 @@ class Replies extends BaseWidget
 			$this->_alerts->criteria([
 				'remote_for',
 				'remote_id',
-				'action'
+				'action',
+				'priority'
 			], [
 				$event->sender->parent_type,
 				$event->sender->parent_id,
-				'reply'
+				'reply',
+				$event->sender->priority
 			]);
 			switch($event->sender->getScenario())
 			{

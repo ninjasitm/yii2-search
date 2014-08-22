@@ -307,28 +307,27 @@ class Dispatcher extends \yii\base\Component
 			case true:
 			$ret_val = true;
 			//Send the emails/mobile alerts
-			self::$_subject = $this->replaceCommon(is_array($compose['subject']) ? \Yii::$app->mailer->render($compose['subject']['view']) : $compose['subject']);
+			self::$_subject = is_array($compose['subject']) ? \Yii::$app->mailer->render($compose['subject']['view']) : $compose['subject'];
 			foreach($types as $type=>$unMappedAddresses)
 			{
 				$addresses = $this->getAddressNameMap($unMappedAddresses);
 				$params = [
-					"content" => $this->replaceCommon(is_array($compose['message'][$type]) ? \Yii::$app->mailer->render($compose['message'][$type]['view']) : $compose['message'][$type])
+					"subject" => self::$_subject,
+					"content" => is_array($compose['message'][$type]) ? \Yii::$app->mailer->render($compose['message'][$type]['view']) : $compose['message'][$type]
 				];
 				switch($scope)
 				{
 					case 'owner':
-					$subject = 'Your '.self::$_subject;
-					$params['content'] = (($this->criteria('action') == 'create') ? '' : 'Your ').$params['content'];
-					$params['greeting'] = "Dear ".current($addresses)['user']->username.", <br><br>";
+					$this->_variables['%bodyDt%'] = 'your';
+					$this->_variables['%subjectDt%'] = $this->_variables['%bodyDt%'];
 					break;
 					
 					default:
-					$subject = (($this->criteria('action') == 'create') ? 'A' : 'The').' '.self::$_subject;
-					$params['content'] = (($this->criteria('action') == 'create') ? '' : 'The ').$params['content'];
-					$params['greeting'] = "Dear user, <br><br>";
+					$this->_variables['%bodyDt%'] = (($this->criteria('action') == 'create') ? 'a' : 'the');
+					$this->_variables['%subjectDt%'] = $this->_variables['%bodyDt%'];
 					break;
 				}
-				$params['title'] = $subject;
+				$params['title'] = $params['subject'];
 				switch($type)
 				{
 					case 'email':
@@ -344,11 +343,16 @@ class Dispatcher extends \yii\base\Component
 					$view = ['text' => '@nitm/views/alerts/message/mobile'];
 					break;
 				}
+				$params = $this->replaceCommon($params);
 				$this->_message = \Yii::$app->mailer->compose($view, $params)->setTo(array_slice($addresses, 0, 1));
 				switch($type)
 				{
 					case 'email':
-					$this->_message->setSubject($subject);
+					$this->_message->setSubject($params['subject']);
+					break;
+						
+					case 'mobile':
+					$this->_message->setTextBody($params['content']);
 					break;
 				}
 				switch(sizeof($addresses) >= 1)
@@ -358,8 +362,7 @@ class Dispatcher extends \yii\base\Component
 					break;
 				}
 				$this->send();
-				$notificationText = $this->replaceCommon($subject." by %who% on %when%");
-				$this->addNotification($notifiactionText, $unMappedAddresses);
+				$this->addNotification($this->replaceCOmmon($this->getMobileMessage($compose['message']['mobile'])), [current($unMappedAddresses)['user']->getId()]);
 			}
 			break;
 		}
@@ -380,7 +383,7 @@ class Dispatcher extends \yii\base\Component
 			case true:
 			$ret_val = true;
 			//Send the emails/mobile alerts
-			self::$_subject = $this->replaceCommon(is_array($compose['subject']) ? \Yii::$app->mailer->render($compose['subject']['view']) : $compose['subject']);
+			self::$_subject = is_array($compose['subject']) ? \Yii::$app->mailer->render($compose['subject']['view']) : $compose['subject'];
 			foreach($types as $type=>$unMappedAddresses)
 			{
 				$addresses = $this->getAddressNameMap($unMappedAddresses);
@@ -388,22 +391,23 @@ class Dispatcher extends \yii\base\Component
 				{
 					$address = [$name => $email];
 					$params = [
-						"content" => $this->replaceCommon(is_array($compose['message'][$type]) ? \Yii::$app->mailer->render($compose['message'][$type]['view']) : $compose['message'][$type])
+						"subject" => self::$_subject,
+						"content" => (is_array($compose['message'][$type]) ? \Yii::$app->mailer->render($compose['message'][$type]['view']) : $compose['message'][$type])
 					];
 					switch($scope)
 					{
 						case 'owner':
-						$subject = 'Your '.self::$_subject;
-						$params['content'] = (($this->criteria('action') == 'create') ? '' : 'Your ').$params['content'];
+						$this->_variables['%bodyDt%'] = 'your';
+						$this->_variables['%subjectDt%'] = $this->_variables['%bodyDt%'];
 						break;
 						
 						default:
-						$subject = (($this->criteria('action') == 'create') ? 'A' : 'The').' '.self::$_subject;
-						$params['content'] = (($this->criteria('action') == 'create') ? '' : 'The ').$params['content'];
+						$this->_variables['%bodyDt%'] = (($this->criteria('action') == 'create') ? 'a' : 'the');
+						$this->_variables['%subjectDt%'] = $this->_variables['%bodyDt%'];
 						break;
 					}
 					$params['greeting'] = "Dear ".current($unMappedAddresses)['user']->username.", <br><br>";
-					$params['title'] = $subject;
+					$params['title'] = $params['subject'];
 					switch($type)
 					{
 						case 'email':
@@ -418,11 +422,12 @@ class Dispatcher extends \yii\base\Component
 						$view = ['text' => '@nitm/views/alerts/message/mobile'];
 						break;
 					}
+					$params = $this->replaceCommon($params);
 					$this->_message = \Yii::$app->mailer->compose($view, $params)->setTo($address);
 					switch($type)
 					{
 						case 'email':
-						$this->_message->setSubject($subject);
+						$this->_message->setSubject($params['subject']);
 						break;
 						
 						case 'mobile':
@@ -430,8 +435,7 @@ class Dispatcher extends \yii\base\Component
 						break;
 					}
 					$this->send();
-					$notificationText = $this->replaceCommon($subject." by %who% on %when%");
-					$this->addNotification($notificationText, [current($unMappedAddresses)['user']->getId()]);
+					$this->addNotification($this->replaceCOmmon($this->getMobileMessage($compose['message']['mobile'])), [current($unMappedAddresses)['user']->getId()]);
 				}
 			}
 			break;
@@ -551,14 +555,34 @@ class Dispatcher extends \yii\base\Component
 	
 	protected function replaceCommon($string)
 	{
+		$string = is_array($string) ? $string : [$string];
+		$stringPlaceholders = array_map(function ($value) {
+			preg_match_all("/%([\w+\:]+)%/", $value, $matches);
+			if(sizeof($matches[1]) >= 1)
+				return $matches[1];
+			else
+				return false;
+		}, $string);
 		$variables = array_merge($this->defaultVariables(), $this->_variables);
-		return str_replace(array_keys($variables), array_values($variables), $string);
+		array_walk($stringPlaceholders, function ($value, $key) use (&$variables) {
+			if(!$value)
+				return;
+			array_walk($value, function ($v) use(&$variables) {	
+				$v = explode(':', $v);
+				$k = $v[0];
+				$f = sizeof($v) == 1 ? null : $v[1];
+				$realValue = $variables['%'.implode(':', $v).'%'];
+				$variables['%'.implode(':', $v).'%'] = is_null($f) == 1 ? $realValue : $f($realValue);
+			});
+		});
+		$ret_val = str_replace(array_keys($variables), array_values($variables), $string);
+		return (is_array($ret_val) && sizeof($ret_val) == 1) ? array_pop($ret_val) : $ret_val;
 	}
 	
 	protected function getMobileMessage($original)
 	{
 		//140 characters to be able to send a single SMS
-		return strlen($original) <= 140 ? $original : substr($original, 0, 136).'...';
+		return strip_tags(strlen($original) <= 140 ? $original : substr($original, 0, 136).'...');
 	}
 	
 	protected function getEmailMessage($original, $user, $scope)
@@ -570,15 +594,15 @@ class Dispatcher extends \yii\base\Component
 	private function defaultVariables()
 	{
 		return [ 
-			'%who%' => \Yii::$app->user->identity->username,
+			'%who%' => '@'.\Yii::$app->user->identity->username,
 			'%when%' => date('D M jS Y @ h:iA'), 
 			'%today%' => date('D M jS Y'),
-			'%priority%' => ($this->_criteria['priority'] == 'any') ? 'Normal' : ucfirst($this->_criteria['priority']),
+			'%priority%' => ($this->criteria('priority') == 'any') ? 'Normal' : ucfirst($this->criteria('priority')),
 			'%action%' => $this->reportedAction,
-			'%remoteFor%' => ucfirst($this->_criteria['remote_for']),
-			'%remoteType%' => ucfirst($this->_criteria['remote_type']),
-			'%remoteId%' => $this->_criteria['remote_id'],
-			'%id%' => $this->_criteria['remote_id']
+			'%remoteFor%' => ucfirst($this->criteria('remote_for')),
+			'%remoteType%' => ucfirst($this->criteria('remote_type')),
+			'%remoteId%' => $this->criteria('remote_id'),
+			'%id%' => $this->criteria('remote_id')
 		];
 	}
 	

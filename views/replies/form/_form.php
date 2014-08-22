@@ -23,6 +23,7 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 	<?php $form = ActiveForm::begin([
 			'id' => 'reply_form'.$uniqid,
 			'type' => ActiveForm::TYPE_HORIZONTAL,
+			'method' => 'post',
 			"action" => "/reply/new/".$parentType."/".$parentId.(isset($parentKey) ? "/".urlencode($parentKey) : ''),
 			"options" => [
 				'data-editor' => $editor,

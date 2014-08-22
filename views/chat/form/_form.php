@@ -39,6 +39,7 @@ switch(1)
 		$form = ActiveForm::begin([
 			'id' => 'reply_form0',
 			"action" => "/reply/new/chat/0",
+			'method' => 'post',
 			"options" => [
 				'data-editor' => $editor,
 				'data-parent' => 'chat-messages',
