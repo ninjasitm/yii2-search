@@ -68,9 +68,6 @@ class DefaultController extends BaseController
             'error' => [
                 'class' => 'yii\web\ErrorAction',
             ],
-            'error' => [
-                'class' => 'yii\web\errorAction',
-            ]
         ];
     }
 	
