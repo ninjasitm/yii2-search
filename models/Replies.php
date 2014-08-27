@@ -211,12 +211,14 @@ class Replies extends BaseWidget
 			'%id%' => $event->sender->getId(),
 			"%viewLink%" => \yii\helpers\Html::a(\Yii::$app->urlManager->createAbsoluteUrl($event->sender->parent_type."/view/".$event->sender->parent_id), \Yii::$app->urlManager->createAbsoluteUrl($event->sender->parent_type."/view/".$event->sender->parent_id))
 		]);
+		$type = $event->sender->isWhat();;
 		switch($event->sender->getScenario())
 		{
 			case 'create':
 			switch($event->sender->parent_type)
 			{
 				case 'chat':
+				$type = 'chat';
 				switch(empty($event->sender->reply_to))
 				{
 					case false:
@@ -251,20 +253,26 @@ class Replies extends BaseWidget
 		if(!empty($message) && $event->sender->getId())
 		{
 			$this->_alerts->criteria([
+				'remote_type',
 				'remote_for',
 				'remote_id',
 				'action',
 				'priority'
 			], [
+				$type,
 				$event->sender->parent_type,
 				$event->sender->parent_id,
-				'reply',
+				($event->sender->reply_to != null ? 'reply' : 'create'),
 				$event->sender->priority
 			]);
-			switch($event->sender->getScenario())
+			switch($event->sender->reply_to != null)
 			{
-				case 'create':
+				case true:
 				$this->_alerts->reportedAction = 'replied';
+				break;
+				
+				default:
+				$this->_alerts->reportedAction = 'create';
 				break;
 			}
 			$message['owner_id'] = $event->sender->hasAttribute('author_id') ? $event->sender->author_id : null;

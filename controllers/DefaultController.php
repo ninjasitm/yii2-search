@@ -112,6 +112,7 @@ class DefaultController extends BaseController
 			$serchModel = new $className($searchModelOptions);
 			break;
 		}
+		
         $dataProvider = $searchModel->search($_REQUEST);
 		
 		$ret_val['data'] = $this->renderAjax('data', [
