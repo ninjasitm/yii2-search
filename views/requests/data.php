@@ -258,10 +258,15 @@ $this->params['breadcrumbs'][] = $this->title;
 			]
 		);
 	},
-	'pager' => [
+	/*'pager' => [
 		'class' => \kop\y2sp\ScrollPager::className(),
-		'container' => '#requests',
-		'item' => "#requests [id^='request']"
+		'container' => '#requests-ias-container',
+		'item' => "tr"
+	]*/
+	'pager' => [
+		'linkOptions' => [
+			'data-pjax' => 1
+		],
 	]
 ]); ?>
 <?php \yii\widgets\Pjax::end(); ?>

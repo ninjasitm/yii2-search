@@ -12,7 +12,7 @@ use kartik\icons\Icon;
 //$this->title = $model->title;
 $this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Issues'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
-$uniqid = !isset($uniqid) ? uniqid() : $uniqid;
+$uniqid = !isset($uniqid) ? uniqid() : $uniqid.$model->getId();
 ?>
 <div id="message<?= $model->getId() ?>" class="message <?= $model->hidden ? 'message-hidden' : '';?> <?= \nitm\helpers\Statuses::getIndicator($model->getStatus()) ?>">
 	<?php
@@ -23,28 +23,28 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 			break;
 		}
 	?>
-	<div id="messageAvatar<?= $model->getId() ?>" class="message-avatar">
+	<div id="message-avatar<?= $model->getId() ?>" class="message-avatar">
 		<img id='messageAvatar<?= $model->getId(); ?>' class="avatar-small" alt="<? $model->author()->username; ?>" src="<?= $model->author()->avatar(); ?>" />
 	</div>
-	<div id="messageHeader<?= $model->getId() ?>" class="message-header">
+	<div id="message-header<?= $model->getId() ?>" class="message-header">
 		<?php if($model->replyTo != null): ?>
 			<a class="reply-to-author" href="#message<?= $model->replyTo->id ?>">@<?= $model->replyTo->author()->username ?></a><span class="reply-to-author"><?= $model->replyTo->title ?></span>
 		<?php endif; ?>
 		<span class="title"><?= $model->title ?><span>
 	</div>
-	<div id="messageBody<?= $model->getId() ?>" class="message-body">
+	<div id="message-body<?= $model->getId() ?>" class="message-body">
 		<div role='message'> <?= \nitm\helpers\Helper::parseLinks($model->message); ?> </div>
 	</div>
-	<div id="messageFooter<?= $model->getId() ?>" class="message-footer">
-		<div id="messageMeta<?= $model->getId() ?>" class="message-meta">
+	<div id="message-footer<?= $model->getId() ?>" class="message-footer">
+		<div id="message-meta<?= $model->getId() ?>" class="message-meta">
 			Posted on <?= $model->created_at ?> by <a class="author" href="#" role="usernameLink"><?= $model->author()->username ?></a>
 		</div>
-		<div id="messageActions<?= $model->getId() ?>" class="message-actions">
+		<div id="message-actions<?= $model->getId() ?>" class="message-actions">
 		<?php
 			if(\Yii::$app->user->identity->isAdmin())
 			{
 				echo Html::a($model->hidden ? 'unhide' : 'hide', \Yii::$app->urlManager->createUrl(['/reply/hide/'.$model->getId()]), [
-					'id' => "hideMessage".$model->getId(),
+					'id' => "hide-message".$model->getId(),
 					'title' => Yii::t('yii', ($model->hidden ? 'Unhide' : 'Hide').' this message'),
 					'class' => 'fa-2x',
 					'role' => 'hideReply',
@@ -53,22 +53,24 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid;
 				]);
 			}
 			echo Html::a('reply', \Yii::$app->urlManager->createUrl(['/reply/to/'.$model->getId()]), [
-				'id' => "replyToMessage".$model->getId(),
+				'id' => "reply-to-message".$model->getId(),
 				'title' => Yii::t('yii', "Reply to this message"),
 				'class' => 'fa-2x',
 				'role' => 'replyTo',
-				'data-parent' => 0,
-				'data-reply-to' => $model->getId(),
+				'data-parent' => '#chat-form0',
+				'data-reply-to-id' => $model->getId(),
+				'data-reply-to-message' => '#message-body'.$model->getId(),
 				'data-author' => $model->author()->username,
 				'data-title' => $model->title
 			]);
 			echo Html::a('quote', \Yii::$app->urlManager->createUrl(['/reply/quote/'.$model->getId()]), [
-				'id' => "quoteMessage".$model->getId(),
+				'id' => "quote-message".$model->getId(),
 				'title' => Yii::t('yii', "Quote this message"),
 				'class' => 'fa-2x',
 				'role' => 'quoteReply',
-				'data-parent' => 0,
-				'data-reply-to' => $model->getId(),
+				'data-parent' => '#chat-form0',
+				'data-reply-to-id' => $model->getId(),
+				'data-reply-to-message' => '#message-body'.$model->getId(),
 				'data-author' => $model->author()->username,
 				'data-title' => $model->title
 			]);

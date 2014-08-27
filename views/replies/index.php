@@ -12,8 +12,8 @@ use nitm\widgets\replies\RepliesModal;
  * @var app\models\search\Replies $searchModel
  */
 
-$uniqid = !isset($uniqid) ? uniqid() : $uniqid;
-$title = Yii::t('app', 'Replies: '.ucfirst($parentType).": ".$parentId);
+$widget->uniqid = !isset($widget->uniqid) ? uniqid() : $widget->uniqid;
+$title = Yii::t('app', 'Replies: '.ucfirst($widget->parentType).": ".$widget->parentId);
 switch(\Yii::$app->request->isAjax)
 {
 	case true:
@@ -24,35 +24,53 @@ $this->params['breadcrumbs'][] = $title;
 ?>
 <h3>Comments</h3>
 <div class="wrapper">
-	<?php
-		$options = is_array($options) ? $options : [
-			'role' => 'entityMessages',
-			'id' => 'messages'.$uniqid,
-			'data-parent' => 'replyFormParent'
-		];
-		echo ListView::widget([
-			'summary' => false,
-			'layout' => '{items}',
-			'emptyText' => '',
-			'options' => $options,
-			'dataProvider' => $dataProvider,
-			'itemOptions' => ['class' => 'item'],
-			'itemView' => function ($model, $key, $index, $widget) use($uniqid) {
-					return $widget->render('@nitm/views/replies/view',['model' => $model, 'uniqid' => $uniqid]);
-			},
-			'pager' => ['class' => \kop\y2sp\ScrollPager::className()]
-		
-		]);
-		if(!isset($formOptions['enabled']) || (isset($formOptions['enabled']) && $formOptions['enabled'] !== false))
-		{
-			echo \nitm\widgets\replies\RepliesForm::widget($formOptions);
-		}
-	?>
+<?php
+	$widget->options = is_array($widget->options) ? $widget->options : [
+		'role' => 'entityMessages',
+		'id' => 'messages'.$uniqid,
+		'data-parent' => 'replyFormParent'
+	];
+	$messages = ListView::widget([
+		'summary' => false,
+		'layout' => '{items}',
+		'emptyText' => '',
+		'options' => $widget->options,
+		'dataProvider' => $dataProvider,
+		'itemOptions' => ['class' => 'item'],
+		'itemView' => function ($model, $key, $index, $_widget) use($widget) {
+				return $widget->render('@nitm/views/replies/view',[
+					'model' => $model, 
+					'uniqid' => $widget->uniqid,
+					'formId' => '#messages-form'.$widget->uniqid
+				]);
+		},
+		/*'pager' => [
+			'class' => \kop\y2sp\ScrollPager::className(),
+			'container' => '#requests-ias-container',
+			'item' => "tr"
+		]*/
+		'pager' => [
+			'linkOptions' => [
+				'data-pjax' => 1
+			],
+		]
+	
+	]);
+	$form = !isset($widget->formOptions['enabled']) || (isset($widget->formOptions['enabled']) && $widget->formOptions['enabled'] !== false) ? \nitm\widgets\replies\RepliesForm::widget($widget->formOptions) : '';
+	switch(isset($widget->noContainer) && $widget->noContainer == true)
+	{
+		case false:
+		$messages = Html::tag('div', $messages, ['role' => 'replyFormParent']);
+		$messages = $messages.$form;
+		break;
+	}
+	echo $messages;
+?>
 </div>
 <?php if(\Yii::$app->request->isAjax ): ?>
 <script type="text/javascript">
 $nitm.onModuleLoad('replies', function () {
-	$nitm.module('replies').init("messages<?=$uniqid?>");
+	$nitm.module('replies').init("<?=$widget->options['id']?>");
 });
 </script>
 <?php endif; ?>

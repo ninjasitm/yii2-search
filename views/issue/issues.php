@@ -40,7 +40,16 @@ echo ListView::widget([
 		$viewOptions = array_merge(['model' => $model], $options);
 		return $widget->render('@nitm/views/issue/view', $viewOptions);
 	},
-	'pager' => ['class' => \kop\y2sp\ScrollPager::className()]
+	/*'pager' => [
+		'class' => \kop\y2sp\ScrollPager::className(),
+		'container' => '#issues-ias-container',
+		'item' => "tr"
+	]*/
+	'pager' => [
+		'linkOptions' => [
+			'data-pjax' => 1
+		],
+	]
 
 ]);
 ?>

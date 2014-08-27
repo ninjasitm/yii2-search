@@ -34,6 +34,16 @@ $this->params['breadcrumbs'][] = $this->title;
 			'tag' => 'ul',
 			'class' => 'list-group',
 			'role' => 'alertsList'
+		],
+		/*'pager' => [
+			'class' => \kop\y2sp\ScrollPager::className(),
+			'container' => '#documentation-ias-container',
+			'item' => "tr"
+		]*/
+		'pager' => [
+			'linkOptions' => [
+				'data-pjax' => 1
+			],
 		]
     ]); ?>
 </div>

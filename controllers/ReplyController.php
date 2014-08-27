@@ -79,8 +79,7 @@ class ReplyController extends DefaultController
      */
     public function actionIndex($type, $id, $key=null)
     {
-		$uniqid = uniqid();
-		$this->model = new Replies(['constrain' => [$id, $type, $key]]);
+		$this->model = new Replies(['constrain' => [$id, $type]]);
 		switch($type)
 		{
 			case 'chat':
@@ -91,6 +90,7 @@ class ReplyController extends DefaultController
 			];
 			$replies = \nitm\widgets\replies\ChatMessages::widget([
 				'model' => $this->model, 
+				'noContainer' => $key,
 				'withForm' => is_null(\Yii::$app->request->get(Replies::FORM_PARAM, null)) ? true : \Yii::$app->request->get(Replies::FORM_PARAM),
 				'updateOptions' => $updateOptions
 			]);
@@ -99,11 +99,10 @@ class ReplyController extends DefaultController
 			
 			default:
 			$replies = RepliesWidget::widget([
-				"model" => $this->model, 
-				'uniqid' => $uniqid,
+				"model" => $this->model,  
+				'noContainer' => $key,
 				'formOptions' => [
 					'useModal' => false,
-					'uniqid' => $uniqid,
 				]
 			]);
 			break;
