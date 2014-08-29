@@ -34,10 +34,9 @@ switch(1)
 ?>
 <div class="chat-form chat-form-container" id='chat-form<?= $parentId ?>'>
 	<?= \nitm\widgets\alert\Alert::widget(); ?>
-	<div id="alert"></div>
 	<?php 
 		$form = ActiveForm::begin([
-			'id' => 'reply_form0',
+			'id' => 'chat-form0',
 			"action" => "/reply/new/chat/0",
 			'method' => 'post',
 			"options" => [

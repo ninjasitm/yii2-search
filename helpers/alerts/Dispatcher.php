@@ -173,7 +173,8 @@ class Dispatcher extends \yii\base\Component
 			'remote_type' => null,
 			'remote_id' => null,
 			'remote_for' => null,
-			'action' => null
+			'action' => null,
+			'priority' => null
 		]);
 		$anyRemoteAction = array_merge($listenerCriteria, [
 			'action' => 'any'
@@ -184,11 +185,15 @@ class Dispatcher extends \yii\base\Component
 		$anyRemoteFor = array_merge($listenerCriteria, [
 			'remote_for' => 'any'
 		]);
+		$anyRemoteId = array_merge($listenerCriteria, [
+			'remote_id' => null
+		]);
 		$anyPriority = array_merge($listenerCriteria, [
 			'priority' => 'any'
 		]);
 		return Alerts::find()->select('*')
 			->orWhere($anyRemoteFor)
+			->orWhere($anyRemoteId)
 			->orWhere($anyRemoteType)
 			->orWhere($anyRemoteAction)
 			->orWhere($anyPriority)
@@ -209,28 +214,19 @@ class Dispatcher extends \yii\base\Component
 	{
 		$criteria = array_intersect_key($criteria, [
 			'remote_type' => null,
-			'action' => null
+			'action' => null,
+			'priority' => null
 		]);
 		$criteria['global'] = 1;
 		$criteria['user_id'] = null;
-		$anyRemoteType = array_merge($criteria, [
-			'remote_type' => 'any'
-		]);
-		$anyRemoteFor = array_replace($criteria, [
-			'remote_for' => 'any'
-		]);
-		$anyPriority = array_replace($criteria, [
-			'priority' => 'any'
-		]);
-		$anyAction = array_replace($criteria, [
-			'action' => 'any'
+		$anyMatching = array_replace($criteria, [
+			'remote_type' => 'any',
+			'priority' => 'any',
+			'action' => 'any',
 		]);
 		return Alerts::find()->select('*')
 			->orWhere($criteria)
-			->orWhere($anyRemoteType)
-			->orWhere($anyRemoteFor)
-			->orWhere($anyPriority)
-			->orWhere($anyAction)
+			->orWhere($anyMatching)
 			->indexBy('user_id')
 			->with('user');
 	}
@@ -362,7 +358,7 @@ class Dispatcher extends \yii\base\Component
 					break;
 				}
 				$this->send();
-				$this->addNotification($this->replaceCOmmon($this->getMobileMessage($compose['message']['mobile'])), [current($unMappedAddresses)['user']->getId()]);
+				$this->addNotification($this->getMobileMessage($compose['message']['mobile']), [current($unMappedAddresses)['user']->getId()]);
 			}
 			break;
 		}
@@ -435,7 +431,7 @@ class Dispatcher extends \yii\base\Component
 						break;
 					}
 					$this->send();
-					$this->addNotification($this->replaceCOmmon($this->getMobileMessage($compose['message']['mobile'])), [current($unMappedAddresses)['user']->getId()]);
+					$this->addNotification($this->getMobileMessage($compose['message']['mobile']), [current($unMappedAddresses)['user']->getId()]);
 				}
 			}
 			break;
@@ -567,11 +563,11 @@ class Dispatcher extends \yii\base\Component
 		array_walk($stringPlaceholders, function ($value, $key) use (&$variables) {
 			if(!$value)
 				return;
-			array_walk($value, function ($v) use(&$variables) {	
+			array_walk($value, function ($v) use(&$variables) {
 				$v = explode(':', $v);
 				$k = $v[0];
 				$f = sizeof($v) == 1 ? null : $v[1];
-				$realValue = $variables['%'.implode(':', $v).'%'];
+				$realValue = $variables['%'.$k.'%'];
 				$variables['%'.implode(':', $v).'%'] = is_null($f) == 1 ? $realValue : $f($realValue);
 			});
 		});
@@ -581,6 +577,13 @@ class Dispatcher extends \yii\base\Component
 	
 	protected function getMobileMessage($original)
 	{
+		switch(is_array($original))
+		{
+			case true:
+			$original = \Yii::$app->mailer->render($original['view']);
+			break;
+		}
+		$original = $this->replaceCommon($original);
 		//140 characters to be able to send a single SMS
 		return strip_tags(strlen($original) <= 140 ? $original : substr($original, 0, 136).'...');
 	}

@@ -74,7 +74,7 @@ function Nitm ()
 	
 	this.animateSubmit = function (form, after)
 	{
-		var $form = $nitm.getObj(form);		$form.fin
+		var $form = $nitm.getObj(form);
 		switch(true)
 		{				
 			case $form.find("[type='image']").get(0) != undefined:
@@ -156,7 +156,8 @@ function Nitm ()
 		switch(true)
 		{
 			case newObject instanceof HTMLElement:
-			var obj = $(newObject).parents().find('#alert').last();
+			var obj = $(newObject).siblings('#alert');
+			obj = obj.length <= 0 ? $(newObject).parents().find('#alert').last() : obj;
 			break;
 			
 			case newObject instanceof Array:
@@ -179,7 +180,7 @@ function Nitm ()
 		if(obj instanceof jQuery)
 		{
 			var id = 'alert'+Date.now();
-			var message = $('<div id="'+id+'" class="'+newClass+'">').html(newMessage);
+			var message = $('<div id="'+id+'" class="'+newClass+'">').html(newMessage.toString());
 			obj.append(message).fadeIn();
 			setTimeout(function () {$('#'+id).fadeOut();$('#'+id).remove()}, 10000);
 		}

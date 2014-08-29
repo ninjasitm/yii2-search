@@ -145,7 +145,16 @@ use nitm\helpers\Cache;
      */
     public function getReplies()
     {
-        return $this->hasMany(\nitm\models\Replies::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()])->orderBy(['id' => SORT_DESC])->with('replyTo');
+		$params = [
+			"parent_type" => $this->isWhat()
+		];
+		switch(\Yii::$app->user->identity->isAdmin())
+		{
+			case false:
+			$params['hidden'] = 0;
+			break;
+		}
+        return $this->hasMany(\nitm\models\Replies::className(), ['parent_id' => 'id'])->andWhere($params)->orderBy(['id' => SORT_DESC])->with('replyTo');
     }
 	
 	public function replies()

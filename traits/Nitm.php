@@ -158,13 +158,14 @@ trait Nitm
 				]
 			]);
 			$ret_val = $model->getList('name');
-			CacheHelper::cache()->set('category-list-'.$type, $ret_val);
+			CacheHelper::cache()->set('category-list-'.$type, $ret_val, 600);
 			break;
 			
 			default:
 			$ret_val = CacheHelper::cache()->get('category-list-'.$type);
 			break;
 		}
+		asort($ret_val);
 		return $ret_val;
     }
 	

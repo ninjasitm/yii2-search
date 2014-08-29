@@ -68,9 +68,6 @@ class DefaultController extends BaseController
             'error' => [
                 'class' => 'yii\web\ErrorAction',
             ],
-            'error' => [
-                'class' => 'yii\web\errorAction',
-            ]
         ];
     }
 	
@@ -115,6 +112,7 @@ class DefaultController extends BaseController
 			$serchModel = new $className($searchModelOptions);
 			break;
 		}
+		
         $dataProvider = $searchModel->search($_REQUEST);
 		
 		$ret_val['data'] = $this->renderAjax('data', [

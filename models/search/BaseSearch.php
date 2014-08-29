@@ -29,6 +29,7 @@ class BaseSearch extends \nitm\models\Data
 	 * Should the or clause be used?
 	 */
 	public $inclusiveSearch;
+	public $exclusiveSearch;
 	public $mergeInclusive;
 	
 	const SEARCH_PARAM = '__searchType';
@@ -163,7 +164,7 @@ class BaseSearch extends \nitm\models\Data
 			case is_numeric($value) && !$partialMatch:
 			case is_bool($value) && !$partialMatch:
 			case is_array($value) && !$partialMatch:
-            switch($this->inclusiveSearch)
+            switch($this->inclusiveSearch && !$this->exclusiveSearch)
 			{
 				case true:
 				$this->conditions['or'][] = [$attribute => $value];
@@ -353,8 +354,8 @@ class BaseSearch extends \nitm\models\Data
 				{
 					switch($filterName)
 					{
-						case 'inclusive':
-						$this->inclusiveSearch = (bool)$filterValue;
+						case 'exclusive':
+						$this->exclusiveSearch = (bool)$filterValue;
 						break;
 						
 						case 'sort':
@@ -387,6 +388,7 @@ class BaseSearch extends \nitm\models\Data
 			}
 		}
 		$params = array_intersect_key($params, array_flip($this->primaryModelAttributes));
+		$this->exclusiveSearch = !(empty($params) && !$useEmptyParams);
 		$params = (empty($params) && !$useEmptyParams) ? array_combine($this->primaryModelAttributes, array_fill(0, sizeof($this->primaryModelAttributes), '')) : $params;
 		if(!empty($params)) $this->setProperties(array_keys($params), array_values($params));
 		$params = [$this->primaryModelFormName => $params];
