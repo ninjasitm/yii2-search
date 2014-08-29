@@ -243,8 +243,6 @@ class Dispatcher extends \yii\base\Component
 					}
 				}
 			}
-		print_r($this->_notifications);
-		exit;
 			$this->sendNotifications();
 			break;
 		}
