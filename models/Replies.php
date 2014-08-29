@@ -218,7 +218,6 @@ class Replies extends BaseWidget
 			switch($event->sender->parent_type)
 			{
 				case 'chat':
-				$type = 'chat';
 				switch(empty($event->sender->reply_to))
 				{
 					case false:

@@ -147,7 +147,7 @@ class DefaultController extends BaseController
 			$this->setResponseFormat('html');
 			break;
 		}
-		$ret_val['message'] = !$dataProvider->getCount() ? $ret_val['message'] : "Found ".$dataProvider->getCount()." results matching your search";
+		$ret_val['message'] = !$dataProvider->getCount() ? $ret_val['message'] : "Found ".$dataProvider->getTotalCount()." results matching your search";
 		Response::$viewOptions['args'] = [
 			"content" => $ret_val['data'],
 		];

@@ -22,15 +22,26 @@ $this->params['breadcrumbs'][] = $this->title;
 			]);
 		},
 		'summary' => false,
-		"layout" => "{summary}\n{items}",
+		"layout" => "{summary}\n{items}{pager}",
 		'itemOptions' => [
 			'tag' => false,
 		],
 		'options' => [
 			'id' => 'notification-list-container',
 			'tag' => 'div',
-			'class' => 'list-group',
+			'class' => 'list-group absolute full-height',
+			'style' => 'margin-top: 70px; padding-bottom: 120px',
 			'role' => 'notificationList'
+		],
+		'pager' => [
+			'class' => \kop\y2sp\ScrollPager::className(),
+			'container' => '#notification-list-container',
+			'eventOnScroll' => "function (){console.log('scroll');}",
+			'item' => ".list-group-item",
+			'negativeMargin' => 250,
+			'delay' => 1000,
+			'triggerText' => 'More notifications',
+			'noneLeftText' => 'No More notifications'
 		]
     ]); ?>
 </div>

@@ -26,7 +26,8 @@ $widget->withForm = isset($widget->withForm) ? $widget->withForm : \Yii::$app->r
 ?>
 <?php
 	$_GET[Replies::FORM_PARAM] = 0;
-	$widget->listOptions = !$widget->noContainer ? $widget->listOptions : ['id' => 'page'.$_GET['page']];
+	$widget->listOptions = !$widget->noContainer ? $widget->listOptions : ['id' => 'page'.@$_GET['page']];
+	$widget->listOptions['class'] = isset($widget->listOptions['class']) ? $widget->listOptions['class'] : 'chat-messages';
 	$dataProvider->pagination->route = '/reply/index/chat/0/1';
 	$params = array_intersect_key($_GET, [
 		Replies::FORM_PARAM => null,
@@ -41,23 +42,23 @@ $widget->withForm = isset($widget->withForm) ? $widget->withForm : \Yii::$app->r
 		'itemView' => function ($model, $key, $index, $_widget) use($widget) {
 				return $widget->render('@nitm/views/chat/view',['model' => $model, 'primaryModel' => $widget->model]);
 		},
-		/*'pager' => [
-			'class' => \kop\y2sp\ScrollPager::className(),
-			'container' => '#'.$widget->options['id'],
-			'negativeMargin' => 100,
-			'triggerText' => 'More Replies',
-		]*/
 		'pager' => [
-			'linkOptions' => [
-				'data-pjax' => 1
-			],
+			'class' => \nitm\widgets\ias\ScrollPager::className(),
+			'overflowContainer' => '#chat-messages-container',
+			'container' => '#'.$widget->listOptions['id'],
+			'item' => ".message",
+			'negativeMargin' => 250,
+			'noneLeftText' => 'No More messages'
 		]
 	]);
 	$form = ($widget->withForm == true) ? \nitm\widgets\replies\ChatForm::widget(['model' => $widget->model]) : '';
 	switch(isset($widget->noContainer) && $widget->noContainer == true)
 	{
 		case false:
-		$messages = Html::tag('div', $messages, ['class' => 'chat-messages-container']);
+		$messages = Html::tag('div', $messages, [
+			'id' => 'chat-messages-container', 
+			'class' => 'chat-messages-container'
+		]);
 		$messages = Html::tag('div', $messages.$form, $widget->options);
 		break;
 	}

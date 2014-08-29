@@ -116,14 +116,14 @@ a.desc:after { content: /*"\e114"*/"\e152"; }
 }
 
 .modal-dialog.modal-full .modal-content .modal-body {
-	height: 90%;
+	height: 95%;
 	padding-bottom: 0px;
 	overflow: auto;
 }
 
 .modal-dialog.modal-full .modal-content .modal-footer {
 	position: fixed;
-	padding: 0;
+	padding: 0 0 15px 0;
 	right: 0;
 	margin-top: 5px;
 	border-top: none;

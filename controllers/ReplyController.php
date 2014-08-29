@@ -231,7 +231,7 @@ class ReplyController extends DefaultController
 			];
 			$ret_val['message'] = $ret_val['count']." new messages";
 			$searchModel = new \nitm\models\search\Replies([
-				'withThese' => ['replyTo', 'authorUser'],
+				'withThese' => ['replyTo', 'author'],
 				'queryOptions' => [
 					'andWhere' => new \yii\db\Expression('UNIX_TIMESTAMP(created_at)>='.\Yii::$app->user->identity->lastActive())
 				]

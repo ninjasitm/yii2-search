@@ -142,20 +142,11 @@ class Dispatcher extends \yii\base\Component
 	{
 		$criteria['user_id'] = $author_id;
 		$criteria['action'] .= '_my';
-		$anyRemoteType = array_merge($criteria, [
-			'remote_type' => 'any'
-		]);
-		$anyRemoteFor = array_merge($criteria, [
-			'remote_for' => 'any'
-		]);
-		$anyPriority = array_merge($criteria, [
-			'priority' => 'any'
-		]);
+		$criteria['remote_type'] = [$criteria['remote_type'], 'any'];
+		$criteria['remote_for'] = [$criteria['remote_for'], 'any'];
+		$criteria['priority'] = [$criteria['priority'], 'any'];
 		return Alerts::find()->select('*')
 			->where($criteria)
-			->orWhere($anyRemoteFor)
-			->orWhere($anyRemoteType)
-			->orWhere($anyPriority)
 			->indexBy('user_id')
 			->with('user');
 	}
@@ -169,34 +160,13 @@ class Dispatcher extends \yii\base\Component
 	public static function findListeners(array $criteria)
 	{
 		unset($criteria['user_id']);
-		$listenerCriteria = array_intersect_key($criteria, [
-			'remote_type' => null,
-			'remote_id' => null,
-			'remote_for' => null,
-			'action' => null,
-			'priority' => null
-		]);
-		$anyRemoteAction = array_merge($listenerCriteria, [
-			'action' => 'any'
-		]);
-		$anyRemoteType = array_merge($listenerCriteria, [
-			'remote_type' => 'any'
-		]);
-		$anyRemoteFor = array_merge($listenerCriteria, [
-			'remote_for' => 'any'
-		]);
-		$anyRemoteId = array_merge($listenerCriteria, [
-			'remote_id' => null
-		]);
-		$anyPriority = array_merge($listenerCriteria, [
-			'priority' => 'any'
-		]);
+		$criteria['remote_type'] = [$criteria['remote_type'], 'any'];
+		$criteria['remote_for'] = [$criteria['remote_for'], 'any'];
+		$criteria['action'] = [$criteria['action'], 'any'];
+		$criteria['priority'] = [$criteria['priority'], 'any'];
+		if(isset($criteria['remote_id']))
+			$criteria['remote_id'] = [$criteria['remote_id'], null];
 		return Alerts::find()->select('*')
-			->orWhere($anyRemoteFor)
-			->orWhere($anyRemoteId)
-			->orWhere($anyRemoteType)
-			->orWhere($anyRemoteAction)
-			->orWhere($anyPriority)
 			->orWhere($criteria)
 			->andWhere([
 				'not', ['user_id' => \Yii::$app->user->getId()]
@@ -212,21 +182,13 @@ class Dispatcher extends \yii\base\Component
 	 */
 	public static function findGlobal(array $criteria)
 	{
-		$criteria = array_intersect_key($criteria, [
-			'remote_type' => null,
-			'action' => null,
-			'priority' => null
-		]);
 		$criteria['global'] = 1;
 		$criteria['user_id'] = null;
-		$anyMatching = array_replace($criteria, [
-			'remote_type' => 'any',
-			'priority' => 'any',
-			'action' => 'any',
-		]);
+		$criteria['remote_type'] = [$criteria['remote_type'], 'any'];
+		$criteria['action'] = [$criteria['action'], 'any'];
+		$criteria['priority'] = [$criteria['priority'], 'any'];
 		return Alerts::find()->select('*')
 			->orWhere($criteria)
-			->orWhere($anyMatching)
 			->indexBy('user_id')
 			->with('user');
 	}
@@ -281,6 +243,8 @@ class Dispatcher extends \yii\base\Component
 					}
 				}
 			}
+		print_r($this->_notifications);
+		exit;
 			$this->sendNotifications();
 			break;
 		}
@@ -358,7 +322,7 @@ class Dispatcher extends \yii\base\Component
 					break;
 				}
 				$this->send();
-				$this->addNotification($this->getMobileMessage($compose['message']['mobile']), [current($unMappedAddresses)['user']->getId()]);
+				$this->addNotification($this->getMobileMessage($compose['message']['mobile']), $unMappedAddresses);
 			}
 			break;
 		}
@@ -431,8 +395,8 @@ class Dispatcher extends \yii\base\Component
 						break;
 					}
 					$this->send();
-					$this->addNotification($this->getMobileMessage($compose['message']['mobile']), [current($unMappedAddresses)['user']->getId()]);
 				}
+				$this->addNotification($this->getMobileMessage($compose['message']['mobile']), $unMappedAddresses);
 			}
 			break;
 		}
@@ -474,10 +438,11 @@ class Dispatcher extends \yii\base\Component
 			return false;
 	}
 	
-	protected function addNotification($message, $userIds)
+	protected function addNotification($message, $addresses)
 	{
-		foreach($userIds as $userId)
+		foreach((array)$addresses as $address)
 		{
+			$userId = $address['user']->getId();
 			switch(isset($this->_notifications[$userId]))
 			{
 				case false:

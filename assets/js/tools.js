@@ -6,7 +6,7 @@
 
 function Tools ()
 {
-	self = this;
+	var self = this;
 	this.defaultInit = [
 		'initVisibility',
 		'initRemoveParent',
@@ -18,7 +18,7 @@ function Tools ()
 		'initOffCanvasMenu',
 		'initAutocompleteSelect',
 		'initSubmitSelect',
-		'initToolTips'
+		'initToolTips',
 	];
 	
 	this.init = function (containerId) {
@@ -316,6 +316,7 @@ function Tools ()
 						deferred.resolve();
 					}).promise();
 				})().then(function () {
+					console.log(self);
 					self.coreInit(wrapperId);
 					var scriptText = '';
 					/*

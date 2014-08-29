@@ -28,7 +28,8 @@ $this->params['breadcrumbs'][] = $title;
 	$widget->options = is_array($widget->options) ? $widget->options : [
 		'role' => 'entityMessages',
 		'id' => 'messages'.$uniqid,
-		'data-parent' => 'replyFormParent'
+		'data-parent' => 'replyFormParent',
+		'class' => 'absolute full-height'
 	];
 	$messages = ListView::widget([
 		'summary' => false,
@@ -36,7 +37,7 @@ $this->params['breadcrumbs'][] = $title;
 		'emptyText' => '',
 		'options' => $widget->options,
 		'dataProvider' => $dataProvider,
-		'itemOptions' => ['class' => 'item'],
+		'itemOptions' => ['tag' => false],
 		'itemView' => function ($model, $key, $index, $_widget) use($widget) {
 				return $widget->render('@nitm/views/replies/view',[
 					'model' => $model, 
@@ -44,15 +45,14 @@ $this->params['breadcrumbs'][] = $title;
 					'formId' => '#messages-form'.$widget->uniqid
 				]);
 		},
-		/*'pager' => [
-			'class' => \kop\y2sp\ScrollPager::className(),
-			'container' => '#requests-ias-container',
-			'item' => "tr"
-		]*/
 		'pager' => [
-			'linkOptions' => [
-				'data-pjax' => 1
-			],
+			'class' => \kop\y2sp\ScrollPager::className(),
+			'container' => '#messages'.$uniqid,
+			'item' => ".message",
+			'negativeMargin' => 250,
+			'delay' => 1000,
+			'triggerText' => 'More messages',
+			'noneLeftText' => 'No more messages'
 		]
 	
 	]);
