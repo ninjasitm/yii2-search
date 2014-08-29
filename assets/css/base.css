@@ -103,23 +103,29 @@ a.desc:after { content: /*"\e114"*/"\e152"; }
 	height: auto;
 }
 
-.modal-dialog.modal-full {
-	height: 100%;
+.modal-dialog.modal-full {	
+	bottom: 0;
+	top: 0;
+	min-height: 90%;
+	max-height: 95%;
+	margin: 15px auto;
 }
 
 .modal-dialog.modal-full .modal-content {
-	height: 90%;
+	height: 95%;
 }
 
 .modal-dialog.modal-full .modal-content .modal-body {
 	height: 90%;
+	padding-bottom: 0px;
 	overflow: auto;
 }
 
 .modal-dialog.modal-full .modal-content .modal-footer {
 	position: fixed;
-	bottom: 30px;
+	padding: 0;
 	right: 0;
+	margin-top: 5px;
 	border-top: none;
 }
 

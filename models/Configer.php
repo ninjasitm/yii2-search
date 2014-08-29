@@ -1592,8 +1592,15 @@ class Configer extends Model
 					{
 						case true:
 						$this->containerModel = $model;
+						//Switch to using Cache::setMOdel
 						static::$_cache[$this->containerModel->name] = $ret_val;
 						$ret_val = $this->containerModel;
+						break;
+						
+						default:
+						static::$_cache[$container] = new Container([
+							'name' => $container
+						]);
 						break;
 					}
 				}

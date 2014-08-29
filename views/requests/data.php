@@ -13,21 +13,22 @@ use nitm\helpers\Icon;
 $this->title = 'Requests';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<?php \yii\widgets\Pjax::begin(); ?>
 <?= GridView::widget([
+	'pjax' => false,
+	'striped' => false,
+	'responsive' => true, 
+	'floatHeader'=>true,
 	'options' => [
 		'id' => 'requests'
 	],
-	'filterModel' => $searchModel,
-	'filterUrl' => 'index',
-	'tableOptions' => [
-		'class' => 'table'
-	],
-	'dataProvider' => $dataProvider,
 	//'filterModel' => $searchModel,
+	//'filterUrl' => '/'.$searchModel->primaryModel->isWhat().'/index',
+	'dataProvider' => $dataProvider,
 	'columns' => [
 		[
-			'label' => 'ID',
+			'sortLinkOptions' => [
+				'data-pjax' => 1
+			],
 			'attribute' => 'id',
 			'format' => 'html',
 			'value' => function ($model) {
@@ -46,11 +47,15 @@ $this->params['breadcrumbs'][] = $this->title;
 			}
 		],
 		[
+			'sortLinkOptions' => [
+				'data-pjax' => 1
+			],
 			'attribute' => 'rating',
 			'label' => '%',
 			'format' => 'raw',
 			'value' => function ($model, $index, $widget) {
 				return $this->context->voteWidget([
+					'size' => 'large',
 					'model' => $model->voteModel(),
 					'parentType' => $model->isWhat(), 
 					'parentId' => $model->getId(),
@@ -61,25 +66,32 @@ $this->params['breadcrumbs'][] = $this->title;
 			]
 		],
 		[
-			'format'  => 'html',
+			'sortLinkOptions' => [
+				'data-pjax' => 1
+			],
+			'format'  => 'raw',
 			'attribute' => 'type_id',
-			'filter' => $primaryModel->getCategoryList($primaryModel->isWhat().'-categories'),
 			'label' => 'Type',
 			'value' => function ($model) {
 				return $model->url('type_id', [$model->type(), 'name']);
 			}
 		],
 		[
-			'format'  => 'html',
+			'sortLinkOptions' => [
+				'data-pjax' => 1
+			],
+			'format'  => 'raw',
 			'attribute' => 'request_for_id',
-			'filter' => $primaryModel->getCategoryList($primaryModel->isWhat().'-for'),
 			'label' => 'Request For',
 			'value' => function ($model) {
 				return $model->url('request_for_id', [$model->requestFor(), 'name']);
 			}
 		],
 		[
-			'format' => 'html',
+			'sortLinkOptions' => [
+				'data-pjax' => 1
+			],
+			'format' => 'raw',
 			'attribute' => 'status',
 			'filter' => $primaryModel->getStatuses(),
 			'label' => 'Urgency',
@@ -104,16 +116,30 @@ $this->params['breadcrumbs'][] = $this->title;
 		// 'rating',
 		// 'rated_on',
 		[
-			'attribute' => 'author',
+			'sortLinkOptions' => [
+				'data-pjax' => 1
+			],
+			'attribute' => 'author_id',
 			'label' => 'Author',
-			'format' => 'html',
-			'filter' => $primaryModel->getFilter('author'),
+			'format' => 'raw',
 			'value' => function ($model, $index, $widget) {
 				return $model->author()->url(\Yii::$app->getModule('nitm')->useFullnames, \Yii::$app->request->url, [$model->formname().'[author]' => $model->author_id]);
 			}
 		],
-		'created_at:datetime',
-		'updated_at:datetime',
+		[
+			'sortLinkOptions' => [
+				'data-pjax' => 1
+			],
+			'attribute' => 'created_at',
+			'format' => 'datetime',
+		],
+		[
+			'sortLinkOptions' => [
+				'data-pjax' => 1
+			],
+			'attribute' => 'updated_at',
+			'format' => 'datetime',
+		],
 
 		[
 			'class' => 'yii\grid\ActionColumn',
@@ -165,17 +191,18 @@ $this->params['breadcrumbs'][] = $this->title;
 			]
 		],
 	],
+	'tableOptions' => [
+		'class' => 'table',
+	],
 	'rowOptions' => function ($model, $key, $index, $grid)
 	{
 		return [
 			"class" => \nitm\helpers\Statuses::getIndicator($model->getStatus()),
+			"style" => "border-top:solid medium #CCC",
 			'id' => 'request'.$model->getId(),
 			'role' => 'statusIndicator'.$model->getId(),
 		];
 	},
-	"tableOptions" => [
-			'class' => 'table table-bordered'
-	],
 	'afterRow' => function ($model, $key, $index, $grid){
 		$replies = $this->context->replyCountWidget([
 			"model" => $model->replyModel(),
@@ -217,13 +244,12 @@ $this->params['breadcrumbs'][] = $this->title;
 				'class' => 'col-md-12 col-lg-12'
 			]
 		);
-		/*$shortLink = Html::tag('div', \lab1\widgets\ShortLink::widget([
+		$shortLink = Html::tag('div', \nitm\widgets\metadata\ShortLink::widget([
 			'url' => \Yii::$app->urlManager->createAbsoluteUrl([$model->isWhat().'/view/'.$model->getId()]),
 			'header' => $model->title,
 			'type' => 'modal',
 			'size' => 'large'
-		]));*/
-		$shortLink = '';
+		]));
 		$metaInfo = Html::tag('div', 
 			Html::tag('div', 
 				$title.$shortLink."<br>".$activityInfo
@@ -233,7 +259,7 @@ $this->params['breadcrumbs'][] = $this->title;
 			]
 		)."<br>";
 				
-		/*$statusInfo .= \lab1\widgets\MetaInfo::widget([
+		/*$statusInfo .= \nitm\widgets\metadata\MetaInfo::widget([
 			'attributes' => [
 				'numbers',
 			],
@@ -264,4 +290,3 @@ $this->params['breadcrumbs'][] = $this->title;
 		'item' => "#requests [id^='request']"
 	]
 ]); ?>
-<?php \yii\widgets\Pjax::end(); ?>

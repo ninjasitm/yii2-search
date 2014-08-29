@@ -74,7 +74,11 @@ $action = $model->getIsNewRecord() ? 'create' : 'update';
 						'name' => 'request',
 						'revisionsModel' => $model->revisionModel(),
 						'model' => $model,
-						'value' => $model->request
+						'value' => $model->request,
+						'editorOptions' => [
+							'toolbarSize' => 'full',
+							'size' => 'full'
+						]
 					]);
 				?>
 				</div>
@@ -91,9 +95,9 @@ $action = $model->getIsNewRecord() ? 'create' : 'update';
 	</div>
 </div>
 <script type='text/javascript'>
-$nitm.onModuleLoad('lab1:requests', function () {
-	$nitm.module('lab1').initForms('<?= $model->isWhat();?>_form_container', 'lab1:requests');
-	$nitm.module('lab1').initMetaActions('#<?= $model->isWhat();?>_form_container', 'lab1:requests');
+$nitm.onModuleLoad('nitm:requests', function () {
+	$nitm.module('nitm').initForms('<?= $model->isWhat();?>_form_container', 'nitm:requests');
+	$nitm.module('nitm').initMetaActions('#<?= $model->isWhat();?>_form_container', 'nitm:requests');
 	<?php if(\Yii::$app->request->isAjax): ?>
 	$nitm.module('tools').initVisibility('#<?= $model->isWhat();?>_form_container');
 	<?php endif; ?>

@@ -27,6 +27,7 @@ echo GridView::widget([
 			'value' => function ($model, $index, $widget) {
 				$rating = Html::tag('div',
 					$this->context->VoteWidget([
+						'size' => 'large',
 						'model' => $model->voteModel(),
 						'parentType' => $model->isWhat(), 
 						'parentId' => $model->getId(),
@@ -35,7 +36,8 @@ echo GridView::widget([
 				return $rating;
 			},
 			'options' => [
-				'rowspan' => 3
+				'rowspan' => 3,
+				'class' => 'col-md-2 col-lg-2'
 			]
 		],
 		[
@@ -91,7 +93,7 @@ echo GridView::widget([
 	],
 	'afterRow' => function ($model, $key, $index, $grid) {
 		
-		/*$shortLink = \lab1\widgets\ShortLink::widget([
+		$shortLink = \nitm\widgets\metadata\ShortLink::widget([
 			'url' => \Yii::$app->urlManager->createAbsoluteUrl([$model->isWhat().'/view/'.$model->getId()]),
 			'viewOptions' => [
 				'data-toggle' => 'modal',
@@ -99,7 +101,7 @@ echo GridView::widget([
 			]
 		]);
 		
-		$statusInfo = \lab1\widgets\StatusInfo::widget([
+		$statusInfo = \nitm\widgets\metadata\StatusInfo::widget([
 			'items' => [
 				[
 					'blamable' => $model->author(),
@@ -128,10 +130,8 @@ echo GridView::widget([
 					]
 				],
 			],
-		]);*/
+		]);
 		
-		$shortLink = '';
-		$statusInfo = '';
 		$metaInfo = empty($statusInfo) ? $shortLink : $shortLink.$statusInfo;
 		/*$issues = $this->context->issueCountWidget([
 			"model" => $model->issues, 
