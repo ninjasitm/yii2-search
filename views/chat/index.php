@@ -26,7 +26,6 @@ $widget->withForm = isset($widget->withForm) ? $widget->withForm : \Yii::$app->r
 ?>
 <?php
 	$_GET[Replies::FORM_PARAM] = 0;
-	$widget->listOptions = !$widget->noContainer ? $widget->listOptions : ['id' => 'page'.@$_GET['page']];
 	$widget->listOptions['class'] = isset($widget->listOptions['class']) ? $widget->listOptions['class'] : 'chat-messages';
 	$dataProvider->pagination->route = '/reply/index/chat/0/1';
 	$params = array_intersect_key($_GET, [
@@ -46,8 +45,8 @@ $widget->withForm = isset($widget->withForm) ? $widget->withForm : \Yii::$app->r
 			'class' => \nitm\widgets\ias\ScrollPager::className(),
 			'overflowContainer' => '#chat-messages-container',
 			'container' => '#'.$widget->listOptions['id'],
-			'item' => ".message",
-			'negativeMargin' => 250,
+			'item' => ".item",
+			'negativeMargin' => 200,
 			'noneLeftText' => 'No More messages'
 		]
 	]);
@@ -66,6 +65,9 @@ $widget->withForm = isset($widget->withForm) ? $widget->withForm : \Yii::$app->r
 ?>
 <script type="text/javascript">
 $nitm.onModuleLoad('replies', function () {
+	<?php if(\Yii::$app->request->isAjax): ?>
+	$nitm.module('nitm-ias').initIas("<?= $widget->options['id']?>");
+	<?php endif; ?>
 	$nitm.module('replies').init("<?= $widget->options['id']?>");
 	$nitm.module('replies').initChatTabs("chat-navigation");
 	<?php if($widget->updateOptions['enabled']): ?>

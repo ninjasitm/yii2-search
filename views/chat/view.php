@@ -44,6 +44,7 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid.$model->getId();
 					'role' => 'hideReply',
 					'data-parent' => 'tr',
 					'data-pjax' => '0',
+					'onclick' => '(function (event) {$nitm.module("replies").hide(event)})(event)'
 				]);
 			}
 			echo Html::a('reply', \Yii::$app->urlManager->createUrl(['/reply/to/'.$model->getId()]), [
@@ -55,7 +56,8 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid.$model->getId();
 				'data-reply-to-id' => $model->getId(),
 				'data-reply-to-message' => '#message-body'.$model->getId(),
 				'data-author' => $model->author()->username,
-				'data-title' => $model->title
+				'data-title' => $model->title,
+				'onclick' => '(function (event) {$nitm.module("replies").replyTo(event)})(event)'
 			]);
 			echo Html::a('quote', \Yii::$app->urlManager->createUrl(['/reply/quote/'.$model->getId()]), [
 				'id' => "quote-message".$model->getId(),
@@ -66,7 +68,8 @@ $uniqid = !isset($uniqid) ? uniqid() : $uniqid.$model->getId();
 				'data-reply-to-id' => $model->getId(),
 				'data-reply-to-message' => '#message-body'.$model->getId(),
 				'data-author' => $model->author()->username,
-				'data-title' => $model->title
+				'data-title' => $model->title,
+				'onclick' => '(function (event) {$nitm.module("replies").quote(event)})(event)'
 			]);
 		?>
 		</div>

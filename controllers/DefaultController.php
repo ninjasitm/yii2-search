@@ -12,6 +12,10 @@ class DefaultController extends BaseController
 	use \nitm\traits\Widgets;
 	
 	public $boolResult;
+	/**
+	 * Redirect requests to the index page to the search function by default
+	 */
+	public $indexToSearch = true;
 	public static $currentUser;
 	
 	public function init()
@@ -82,6 +86,14 @@ class DefaultController extends BaseController
 			case 'close':
 			$this->enableCsrfValidation = false;
 			break;
+			
+			case 'index':
+			/**
+			 * If this is an ajax request then redirect it to the search function
+			 */
+			if(\yii::$app->request->isAjax)
+				$action->id = 'search';
+			break;
 		}
 		return parent::beforeAction($action);
 	}
@@ -126,7 +138,7 @@ class DefaultController extends BaseController
 			switch(Response::formatSpecified())
 			{
 				case false:
-				$this->setResponseFormat(\Yii::$app->request->get('_pjax') ? 'html' : 'json');
+				$this->setResponseFormat('html');
 				break;
 			}
 			break;
