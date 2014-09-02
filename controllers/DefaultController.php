@@ -86,14 +86,6 @@ class DefaultController extends BaseController
 			case 'close':
 			$this->enableCsrfValidation = false;
 			break;
-			
-			case 'index':
-			/**
-			 * If this is an ajax request then redirect it to the search function
-			 */
-			if(\yii::$app->request->isAjax)
-				$action->id = 'search';
-			break;
 		}
 		return parent::beforeAction($action);
 	}
