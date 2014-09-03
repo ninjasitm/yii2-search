@@ -16,6 +16,7 @@ $this->params['breadcrumbs'][] = ['label' => 'Requests', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 $action = $model->getIsNewRecord() ? 'create' : 'update';
 ?>
+
 <div id="<?= $model->isWhat()?>_form_container" class='row'>
 	<?php if (!$model->getIsNewRecord()) : ?>
 	<div class="col-md-7 col-lg-7">
@@ -29,13 +30,14 @@ $action = $model->getIsNewRecord() ? 'create' : 'update';
 	<?php else: ?>
 	<div class="col-md-12 col-lg-12">
 	<?php endif ?>
-	<?= Html::tag('div', '', ['id' => 'alert']); ?>
+		<?= Html::tag('div', '', ['id' => 'alert']); ?>
 		<?php $form = ActiveForm::begin([
 			"action" => "/".$model->isWhat()."/$action/".$model->id,
 			"type" => ActiveForm::TYPE_HORIZONTAL,
 			'options' => [
 				"role" => $action.$model->formName(),
-				'id' => $model->isWhat().'_form'.$model->getId()
+				'id' => $model->isWhat().'_form'.$model->getId(),
+				"onsubmit" => "(function (event, form) {\$nitm.module('entity').operation(form, null, 'entity:requests', event)})(event, this)",
 			],
 			'fieldConfig' => [
 				'inputOptions' => ['class' => 'form-control'],
@@ -95,9 +97,9 @@ $action = $model->getIsNewRecord() ? 'create' : 'update';
 	</div>
 </div>
 <script type='text/javascript'>
-$nitm.onModuleLoad('nitm:requests', function () {
-	$nitm.module('nitm').initForms('<?= $model->isWhat();?>_form_container', 'nitm:requests');
-	$nitm.module('nitm').initMetaActions('#<?= $model->isWhat();?>_form_container', 'nitm:requests');
+$nitm.onModuleLoad('lab1:requests', function () {
+	$nitm.module('lab1').initForms('<?= $model->isWhat();?>_form_container', 'lab1:requests');
+	$nitm.module('lab1').initMetaActions('#<?= $model->isWhat();?>_form_container', 'lab1:requests');
 	<?php if(\Yii::$app->request->isAjax): ?>
 	$nitm.module('tools').initVisibility('#<?= $model->isWhat();?>_form_container');
 	<?php endif; ?>

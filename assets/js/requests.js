@@ -1,9 +1,6 @@
 // JavaScript Document
 
 function Requests () {
-	//Extend Nitm
-	//Nitm.apply(this, arguments);
-	
 	var self = this;
 	
 	this.forms = {
@@ -27,11 +24,11 @@ function Requests () {
 				self[method](container);
 			}
 		});
-		var $nitm = $nitm.module('nitm', true);
-		$nitm.initMetaActions(null, 'nitm:requests');
+		var $entity = $nitm.module('entity', true);
+		$entity.initMetaActions(null, 'entity:requests');
 	}
 }
 
-$nitm.onModuleLoad('nitm', function () {
-	$nitm.initModule('nitm:requests', new Requests());
+$nitm.onModuleLoad('entity', function () {
+	$nitm.initModule('entity:requests', new Requests());
 });

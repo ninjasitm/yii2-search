@@ -123,7 +123,7 @@ $this->params['breadcrumbs'][] = $this->title;
 			'label' => 'Author',
 			'format' => 'raw',
 			'value' => function ($model, $index, $widget) {
-				return $model->author()->url(\Yii::$app->getModule('nitm')->useFullnames, \Yii::$app->request->url, [$model->formname().'[author]' => $model->author_id]);
+				return $model->author()->url(\Yii::$app->getModule('lab1')->fullUsernames, \Yii::$app->request->url, [$model->formname().'[author]' => $model->author_id]);
 			}
 		],
 		[
@@ -184,7 +184,7 @@ $this->params['breadcrumbs'][] = $this->title;
 			],
 			'template' => "{form/update} {complete} {close}",
 			'urlCreator' => function($action, $model, $key, $index) {
-				return $this->context->id.'/'.$action.'/'.$model->getId();
+				return '/'.$this->context->id.'/'.$action.'/'.$model->getId();
 			},
 			'options' => [
 				'rowspan' => 3
@@ -197,7 +197,7 @@ $this->params['breadcrumbs'][] = $this->title;
 	'rowOptions' => function ($model, $key, $index, $grid)
 	{
 		return [
-			"class" => \nitm\helpers\Statuses::getIndicator($model->getStatus()),
+			"class" => 'item '.\nitm\helpers\Statuses::getIndicator($model->getStatus()),
 			"style" => "border-top:solid medium #CCC",
 			'id' => 'request'.$model->getId(),
 			'role' => 'statusIndicator'.$model->getId(),
@@ -244,7 +244,7 @@ $this->params['breadcrumbs'][] = $this->title;
 				'class' => 'col-md-12 col-lg-12'
 			]
 		);
-		$shortLink = Html::tag('div', \nitm\widgets\metadata\ShortLink::widget([
+		$shortLink = Html::tag('div', \lab1\widgets\ShortLink::widget([
 			'url' => \Yii::$app->urlManager->createAbsoluteUrl([$model->isWhat().'/view/'.$model->getId()]),
 			'header' => $model->title,
 			'type' => 'modal',
@@ -259,7 +259,7 @@ $this->params['breadcrumbs'][] = $this->title;
 			]
 		)."<br>";
 				
-		/*$statusInfo .= \nitm\widgets\metadata\MetaInfo::widget([
+		/*$statusInfo .= \lab1\widgets\MetaInfo::widget([
 			'attributes' => [
 				'numbers',
 			],
@@ -279,19 +279,17 @@ $this->params['breadcrumbs'][] = $this->title;
 				]
 			),
 			[
-				"class" => \nitm\helpers\Statuses::getIndicator($model->getStatus()),
+				"class" => 'item '.\nitm\helpers\Statuses::getIndicator($model->getStatus()),
 				'role' => 'statusIndicator'.$model->getId(),
 			]
 		);
 	},
-	/*'pager' => [
-		'class' => \kop\y2sp\ScrollPager::className(),
-		'container' => '#requests-ias-container',
-		'item' => "tr"
-	]*/
 	'pager' => [
-		'linkOptions' => [
-			'data-pjax' => 1
-		],
+		'class' => \nitm\widgets\ias\ScrollPager::className(),
+		'overflowContainer' => '#requests-ias-container',
+		'container' => '#requests',
+		'item' => ".item",
+		'negativeMargin' => 150,
+		'delay' => 500,
 	]
 ]); ?>

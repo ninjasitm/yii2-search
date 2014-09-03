@@ -45,7 +45,7 @@ echo GridView::widget([
 			'label' => 'Author',
 			'format' => 'html',
 			'value' => function ($model, $index, $widget) {
-				return $model->author()->url(\Yii::$app->getModule('nitm')->useFullnames, \Yii::$app->request->url, [$model->formname().'[author]' => $model->author()->getId()]);
+				return $model->author()->url(\Yii::$app->getModule('lab1')->fullUsernames, \Yii::$app->request->url, [$model->formname().'[author]' => $model->author()->getId()]);
 			}
 		],
 		'closed:boolean',
@@ -74,7 +74,7 @@ echo GridView::widget([
 			],
 			'template' => "{complete} {close}",
 			'urlCreator' => function($action, $model, $key, $index) {
-				return $this->context->id.'/'.$action.'/'.$model->getId();
+				return '/'.$this->context->id.'/'.$action.'/'.$model->getId();
 			},
 			'options' => [
 				'rowspan' => 3
@@ -93,7 +93,7 @@ echo GridView::widget([
 	],
 	'afterRow' => function ($model, $key, $index, $grid) {
 		
-		$shortLink = \nitm\widgets\metadata\ShortLink::widget([
+		$shortLink = \lab1\widgets\ShortLink::widget([
 			'url' => \Yii::$app->urlManager->createAbsoluteUrl([$model->isWhat().'/view/'.$model->getId()]),
 			'viewOptions' => [
 				'data-toggle' => 'modal',
@@ -101,7 +101,7 @@ echo GridView::widget([
 			]
 		]);
 		
-		$statusInfo = \nitm\widgets\metadata\StatusInfo::widget([
+		$statusInfo = \lab1\widgets\StatusInfo::widget([
 			'items' => [
 				[
 					'blamable' => $model->author(),

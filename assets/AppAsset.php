@@ -19,6 +19,7 @@ class AppAsset extends AssetBundle
 	];
 	public $js = [
 		'js/nitm.js',
+		'js/entity.js',
 		'js/tools.js'
 	];
 	public $jsOptions = ['position' => \yii\web\View::POS_HEAD];

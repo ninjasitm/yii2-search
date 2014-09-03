@@ -12,7 +12,7 @@ $this->title = 'Requests';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
-<div 'requests-ias-container' class="col-md-8 col-lg-8">
+<div id='requests-ias-container' class="absolute full-height col-md-8 col-lg-8">
 	<h1><?= Html::encode($this->title) ?></h1>
 	<?php \yii\widgets\Pjax::begin([
 		'options' => [
@@ -31,7 +31,7 @@ $this->params['breadcrumbs'][] = $this->title;
 	?>
 	<?php \yii\widgets\Pjax::end(); ?>
 </div>
-<div class="col-md-4 col-lg-4">
+<div class="col-md-4 col-lg-4 col-md-offset-8 col-lg-offset-8 absolute full-height">
 	<?php
 		echo @$this->render('_search', array("data" => array(), 'model' => $searchModel)); 
 	?>

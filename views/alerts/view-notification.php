@@ -9,7 +9,7 @@ use nitm\models\Notification;
 /* @var $dataProvider yii\data\ActiveDataProvider */
 $itemOptions = [
 	'id' => 'notification'.$model->getId(),
-	'class' => 'list-group-item '.\nitm\helpers\Statuses::getListIndicator($model->getPriority())
+	'class' => \nitm\helpers\Statuses::getListIndicator($model->getPriority())
 ];
 echo Html::tag('div', 
 	((isset($isNew) && ($isNew === true) || $model->isNew()) ? \nitm\widgets\activityIndicator\ActivityIndicator::widget() : '').$model->message.

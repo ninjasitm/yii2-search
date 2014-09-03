@@ -74,6 +74,8 @@ class Request extends Entity
 		$scenarios = [
 			'create' => ['title', 'request', 'type_id', 'request_for_id', 'status'],
 			'create' => ['title', 'request', 'type_id', 'request_for_id', 'status'],
+			'complete' => ['completed', 'completed_at', 'closed'],
+			'close' => ['closed', 'closed_at', 'completed', 'resolved'],
 		];
 		return array_merge(parent::scenarios(), $scenarios);
 	}

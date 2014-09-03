@@ -4,7 +4,6 @@ use kartik\widgets\ActiveForm;
 use kartik\widgets\Select2;
 use yii\widgets\ActiveField;
 ?>
-<br>
 <?php
 	echo $this->context->alertWidget();
 	echo $this->context->legendWidget();
@@ -17,9 +16,6 @@ use yii\widgets\ActiveField;
 			'href' => \Yii::$app->urlManager->createUrl([$model->primaryModel->isWhat().'/form/create', '__format' => 'modal']),
 			'title' => Yii::t('yii', "Add a new ".$model->primaryModel->isWhat()),
 			'role' => 'dynamicAction createAction disabledOnClose',
-		],
-		'contentOptions' => [
-			"class" => "modal-full"
 		],
 		'dialogOptions' => [
 			"class" => "modal-full"

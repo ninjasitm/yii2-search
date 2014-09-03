@@ -145,5 +145,48 @@ use nitm\helpers\Response;
             throw new \yii\web\NotFoundHttpException('The requested page does not exist.');
         }
     }
+	
+	/**
+	 * Get the query that orders items by their activity
+	 */
+	protected function getHasNewQuery()
+	{
+		return "(SELECT SUM(hasNew) FROM 
+			(
+				SELECT SUM(
+					IF(
+						parent_id=id AND 
+						parent_type='".$this->model->isWhat()."' AND
+						(updated_at>=updated_at OR created_at>=updated_at) AND
+						(".static::$currentUser->lastActive()."<=UNIX_TIMESTAMP(updated_at) OR ".static::$currentUser->lastActive()."<=UNIX_TIMESTAMP(updated_at)),
+						1, 0
+					)
+				) AS hasNew FROM `".\nitm\models\Issues::tableName()."`
+				UNION ALL 
+				SELECT SUM(
+					IF(
+						parent_id=id AND 
+						parent_type='".$this->model->isWhat()."' AND
+						(updated_at>=updated_at OR created_at>=updated_at) AND 
+						(".static::$currentUser->lastActive()."<=UNIX_TIMESTAMP(updated_at) OR ".static::$currentUser->lastActive()."<=UNIX_TIMESTAMP(updated_at)),
+						1, 0
+					)
+				) AS hasNew FROM `".\nitm\models\Replies::tableName()."`
+			) newActivity) as hasNewActivity
+		";
+	}
+	
+	/**
+	 * Get the query that orders items by their activity
+	 */
+	protected function getOrderByQuery()
+	{
+		return [
+			"(CASE 
+				WHEN updated_at > created_at THEN updated_at
+				ELSE created_at
+			END)" => SORT_DESC,
+		];
+	}
  }
 ?>

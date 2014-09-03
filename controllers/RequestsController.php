@@ -5,7 +5,6 @@ namespace nitm\controllers;
 use Yii;
 use nitm\models\Request;
 use nitm\models\search\Request as RequestSearch;
-use nitm\controllers\DefaultController;
 use yii\web\NotFoundHttpException;
 use yii\web\VerbFilter;
 use yii\db\Expression;
@@ -25,6 +24,8 @@ class RequestsController extends DefaultController
 	
 	public function init()
 	{
+		$this->addJs('@nitm/assets/js/requests', true);
+		$this->addJs('@nitm/assets/js/entity', true);
 		parent::init();
 		$this->model = new Request(['scenario' => 'default']);
 	}
@@ -39,10 +40,6 @@ class RequestsController extends DefaultController
 	public static function has()
 	{
 		return [
-			'\nitm\widgets\replies',
-			'\nitm\widgets\activityIndicator',
-			'\nitm\widgets\vote',
-			'\nitm\widgets\issueTracker'
 		];
 	}
 
@@ -59,7 +56,10 @@ class RequestsController extends DefaultController
 			'completedBy', 'closedBy', 'replyModel', 
 			'issueModel', 'revisionModel', 'voteModel'
 		]);
-        $dataProvider = $searchModel->search(Yii::$app->request->getQueryParams());
+		$params = \Yii::$app->request->getQueryParams();
+		$params = empty($params) ? [$this->model->formName() => ['closed' => 0]] : $params;
+        $dataProvider = $searchModel->search($params);
+		$dataProvider->pagination->route = '/'.$this->id.'/search';
 		switch((sizeof(\Yii::$app->request->getQueryParams()) == 0))
 		{	
 			case true:
@@ -136,62 +136,19 @@ class RequestsController extends DefaultController
 	/**
 	 * Get the query that orders items by their activity
 	 */
-	protected function getHasNewQuery()
-	{
-		return "(SELECT SUM(hasNew) FROM 
-			(
-				SELECT SUM(
-					IF(
-						parent_id=id AND 
-						parent_type='".$this->model->isWhat()."' AND
-						(updated_at>=updated_at OR created_at>=updated_at) AND
-						(".static::$currentUser->lastActive()."<=UNIX_TIMESTAMP(updated_at) OR ".static::$currentUser->lastActive()."<=UNIX_TIMESTAMP(updated_at)),
-						1, 0
-					)
-				) AS hasNew FROM `".\nitm\models\Issues::tableName()."`
-				UNION ALL 
-				SELECT SUM(
-					IF(
-						parent_id=id AND 
-						parent_type='".$this->model->isWhat()."' AND
-						(updated_at>=updated_at OR created_at>=updated_at) AND 
-						(".static::$currentUser->lastActive()."<=UNIX_TIMESTAMP(updated_at) OR ".static::$currentUser->lastActive()."<=UNIX_TIMESTAMP(updated_at)),
-						1, 0
-					)
-				) AS hasNew FROM `".\nitm\models\Replies::tableName()."`
-			) newActivity) as hasNewActivity
-		";
-	}
-	
-	/**
-	 * Get the query that orders items by their activity
-	 */
 	protected function getOrderByQuery()
 	{
-		return [
-			"(".new Expression("SELECT COUNT(*) FROM ".\nitm\models\Issues::tableName()." WHERE 
-				parent_id=id AND 
-				parent_type='".$this->model->isWhat())."' AND 
-				(updated_at>=updated_at OR created_at>=updated_at)
-			)" => SORT_DESC,
-			"(".new Expression("SELECT COUNT(*) FROM ".\nitm\models\Replies::tableName()." WHERE 
-				parent_id=id AND 
-				parent_type='".$this->model->isWhat())."' AND 
-				(updated_at>=updated_at OR created_at>=updated_at)
-			)" => SORT_DESC,
+		$localOrderBy = [
 			"(".new Expression("SELECT COUNT(*) FROM ".\nitm\models\Vote::tableName()." WHERE 
 				parent_id=id AND 
 				parent_type='".$this->model->isWhat())."'
 			)" => SORT_DESC,
-			"(CASE 
-				WHEN updated_at > created_at THEN updated_at
-				ELSE created_at
-			END)" => SORT_DESC,
 			"(CASE status 
 				WHEN 'normal' THEN 0
 				WHEN 'important' THEN 1 
 				WHEN 'critical' THEN 2
 			END)" => SORT_DESC,
 		];
+		return array_merge(parent::getOrderByQuery(), $localOrderBy);
 	}
 }

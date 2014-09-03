@@ -107,6 +107,7 @@ class BaseSearch extends \nitm\models\Data
 				case 'integer':
 				case 'boolean':
 				case 'double':
+				case 'array':
         		$this->addCondition($column->name, $value);
 				break;
 				
@@ -134,18 +135,9 @@ class BaseSearch extends \nitm\models\Data
 	{
 		foreach($this->conditions as $type=>$condition)
 		{
-			switch($this->mergeInclusive)
-			{
-				case true:
-				array_unshift($condition,( $this->inclusiveSearch ? 'or' : 'and'));
-				$this->dataProvider->query->orWhere($condition);
-				break;
-				
-				default:
-				array_unshift($condition, ($this->inclusiveSearch ? 'or' : 'and'));
-				$this->dataProvider->query->andWhere($condition);
-				break;
-			}
+			$where = ($this->exclusiveSearch) ? 'andWhere' : $type.'Where';
+			array_unshift($condition, $type);
+			$this->dataProvider->query->$where($condition);
 		}
 	}
 
@@ -185,7 +177,7 @@ class BaseSearch extends \nitm\models\Data
 				switch($this->inclusiveSearch)
 				{
 					case true:
-					$this->conditions['or'][] = ['or like', $attribute, $value, false];
+					$this->conditions['or'][] = ['like', $attribute, $value, false];
 					break;
 					
 					default:
@@ -372,6 +364,7 @@ class BaseSearch extends \nitm\models\Data
 				if(!empty($value)) 
 				{
 					$this->text = $value;
+					$this->mergeInclusive = true;
 					foreach($this->primaryModelTable->columns as $column)
 					{
 						switch($column->phpType)
@@ -388,7 +381,7 @@ class BaseSearch extends \nitm\models\Data
 			}
 		}
 		$params = array_intersect_key($params, array_flip($this->primaryModelAttributes));
-		$this->exclusiveSearch = !(empty($params) && !$useEmptyParams);
+		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(empty($params) && !$useEmptyParams)) : $this->exclusiveSearch;
 		$params = (empty($params) && !$useEmptyParams) ? array_combine($this->primaryModelAttributes, array_fill(0, sizeof($this->primaryModelAttributes), '')) : $params;
 		if(!empty($params)) $this->setProperties(array_keys($params), array_values($params));
 		$params = [$this->primaryModelFormName => $params];

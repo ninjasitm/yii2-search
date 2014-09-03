@@ -70,7 +70,9 @@ class AlertsController extends DefaultController
      */
     public function actionNotifications()
     {
-        Response::$viewOptions['args']['content'] = \nitm\widgets\alerts\Notifications::widget();
+        Response::$viewOptions['args']['content'] = \nitm\widgets\alerts\Notifications::widget([
+			'contentOnly' => (bool)\Yii::$app->request->get('__contentOnly')
+		]);
 		$this->setResponseFormat('html');
 		return $this->renderResponse(null, Response::$viewOptions, \Yii::$app->request->isAjax);
     }
