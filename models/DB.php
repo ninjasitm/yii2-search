@@ -254,7 +254,7 @@ class DB extends Query
 	}
 	
 	
-	public function getCurPri()
+	public function primaryKey()
 	{
 		return (static::$active['table']['name'] == NULL) ? NULL : $this->primary['key'];
 	}
@@ -590,6 +590,26 @@ class DB extends Query
 		if(!is_null($table) && !is_null($db))
 		{
 			$this->execute("SHOW INDEX FROM ".$db.".".$table."");
+			$ret_val = $this->result(self::R_ASS, true, false);
+			$this->free();
+		}
+		return $ret_val;
+	}
+
+    /**
+	 * Get the table information for a table
+	 * @param string $db
+	 * @param string $table
+	 * @return mixed
+	 */
+	public function getTableInfo($db=null, $table=null)
+	{
+		$ret_val = false;
+		$table = (empty($table)) ? static::$active['table']['name'] : $table;
+		$db = (empty($db)) ? static::$active['db']['name'] : $db;
+		if(!is_null($table) && !is_null($db))
+		{
+			$this->execute("SHOW TABLE STATUS FROM ".$db.".".$table."");
 			$ret_val = $this->result(self::R_ASS, true, false);
 			$this->free();
 		}

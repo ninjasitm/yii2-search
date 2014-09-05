@@ -144,6 +144,7 @@ class Dispatcher extends \yii\base\Component
 		$criteria['action'] .= '_my';
 		$criteria['remote_type'] = [$criteria['remote_type'], 'any'];
 		$criteria['remote_for'] = [$criteria['remote_for'], 'any'];
+		$criteria['remote_id'] = [$criteria['remote_id'], null];
 		$criteria['priority'] = [$criteria['priority'], 'any'];
 		return Alerts::find()->select('*')
 			->where($criteria)
