@@ -402,80 +402,105 @@ class DefaultController extends BaseController
 	{
 		return $this->booleanAction($this->action->id, $id);
 	}
+
+    public static function booleanActions()
+	{
+		return [
+			'close' => [
+				'scenario' => 'close',
+				'attributes' => [
+					'attribute' => 'closed',
+					'blamable' => 'closed_by',
+					'date' => 'closed_at'
+				],
+				'title' => [
+					'Close',
+					'Re-Open'
+				]
+			],
+			'complete' => [
+				'scenario' => 'complete',
+				'attributes' => [
+					'attribute' => 'completed',
+					'blamable' => 'completed_by',
+					'date' => 'completed_at'
+				],
+				'title' => [
+					'Complete',
+					'In-Complete'
+				]
+			],
+			'resolve' => [
+				'scenario' => 'resolve',
+				'attributes' => [
+					'attribute' => 'resolved',
+					'blamable' => 'resolved_by',
+					'date' => 'resolved_at'
+				],
+				'title' => [
+					'Resolve',
+					'Un-Resolve'
+				]
+			],
+			'disable' => [
+				'scenario' => 'disable',
+				'attributes' => [
+					'attribute' => 'disabled',
+					'blamable' => 'disabled_by',
+					'date' => 'disabled_at'
+				],
+				'title' => [
+					'Enable',
+					'Disable'
+				]
+			],
+			'delete'=> [
+				'scenario' => 'delete',
+				'attributes' => [
+					'attribute' => 'deleted',
+					'blamable' => 'deleted_by',
+					'date' => 'deleted_at'
+				],
+				'title' => [
+					'Delete',
+					'Restore'
+				]
+			]
+		];
+	}
 	
 	protected function booleanAction($action, $id)
 	{
+		$saved = false;
         $this->model = $this->findModel($this->model->className(), $id);
-		switch($action)
+		if(array_key_exists($action, static::booleanActions()))
 		{
-			case 'close':
-			$scenario = 'close';
-			$attributes = [
-				'attribute' => 'closed',
-				'blamable' => 'closed_by',
-				'date' => 'closed_at'
-			];
-			break;
-			
-			case 'complete':
-			$scenario = 'complete';
-			$attributes = [
-				'attribute' => 'completed',
-				'blamable' => 'completed_by',
-				'date' => 'completed_at'
-			];
-			break;
-			
-			case 'resolve':
-			$scenario = 'resolve';
-			$attributes = [
-				'attribute' => 'resolved',
-				'blamable' => 'resolved_by',
-				'date' => 'resolved_at'
-			];
-			break;
-			
-			case 'disable':
-			$scenario = 'disable';
-			$attributes = [
-				'attribute' => 'disabled',
-				'blamable' => 'disabled_by',
-				'date' => 'disabled_at'
-			];
-			break;
-			
-			case 'delete':
-			$scenario = 'delete';
-			$attributes = [
-				'attribute' => 'deleted',
-				'blamable' => 'deleted_by',
-				'date' => 'deleted_at'
-			];
-			break;
-		}
-		$this->model->setScenario($scenario);
-		$this->boolResult = !$this->model->getAttribute($attributes['attribute']) ? 1 : 0;
-		foreach($attributes as $key=>$value)
-		{
-			switch($this->model->hasAttribute($value))
+			extract(static::booleanActions()[$action]);
+			$this->model->setScenario($scenario);
+			$this->boolResult = !$this->model->getAttribute($attributes['attribute']) ? 1 : 0;
+			foreach($attributes as $key=>$value)
 			{
-				case true:
-				switch($key)
+				switch($this->model->hasAttribute($value))
 				{
-					case 'blamable':
-					$this->model->setAttribute($value, (!$this->boolResult ? null : \Yii::$app->user->getId()));
-					break;
-					
-					case 'date':
-					$this->model->setAttribute($value, (!$this->boolResult ? null : new \yii\db\Expression('NOW()')));
+					case true:
+					switch($key)
+					{
+						case 'blamable':
+						$this->model->setAttribute($value, (!$this->boolResult ? null : \Yii::$app->user->getId()));
+						break;
+						
+						case 'date':
+						$this->model->setAttribute($value, (!$this->boolResult ? null : new \yii\db\Expression('NOW()')));
+						break;
+					}
 					break;
 				}
-				break;
 			}
+			$this->model->setAttribute($attributes['attribute'], $this->boolResult);
+			$this->setResponseFormat('json');
+			$saved = $this->model->save();
 		}
-		$this->model->setAttribute($attributes['attribute'], $this->boolResult);
-		$this->setResponseFormat('json');
-		return $this->finalAction($this->model->save());
+		return $this->finalAction($saved);
 	}
 	
 	/**
@@ -490,42 +515,15 @@ class DefaultController extends BaseController
 			switch(\Yii::$app->request->isAjax)
 			{
 				case true:
-				switch($this->action->id)
+				switch(array_key_exists($this->action->id, static::booleanActions()))
 				{
-					case 'close':
-					case 'complete':
-					case 'disable':
-					case 'resolve':
-					case 'delete':
+					case true:
+					extract(static::booleanActions()[$this->action->id]);
 					$ret_val['success'] = true;
-					switch($this->action->id)
-					{
-						case 'complete':
-						$attribute = 'completed';
-						$ret_val['title'] = ($this->model->getAttribute($attribute) == 0) ? 'Complete' : 'Un-Complete';
-						break;
-						
-						case 'resolve':
-						$attribute = 'resolved';
-						$ret_val['title'] = ($this->model->getAttribute($attribute) == 0) ? 'Resolve' : 'Un-Resolve';
-						break;
-						
-						case 'close':
-						$attribute = 'closed';
-						$ret_val['title'] = ($this->model->getAttribute($attribute) == 0) ? 'Close' : 'Open';
-						break;
-						
-						case 'disable':
-						$attribute = 'disabled';
-						$ret_val['title'] = ($this->model->getAttribute($attribute) == 0) ? 'Disable' : 'Enable';
-						break;
-						
-						case 'delete':
-						$attribute = 'deleted';
-						$ret_val['title'] = ($this->model->getAttribute($attribute) == 0) ? 'Disable' : 'Enable';
-						break;
-					}
-					$ret_val['actionHtml'] = Icon::forAction($this->action->id, $attribute, $this->model);
+					$booleanValue = $this->model->getAttribute($attributes['attribute']);
+					$ret_val['title'] = $title[$booleanValue];
+					$iconName = isset($icon) ? $icon[$booleanValue] : $this->action->id;
+					$ret_val['actionHtml'] = Icon::forAction($iconName, $booleanValue);
 					$ret_val['data'] = $this->boolResult;
 					$ret_val['class'] = 'wrapper';
 					switch(\Yii::$app->request->get(static::ELEM_TYPE_PARAM))

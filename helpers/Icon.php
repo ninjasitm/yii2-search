@@ -14,26 +14,36 @@ class Icon extends \kartik\icons\Icon
 	public static function forAction($action, $attribute=null, $model=null, $options=[])
 	{
 		$icon = $action;
-		switch(is_object($model) && $model->hasAttribute($attribute))
+		switch(!is_null($model) || !is_null($attribute))
 		{
-			case true:
+			case true;
+			switch(1)
+			{
+				case is_object($model) && $model->hasAttribute($attribute):
+				$value = $model->getAttribute($attribute);
+				break;
+				
+				default;
+				$value = $attribute;
+				break;
+			}
 			switch($action)
 			{
 				case 'close':
-				$icon = ($model->$attribute == 1) ? 'lock' : 'unlock-alt';
+				$icon = ($value == 1) ? 'lock' : 'unlock-alt';
 				break;
 				
 				case 'resolve':
 				case 'complete':
-				$icon = ($model->$attribute == 1) ? 'check-circle' : 'circle';
+				$icon = ($value == 1) ? 'check-circle' : 'circle';
 				break;
 				
 				case 'duplicate':
-				$icon = ($model->$attribute == 1) ?  'flag' : 'flag-o';
+				$icon = ($value == 1) ?  'flag' : 'flag-o';
 				break;
 				
 				case 'disable':
-				$icon = ($model->$attribute == 1) ?  'check-circle' : 'ban';
+				$icon = ($value == 1) ?  'check-circle' : 'ban';
 				break;
 			}
 			break;

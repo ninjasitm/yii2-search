@@ -123,7 +123,7 @@ $this->params['breadcrumbs'][] = $this->title;
 			'label' => 'Author',
 			'format' => 'raw',
 			'value' => function ($model, $index, $widget) {
-				return $model->author()->url(\Yii::$app->getModule('lab1')->fullUsernames, \Yii::$app->request->url, [$model->formname().'[author]' => $model->author_id]);
+				return $model->author()->url(\Yii::$app->getModule('nitm')->useFullnames, \Yii::$app->request->url, [$model->formname().'[author]' => $model->author_id]);
 			}
 		],
 		[
@@ -244,7 +244,7 @@ $this->params['breadcrumbs'][] = $this->title;
 				'class' => 'col-md-12 col-lg-12'
 			]
 		);
-		$shortLink = Html::tag('div', \lab1\widgets\ShortLink::widget([
+		$shortLink = Html::tag('div', \nitm\widgets\metadata\ShortLink::widget([
 			'url' => \Yii::$app->urlManager->createAbsoluteUrl([$model->isWhat().'/view/'.$model->getId()]),
 			'header' => $model->title,
 			'type' => 'modal',
@@ -259,7 +259,7 @@ $this->params['breadcrumbs'][] = $this->title;
 			]
 		)."<br>";
 				
-		/*$statusInfo .= \lab1\widgets\MetaInfo::widget([
+		/*$statusInfo .= \nitm\widgets\MetaInfo::widget([
 			'attributes' => [
 				'numbers',
 			],

@@ -387,7 +387,7 @@ function Nitm ()
 	this.jqEscape = function (val) 
 	{
 		// return new String(val).replace(/[-[\]{}()*+?.,\\^$|]/g, '\\$&');
-		return new String(val).replace(/[-{}()*+?.,\\^$|]/g, '\\$&');
+		return new String(val).replace(/[{}()*+?.,\\^$|]/g, '\\$&');
 	}
 	
 	this.doRequest = function (options, rData, success, error, timeout, headers, useGet)

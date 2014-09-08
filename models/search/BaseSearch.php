@@ -177,11 +177,11 @@ class BaseSearch extends \nitm\models\Data
 				switch($this->inclusiveSearch)
 				{
 					case true:
-					$this->conditions['or'][] = ['like', $attribute, $value, false];
+					$this->conditions['or'][] = ['or like', $attribute, $value, false];
 					break;
 					
 					default:
-					$this->conditions['and'][] = ['like', $attribute, $value, false];
+					$this->conditions['and'][] = ['and like', $attribute, $value, false];
 					break;
 				}
 				break;
