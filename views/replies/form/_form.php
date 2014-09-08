@@ -17,6 +17,7 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 ?>
 
 <div class="message-form" id='messages-form-container<?= $widget->uniqid ?>'>
+	<br>
 	<?= \nitm\widgets\alert\Alert::widget(); ?>
 	<h3>Reply</h3>
 	<?php $form = ActiveForm::begin([
@@ -68,6 +69,6 @@ $action = ($model->getIsNewRecord()) ? "create" : "update";
 </div>
 <script type="text/javascript">
 $nitm.onModuleLoad('replies', function () {
-	$nitm.module('replies').initCreating('<?= $widget->options['id'] ?>');
+	$nitm.module('replies').initCreating('messages-form-container<?= $widget->uniqid ?>');
 });
 </script>

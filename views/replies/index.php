@@ -60,8 +60,7 @@ $this->params['breadcrumbs'][] = $title;
 	switch(isset($widget->noContainer) && $widget->noContainer == true)
 	{
 		case false:
-		$messages = Html::tag('div', $messages, ['role' => 'replyFormParent']);
-		$messages = $messages.$form;
+		$messages = Html::tag('div', $messages.$form, ['role' => 'replyFormParent']);
 		break;
 	}
 	echo $messages;

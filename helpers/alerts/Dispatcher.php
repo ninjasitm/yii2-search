@@ -144,10 +144,16 @@ class Dispatcher extends \yii\base\Component
 		$criteria['action'] .= '_my';
 		$criteria['remote_type'] = [$criteria['remote_type'], 'any'];
 		$criteria['remote_for'] = [$criteria['remote_for'], 'any'];
-		$criteria['remote_id'] = [$criteria['remote_id'], null];
 		$criteria['priority'] = [$criteria['priority'], 'any'];
+		$remoteWhere = [];
+		if(isset($criteria['remote_id']))
+		{
+			$remoteWhere = ['or', '`remote_id`='.$criteria['remote_id'], ' `remote_id` IS NULL'];
+			unset($criteria['remote_id']);
+		}
 		return Alerts::find()->select('*')
 			->where($criteria)
+			->andWhere($remoteWhere)
 			->indexBy('user_id')
 			->with('user');
 	}
@@ -165,10 +171,15 @@ class Dispatcher extends \yii\base\Component
 		$criteria['remote_for'] = [$criteria['remote_for'], 'any'];
 		$criteria['action'] = [$criteria['action'], 'any'];
 		$criteria['priority'] = [$criteria['priority'], 'any'];
+		$remoteWhere = [];
 		if(isset($criteria['remote_id']))
-			$criteria['remote_id'] = [$criteria['remote_id'], null];
+		{
+			$remoteWhere = ['or', '`remote_id`='.$criteria['remote_id'], ' `remote_id` IS NULL'];
+			unset($criteria['remote_id']);
+		}
 		return Alerts::find()->select('*')
 			->orWhere($criteria)
+			->andWhere($remoteWhere)
 			->andWhere([
 				'not', ['user_id' => \Yii::$app->user->getId()]
 			])

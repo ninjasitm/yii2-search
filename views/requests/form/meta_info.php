@@ -39,7 +39,7 @@ use \yii\bootstrap\Tabs;
 					'data-run-once' => 1,
 					'data-type' => 'html',
 					'data-id' => 'request-issues'.$uniqid,
-					'data-url' =>  \Yii::$app->urlManager->createUrl(['/issue/index/'.$model->isWhat().'/'.$model->getId(), '__format' => 'html'])
+					'data-url' =>  \Yii::$app->urlManager->createUrl(['/issue/index/'.$model->isWhat().'/'.$model->getId(), '__format' => 'html', \nitm\models\Issues::COMMENT_PARAM => true])
 				]
 			],
 			[
