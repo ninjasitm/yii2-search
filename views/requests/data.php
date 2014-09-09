@@ -236,39 +236,41 @@ $this->params['breadcrumbs'][] = $this->title;
 		);
 		
 		$activityInfo = Html::tag('div',
-			Html::tag('div', $replies, ['class' => 'col-md-3 col-lg-3']).
-			Html::tag('div', $revisions, ['class' => 'col-md-3 col-lg-3']).
-			Html::tag('div', $issues, ['class' => 'col-md-3 col-lg-3']).
-			Html::tag('div', $follow, ['class' => 'col-md-3 col-lg-3']),
+			Html::tag('div', $replies, ['class' => 'col-md-3 col-lg-3 text-center']).
+			Html::tag('div', $revisions, ['class' => 'col-md-3 col-lg-3 text-center']).
+			Html::tag('div', $issues, ['class' => 'col-md-3 col-lg-3 text-center']).
+			Html::tag('div', $follow, ['class' => 'col-md-3 col-lg-3 text-center']),
 			[
 				'class' => 'col-md-12 col-lg-12'
 			]
 		);
-		$shortLink = Html::tag('div', \nitm\widgets\metadata\ShortLink::widget([
+		$viewLink = Html::tag('div', \nitm\widgets\metadata\ShortLink::widget([
+			'title' => 'View',
 			'url' => \Yii::$app->urlManager->createAbsoluteUrl([$model->isWhat().'/view/'.$model->getId()]),
 			'header' => $model->title,
 			'type' => 'modal',
 			'size' => 'large'
 		]));
+		$editLink = Html::tag('div', \nitm\widgets\metadata\ShortLink::widget([
+			'title' => 'Update',
+			'url' => \Yii::$app->urlManager->createAbsoluteUrl([$model->isWhat().'/form/update/'.$model->getId()]),
+			'header' => $model->title,
+			'type' => 'modal',
+			'size' => 'x-large',
+			'modalOptions' => [
+				'dialogOptions' => [
+					'class' => 'modal-full'
+				]
+			]
+		]));
 		$metaInfo = Html::tag('div', 
 			Html::tag('div', 
-				$title.$shortLink."<br>".$activityInfo
+				implode('<br>', [$title, $editLink, $viewLink, $activityInfo])
 			),
 			[
 				'class' => 'wrapper'
 			]
 		)."<br>";
-				
-		/*$statusInfo .= \nitm\widgets\MetaInfo::widget([
-			'attributes' => [
-				'numbers',
-			],
-			'items' => [
-				[
-					'attribute' => 'numbers',
-				],
-			],
-		]);*/
 		return Html::tag('tr', 
 			Html::tag(
 				'td', 

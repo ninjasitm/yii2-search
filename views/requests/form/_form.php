@@ -97,11 +97,7 @@ $action = $model->getIsNewRecord() ? 'create' : 'update';
 	</div>
 </div>
 <script type='text/javascript'>
-$nitm.onModuleLoad('lab1:requests', function () {
-	$nitm.module('lab1').initForms('<?= $model->isWhat();?>_form_container', 'lab1:requests');
-	$nitm.module('lab1').initMetaActions('#<?= $model->isWhat();?>_form_container', 'lab1:requests');
-	<?php if(\Yii::$app->request->isAjax): ?>
-	$nitm.module('tools').initVisibility('#<?= $model->isWhat();?>_form_container');
-	<?php endif; ?>
+$nitm.onModuleLoad('entity:requests', function () {
+	$nitm.module('entity').initForms('<?= $model->isWhat();?>_form_container', 'entity:requests');
 });
 </script>

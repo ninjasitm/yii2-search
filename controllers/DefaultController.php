@@ -39,7 +39,7 @@ class DefaultController extends BaseController
 						'actions' => [
 							'index', 'add', 'list', 'view', 'create', 
 							'update', 'delete', 'form', 'search', 'disable',
-							'close', 'resolve', 'complete'
+							'close', 'resolve', 'complete', 'error'
 						],
 						'allow' => true,
 						'roles' => ['@'],
@@ -117,6 +117,18 @@ class DefaultController extends BaseController
 			break;
 		}
 		
+		if(\Yii::$app->request->isAjax)
+		{
+			if(!Response::formatSpecified())
+			{
+				$this->setResponseFormat('html');
+			}
+		}
+		
+		/**
+		 * Remove the __format paramater as it causes problems with 
+		 */
+		unset($_REQUEST['__format'], $_GET['__format']);
         $dataProvider = $searchModel->search($_REQUEST);
 		
 		$ret_val['data'] = $this->renderAjax('data', [
@@ -124,18 +136,8 @@ class DefaultController extends BaseController
 			'searchModel' => $searchModel,
 			'primaryModel' => $this->model
 		]);
-		switch(\Yii::$app->request->isAjax)
+		if(!\Yii::$app->request->isAjax)
 		{
-			case true:
-			switch(Response::formatSpecified())
-			{
-				case false:
-				$this->setResponseFormat('html');
-				break;
-			}
-			break;
-			
-			default:
 			$ret_val['data'] = Html::tag('div',
 				\yii\widgets\Breadcrumbs::widget(['links' => [
 					[
@@ -149,7 +151,6 @@ class DefaultController extends BaseController
 				$ret_val['data'], ['class' => 'col-md-12 col-lg-12']
 			);
 			$this->setResponseFormat('html');
-			break;
 		}
 		$ret_val['message'] = !$dataProvider->getCount() ? $ret_val['message'] : "Found ".$dataProvider->getTotalCount()." results matching your search";
 		Response::$viewOptions['args'] = [
