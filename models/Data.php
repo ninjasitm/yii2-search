@@ -31,8 +31,10 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	\nitm\traits\Data;
 	
 	//public members
+	public $initLocalConfig = true;
 	public $unique;
 	public $requestModel;
+	public static $initClassConfig = true;
 	public static $settings;
 	public static $active = [
 		'driver' => 'mysql',
@@ -62,7 +64,8 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	public function init()
 	{
 		parent::init();
-		$this->initConfig(static::isWhat());
+		if((bool)$this->initLocalConfig && (bool)static::$initClassConfig)
+			$this->initConfig(static::isWhat());
 	}
 	
 	public function rules()

@@ -60,7 +60,7 @@ class BaseWidget extends Data implements DataInterface
 		$this->addWith(['author']);
 		if($this->initSearchClass)
 			static::initCache($this->constrain, self::cacheKey($this->getId()));
-		static::$currentUser =  \Yii::$app->user->identity;
+		static::$currentUser =  isset(\Yii::$app->user) ? \Yii::$app->user->identity : new User(['id' => 1]);
 		static::$userLastActive = is_null(static::$userLastActive) ? static::$currentUser->lastActive() : static::$userLastActive;
 		$this->initEvents();
 	}

@@ -131,6 +131,10 @@ class Helper extends Model
 					$ret_val .= $field.$match."$quoter".$value."$quoter";
 					break;
 					
+					case is_array($value):
+					$ret_val .= static::splitc(array_keys($value), array_values($value), $c, $xor, $esc, $quote_fields, $quote_data);
+					break;
+					
 					default:
 					$ret_val .= $field.$match.$value;
 					break;

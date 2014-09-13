@@ -56,16 +56,19 @@ class DB extends Query
 		'db' => ['name' => null, 'resource' => null]
 	];
 	
+	protected $type;
 	protected $score = null;
 	protected $connection;
 	protected $resource;
 	protected $quoter = '"';
-	protected $query = [
-		"stats" => [
-			'count' => 0, 'time_total' => 0, 'queries' => []
-		], 
-		"string" => null
-	];
+	protected $query = '';
+	protected $data = [];
+	protected $parts = [];
+	protected $stats = [
+		'count' => 0, 
+		'duration' => 0, 
+		'queries' => []
+	]; 
 	protected $last_id = null;
 
 	private $_on;
@@ -77,7 +80,7 @@ class DB extends Query
 	
 	function init($db=NULL, $table=NULL, $db_host=NULL, $db_user=NULL, $db_pass=NULL, $db_driver=NULL)
 	{
-		$this->query['stats']['start'] = microtime();
+		$this->stats['start'] = microtime();
 		//assign variables as needed
 		$this->setDriver($db_driver);
 		$this->setLogin($db_host, $db_user, $db_pass);
@@ -89,11 +92,11 @@ class DB extends Query
 	
 	public function behaviors()
 	{
-		$behaviors = array(
-				"Behavior" => array(
-					"class" => \yii\base\Behavior::className(),
-				),
-			);
+		$behaviors = [
+			"Behavior" => [
+				"class" => \yii\base\Behavior::className(),
+			],
+		];
 		return array_merge(parent::behaviors(), $behaviors);
 	}
 	
@@ -165,6 +168,11 @@ class DB extends Query
 		return $matches[2];
 	}
 	
+	public static function tableName()
+	{
+		return static::$active['table']['name'];
+	}
+	
 	/**
 	 * Set the error handling behavior
 	 * @param boolean $die
@@ -173,7 +181,7 @@ class DB extends Query
 	 */
 	public function dieOnError($die=false, $backtrace=false)
 	{
-		$this->_on['erorr'] = array();
+		$this->_on['erorr'] = [];
 		$this->_on['error']['die'] = ($die !== false) ? true : false;
 		$this->_on['erorr']['backtrace'] = ($backtrace !== false) ? true : false;
 	}
@@ -268,7 +276,7 @@ class DB extends Query
 	{
 		$ret_val = false;
 		$was_array = is_array($data) ? true : false;
-		$data = is_array($data) ? $data : array($data);
+		$data = (array) $data;
 		foreach($data as $i=>$d)
 		{
 			switch(is_null($d))
@@ -311,7 +319,7 @@ class DB extends Query
 		}
 		if((!empty($db)))
 		{
-			static::$old['db']['name'] = static::$active['db']['name'];
+			static::$old['db'] = static::$active['db'];
 			static::$active['db']['name'] = $db;
 			$this->setDb(static::$active['db']['name']);
 		}
@@ -321,7 +329,7 @@ class DB extends Query
 		}
 		if(!empty($table))
 		{
-			static::$old['table']['name'] = static::$active['table'];
+			static::$old['table'] = static::$active['table'];
 			static::$active['table']['name'] = $table;
 			$this->setTable(static::$active['table']['name']);
 		}
@@ -352,8 +360,8 @@ class DB extends Query
 			$this->setTable(static::$active['table']['name']);
 			break;
 		}
-		static::$old['db'] = array();
-		static::$old['table'] = array();
+		static::$old['db'] = [];
+		static::$old['table'] = [];
 	}
 	
 	/**
@@ -412,8 +420,7 @@ class DB extends Query
 	 */
 	public final function addFieldTo($field, $db=null, $table=null, $null=true, $default=0)
 	{
-		$db = (is_null($db)) ? static::$active['db']['name'] : $db;
-		$table = (is_null($table)) ? static::$active['table'] : $table;
+		extract(static::getCorrectDbTable($db, $table));
 		$ret_val = false;
 		if(is_array($field))
 		{
@@ -421,13 +428,12 @@ class DB extends Query
 			$default = ($default == "NULL") ? "" : $default;
 			$null = ($null === true) ? "" : (($default == "") ? "" : "NOT NULL DEFAULT $default");
 			$field['Type'] = empty($null) ? $field['Type'] : $field['Type']." $null";
-			$this->addColumn($table, $field['Field'], $field['Type']);
-			$uni = ($field['Key'] == 'UNI') ? true : false;
+			$this->createCommand()->addColumn($table, $field['Field'], $field['Type'])->execute();
+			$uni = (isset($field['Key']) && $field['Key'] == 'UNI') ? true : false;
 			if($uni === true)
 			{
-				$this->addPrimaryKey($field['Field'], $table, $field['Field']);
+				$this->createCommand()->addPrimaryKey($field['Field'], $table, $field['Field'])->execute();
 			}
-			$this->performOp(DB::OP_FLU);
 			$this->revertDbt();
 			$ret_val = true;
 		}
@@ -585,11 +591,11 @@ class DB extends Query
 	public function getIndexes($db=null, $table=null)
 	{
 		$ret_val = false;
-		$table = (empty($table)) ? static::$active['table']['name'] : $table;
-		$db = (empty($db)) ? static::$active['db']['name'] : $db;
+		extract(static::getCorrectDbTable($db, $table));
 		if(!is_null($table) && !is_null($db))
 		{
-			$this->execute("SHOW INDEX FROM ".$db.".".$table."");
+			$this->type = 'indexes';
+			$this->execute("SHOW INDEXES FROM ".$db.".".$table."");
 			$ret_val = $this->result(self::R_ASS, true, false);
 			$this->free();
 		}
@@ -605,13 +611,44 @@ class DB extends Query
 	public function getTableInfo($db=null, $table=null)
 	{
 		$ret_val = false;
-		$table = (empty($table)) ? static::$active['table']['name'] : $table;
-		$db = (empty($db)) ? static::$active['db']['name'] : $db;
+		extract(static::getCorrectDbTable($db, $table));
 		if(!is_null($table) && !is_null($db))
 		{
-			$this->execute("SHOW TABLE STATUS FROM ".$db.".".$table."");
-			$ret_val = $this->result(self::R_ASS, true, false);
+			$this->type = 'tableStatus';
+			$this->execute("SHOW TABLE STATUS FROM `".$db."` LIKE '".$table."'");
+			$ret_val = $this->result(self::R_ASS);
 			$this->free();
+		}
+		return $ret_val;
+	}
+	
+	protected static function getCorrectDbTable($db, $table)
+	{
+		$ret_val = [
+			'db' => $db,
+			'table' => $table
+		];
+		switch(!is_null($db) && !is_null($table))
+		{
+			case true:
+			$ret_val['table'] = $table;
+			$ret_val['db'] = $db;
+			break;
+			
+			default:
+			$ret_val['table'] = is_null($table) ? static::$active['table']['name'] : $table;
+			$ret_val['db'] = isset(static::$active['db']['name']) ? static::$active['db']['name'] : static::getDbName();
+			break;
+		}
+		return $ret_val;
+	}
+	
+	protected static function parseForJson($data)
+	{
+		$ret_val = (array) $data;
+		foreach($data as $key=>$value)
+		{
+			$ret_val[$key] = (is_null($jdata = @json_decode($value, true))) ? $value : $jdata;
 		}
 		return $ret_val;
 	}
@@ -643,7 +680,7 @@ class DB extends Query
 	public function execute($db_query=null, $db=null, $table=null, $prepared=false)
 	{
 		$ret_val = false;
-		$this->_rows = array();
+		$this->_rows = [];
 		switch(is_null($db))
 		{
 			case true:
@@ -664,28 +701,28 @@ class DB extends Query
 			$this->generateError('local', 'local');
 			die("empty database");
 		}
-		$this->query['string'] = (empty($db_query)) ? $this->query['string'] : $db_query;
+		$this->query = (empty($db_query)) ? $this->query : $db_query;
 		switch($prepared)
 		{
 			case false: 
-			$this->resource['prepared'] = $this->connection->createCommand($this->query['string']);
+			$this->resource['prepared'] = $this->connection->createCommand($this->query);
 			break;
 		}
 		if($this->collect_stats === true)
 		{
-			$this->query['stats']['count']++;
+			$this->stats['count']++;
 			$start = microtime(true);
 		}
 		try
 		{
         	$this->resource['transaction'] = $this->connection->beginTransaction();
 			$this->resource['result'] = $this->resource['prepared']->query();
-			switch($this->query['type'] != null)
+			switch(isset($this->type) && $this->type != null)
 			{
 				case true:
-				$this->last_id[$this->query['type']] = $this->connection->getLastInsertId();
-				$this->query['type'] = null;
-				$this->query['data'] = array();
+				$this->last_id[$this->type] = $this->connection->getLastInsertId();
+				$this->type = null;
+				$this->data = [];
 				break;
 			}
 			$this->resource['transaction']->commit();
@@ -720,12 +757,20 @@ class DB extends Query
 		if($this->collect_stats === true)
 		{
 			$end = microtime(true);
-			$this->query['stats']['time_total'] += ($end - $start);
+			$this->stats['duration'] += ($end - $start);
 			$caller = array_shift(array_slice(debug_backtrace(), 1, 1, true));
-			$this->query['stats']['queries'][] = array('query' => $this->query['string'], 'start' => $start, 'end' => $end, 'duration' => ($end - $start), 'called_from' => $caller['line'], 'called_by' => $caller['function'], 'in_file' => $caller['file']);
+			$this->stats['queries'][] = [
+				'query' => $this->query, 
+				'start' => $start, 
+				'end' => $end, '
+				duration' => ($end - $start), 
+				'called_from' => $caller['line'], 
+				'called_by' => $caller['function'], 
+				'in_file' => $caller['file']
+			];
 		}
 		$this->_rows['rows'] = $this->resource['result']->getRowCount();
-		if(preg_match('/^SELECT\s+(?:ALL\s+|DISTINCT\s+)?(?:.*?)\s+FROM\s+(.*)$/i', $this->query['string'], $output) > 0) 
+		if(preg_match('/^SELECT\s+(?:ALL\s+|DISTINCT\s+)?(?:.*?)\s+FROM\s+(.*)$/i', $this->query, $output) > 0) 
 		{
 // 			//doing this here ebcasue PDO doesn't return proper rows on SELECT
 			//$row_query = "SELECT COUNT(*) FROM {$output[1]}";
@@ -745,35 +790,50 @@ class DB extends Query
 		{
 			$this->revertDbt();
 		}
-		$this->query['data'] = null;
+		$this->data = [];
 		//return the query result
 		return $ret_val;
 	}
 	
-	public function getQuery()
+	public function run()
 	{
-		$ret_val = $this->query['string'];
+		$this->build();
+		if(empty($this->parts['where']))
+			$this->where();
+		$this->execute(null, null, null, true);
+		return $this;
+	}
+	
+	/**
+	 * Function to return the SQL
+	 * @param boolean $stringOnly Only return the query string and not the 
+	 */
+	public function getSql($unbound=false)
+	{
+		$ret_val = '';
 		switch(is_object($this->resource['prepared']))
 		{
 			case true:
-			$ret_val .= $this->resource['prepared']->getRawSql();
+			$ret_val = $this->resource['prepared']->getRawSql();
 			break;
 		}
+		if($unbound)
+			$ret_val .= ' | Unbound: '.$this->query;
 		return $ret_val;
 	}
 	
 	public function printQuery()
 	{
-		Helper::pr($this->getQuery());
+		Helper::pr($this->getSql());
 	}
 	
-	public function getQueryStats($return_queries=false)
+	public function getSqlStats($return_queries=false)
 	{
 		$ret_val = false;
 		if($this->collect_stats)
 		{
-			$this->query['stats']['time_average'] = $this->query['stats']['time_total']/$this->query['stats']['count'];
-			$ret_val = $this->query['stats'];
+			$this->stats['time_average'] = $this->stats['duration']/$this->stats['count'];
+			$ret_val = $this->stats;
 			switch($return_queries)
 			{
 				case false:
@@ -798,7 +858,7 @@ class DB extends Query
 		$ret_val = false;
 		if(!empty($key))
 		{
-			$this->query['data']['check']['keys'] = (is_array($key)) ? Helper::splitF($key, ',') : $key;
+			$this->data['check']['keys'] = (is_array($key)) ? Helper::splitF($key, ',') : $key;
 			if($db)
 			{
 				$this->changeDbt($db, $table);
@@ -829,7 +889,12 @@ class DB extends Query
 					echo $this->query;
 				echo "</pre>";
 			}
-			$this->select($sel, false, array('key' => $key, 'data' => $data, 'operand' => $oper, 'xor' => $xor), $this->getCurPri(), true, $limit, true);
+			$this->select($sel, false)
+				->where($key, $data, $oper, $xor)
+				->orderBy($this->getCurPri())
+				->direction(true)
+				->limit($limit)
+				->run();
 			$ret_val = $this->result(DB::R_ASS, true, true);
 			$rows = $this->rows();
 			$this->free();
@@ -837,7 +902,7 @@ class DB extends Query
 			{
 				$this->revertDbt();
 			}
-			unset($this->query['data']['check']);
+			unset($this->data['check']);
 			switch(1)
 			{
 				case empty($rows):
@@ -857,25 +922,17 @@ class DB extends Query
 				
 				case (is_string($fields) && ($fields != '*')):
 				$fields = explode(',', $fields);
-				switch(is_array($fields) && sizeof($fields) >= 2)
+				$replaceFunc = function ($value){
+					return preg_replace(['/([`]{1,})/', '/([\W]{1,})/'], '', $value);
+				};
+				$fields = (array) $fields;
+				foreach($fields as $field=>$value)
 				{
-					case true:
-					$temp_val = array();
-					foreach($fields as $field=>$value)
-					{
-						$field = explode('AS', $field);
-						$ret_val = (sizeof($field) == 2) ? $ret_val[preg_replace(array('/([`]{1,})/', '/([\W]{1,})/'), '', $field[1])] : $ret_val[preg_replace(array('/([`]{1,})/', '/([\W]{1,})/'), '', $field[0])];
-						$temp_val[$field] = $ret_val[$field];	
-					}				
-					$ret_val = $temp_val;
-					break;
-					
-					default:
-					$fields = explode('AS', $fields[0]);
-					$ret_val = (sizeof($fields) == 2) ? $ret_val[preg_replace(array('/([`]{1,})/', '/([\W]{1,})/'), '', $fields[1])] : $ret_val[preg_replace(array('/([`]{1,})/', '/([\W]{1,})/'), '', $fields[0])];
-					$ret_val = $ret_val[0];
-					break;
-				}
+					$field = explode('AS', $field);
+					$ret_val = (sizeof($field) == 2) ? $ret_val[$replace($field[1])] : $ret_val[$replace($field[0])];
+					$temp_val[$field] = $ret_val[$field];	
+				}				
+				$ret_val = $temp_val;
 //				echo "Exiting check here 2 $fields<br>";
 // 				pr($ret_val);
 				break;
@@ -889,7 +946,7 @@ class DB extends Query
 // 				echo "Returning <br>";
 // 				$this->pr($ret_val);
 // 				echo "<br> for <br>";
-// 				echo $this->query['string']."<br>";
+// 				echo $this->query."<br>";
 // 			}
 		}
 		return $ret_val;
@@ -900,39 +957,18 @@ class DB extends Query
 	function to select data from a database + table
 		@param mixed $f fields to be selected
 		@param boolean $d whether or not this should be a distinct select
-		@param mixed $c the conditions for selecting data
-		@param mixed $o order the results by
-		@param mixed $a ascending or descing order?
-		@param mixed $lim the manimum number of results to return
-		@param boolean $esc escape arguments
-		@param int $offset start selecting from here
-		@param boolean $union Should a union be used to merge multiple selects?
-		@param mixed $max maximum number of results to return
-		@return mixed
+		@return static
 	*/
 	
-	public function select($f=null, $d=false, $c=null, $o=null, $a=null, $lim=null, $esc=true, $offset=0, $max=false, $union=false)
+	public function select($f=null, $distinct=true, $union=false)
 	{
-		$this->query['type'] = 'select';
-		$this->query['data'] = array();
-		$f = (is_null($jdata = @json_decode($f, true))) ? $f : $jdata;
-		$d = (is_null($jdata = @json_decode($d, true))) ? $d : $jdata;
-		$c = (is_null($jdata = @json_decode($c, true))) ? $c : $jdata;
-		$this->query['string'] = "SELECT";
-		$this->query['string'] .= ($d === true) ? '' : " DISTINCT ";
-		$u = $this->fields($f, $union);
-		$this->where(@$c['key'], @$c['data'], @$c['operand'], @$c['xor'], $union);
-		//set the ascending or descinding value of query
-		$this->direction($a);
-		$this->ordering($o, $union, $u);
-		//do the max query before doing the limit
-		//$this->maxQuery();
-		$this->limit($lim, $offset);
-		$queries = array("data" => $this->query['string']);
-		$this->bindQuery($queries);
-		$this->execute(null, null, null, true);
-		$ret_val = ($this->_rows['rows'] >= 1) ? true : false;
-		return $ret_val;
+		$this->type = 'select';
+		$this->parts = [];
+		extract($this->parseForJson(['f' => $f]));
+		$this->parts = ["SELECT"];
+		$this->parts[] = ($distinct === true) ? '' : "DISTINCT";
+		$this->fields($f, $union);
+		return $this;
 	}
 	
 	/**
@@ -942,17 +978,14 @@ class DB extends Query
 	 * @param mixed $d = data to be inserted
 	 * @param boolean $delay = whether transaction is high priority or should be delayed
 	 * @param mixed $dupe = data to be changed on a duplicate
-	 * @param boolean $esc Should the data be escaped?
 	 */
-	public function insert($f, $d, $delay=false, $dupe=null, $esc=true)
+	public function insert($f, $d, $delay=false, $dupe=null)
 	{
-		$this->query['type'] = 'insert';
+		$this->type = 'insert';
 		$this->free();
-		$f = (is_null($jdata = @json_decode($f, true))) ? $f : $jdata;
-		$d = (is_null($jdata = @json_decode($d, true))) ? $d : $jdata;
-		$esc = ($esc == true) ? true : false;
-		$this->query['string'] = "INSERT";
-		$this->query['string'] .= ($delay === true) ? " DELAYED " : '';
+		extract($this->parseForJson(['f' => $f, 'd' => $d]));
+		$this->parts = ["INSERT"];
+		$this->parts[] = ($delay === true) ? "DELAYED" : '';
 		$this->fields($f, false, $d);
 		if(sizeof($f) != sizeof($d))
 		{
@@ -963,17 +996,14 @@ class DB extends Query
 		switch(is_array($dupe))
 		{
 			case true:
-			$this->query['data']['dupe'] = $this->prepareConditional(array('values' => array_keys($dupe)), array('values' => array_values($dupe), "prep" => '"', "app" => '"'), '=', ', ');
-			$this->query['string'] .= " ON DUPLICATE KEY UPDATE ".$this->condition;
+			$this->data['dupe'] = $this->prepareConditional(
+				['values' => array_keys($dupe)], 
+				['values' => array_values($dupe), "prep" => '"', "app" => '"'],
+				'=', ', ');
+			$this->query[] = "ON DUPLICATE KEY UPDATE ".$this->condition;
 			break;
 		}
-		
-		//spare parts
-		$queries = array("data" => $this->query['string']);
-		$this->bindQuery($queries);
-		$this->execute(null, null, null, true);
-		$ret_val = ($this->_rows['rows'] >= 1) ? true : false;
-		return $ret_val;
+		return $this;
 	}
 	
 	/**
@@ -984,32 +1014,21 @@ class DB extends Query
 	 * @param int $lim how many to update?
 	 * @return mixed
 	 */
-	public function update($f, $d, $c, $lim=1, $esc=true)
+	public function update($f=null, $d=null)
 	{
 		switch(!is_null($d) && !empty($f))
 		{
 			case false:
 			return false;
-			return "empty data and fields ($d, $f)";
+			throw new \Exception("Empty data and fields ($d, $f)");
 			break;
 		}
-		$this->query['type'] = 'update';
+		$this->type = 'update';
 		$this->free();
-		$f = (is_null($jdata = @json_decode($f, true))) ? $f : $jdata;
-		$d = (is_null($jdata = @json_decode($d, true))) ? $d : $jdata;
-		$c = (is_null($jdata = @json_decode($c, true))) ? $c : $jdata;
-		$this->query['string'] = "UPDATE ";
-		$f = is_array($f) ? $f : array($f);
+		extract($this->parseForJson(['f' => $f, 'd' => $d]));
+		$this->parts = ["UPDATE"];
 		$this->fields($f, null, $d);
-		$this->where(@$c['key'], @$c['data'], @$c['operand'], @$c['xor']);
-		$this->limit($lim);
-		
-		//spare parts
-		$queries = array("data" => $this->query['string']);
-		$this->bindQuery($queries);
-		$this->execute(null, null, null, true);
-		$ret_val = ($this->_rows['rows'] >= 1) ? true : false;
-		return $ret_val;
+		return $this;
 	}
 	
 	/**
@@ -1017,29 +1036,19 @@ class DB extends Query
 	 * Named remove because of conflicts with delete
 	 * @param mixed $f fields to be matched against $d
 	 * @param mixed $d data to be matched
-	 * @param int $lim delete limit
-	 * @param string $oper operand to use
+	 * @param string $operand operand to use
 	 * @param string $xor connector for conditional requirements
-	 * @return boolean */
-	public function remove($f, $d, $table=null, $db=null, $lim=1, $oper='=', $xor=' AND ')
+	 * @return $this 
+	 */
+	public function remove($f, $d, $operand='=', $xor='AND')
 	{
-		$this->query['type'] = 'delete';
+		$this->type = 'delete';
 		$this->free();
-		$f = (is_null($jdata = @json_decode($f, true))) ? $f : $jdata;
-		$d = (is_null($jdata = @json_decode($d, true))) ? $d : $jdata;
-		$this->query['string'] = "DELETE ";
-		$f = is_array($f) ? $f : array($f);
-		$d = is_array($d) ? $d : array($d);
+		extract($this->parseForJson(['f' => $f, 'd' => $d]));
+		$this->parts = ["DELETE"];
 		$this->fields();
 		$this->where($f, $d, $oper, $xor);
-		$this->limit($lim);
-		
-		//spare parts
-		$queries = array("data" => $this->query['string']);
-		$this->bindQuery($queries);
-		$this->execute(null, null, null, true);
-		$ret_val = ($this->_rows['rows'] >= 1) ? true : false;
-		return $ret_val;
+		return $this;
 	}
 	
 	/**
@@ -1050,38 +1059,55 @@ class DB extends Query
 	 * @param mixed $xor  
 	 * @return string the union parameter
 	 */
-	public function where($key=null, $data=null, $operand=null, $xor=null, $union=false)
+	public function where($glue=null, $key=null, $data=null, $operand=null, $xor=null, $union=false)
 	{
-		$ret_val = '';
+		$ret_val = '1';
+		if(is_null($glue))
+		{
+			$args = func_get_args();
+			//Remove the glue parameter
+			array_shift($args);
+			@list($key, $data, $operand, $xor, $union) = $args;
+		}
 		switch($union)
 		{
 			case false:
 			switch(empty($key))
 			{
-				case true:
-				$ret_val = ' WHERE 1';
-				break;
-				
-				default:
-				$data = is_array($data) ? $data : array($data);
+				case false:
+				$data = (array) $data;
 				$pdo_data = $this->pdoKeys($key, 10000, $data);
 				$bind_fields = array_keys($pdo_data['pdo_data']);
 				$bind_data = array_values($pdo_data['pdo_data']);
-				$ret_val = " WHERE ".$this->prepareConditional(array('values' => $pdo_data['data']['keys']), array('values' => array_keys($pdo_data['pdo_data'])), $operand, $xor);
-				$this->query['data']['bind']['fields'] = array_merge($this->query['data']['bind']['fields'], $bind_fields);
-				$this->query['data']['bind']['data'] = array_merge($this->query['data']['bind']['data'], $bind_data);
-				$this->query['data']['bind']['raw'] = array_merge($this->query['data']['bind']['raw'], $pdo_data);
+				$ret_val = $this->prepareConditional(
+					['values' => $pdo_data['data']['keys']], 
+					['values' => array_keys($pdo_data['pdo_data'])], 
+					$operand, $xor);
+				if(!isset($this->data['bind']))
+					$this->data['bind'] = ['fields' => [], 'data' => [], 'raw' => []];
+				$this->data['bind']['fields'] = array_merge($this->data['bind']['fields'], $bind_fields);
+				$this->data['bind']['data'] = array_merge($this->data['bind']['data'], $bind_data);
+				$this->data['bind']['raw'] = array_merge($this->data['bind']['raw'], $pdo_data);
 				break;
 			}
 			break;
-			
-			default:
-			$ret_val = '';
-			break;
 		}
-		$this->query['data']['where'] = $ret_val;
-		$this->query['string'] .= $ret_val;
-		return $ret_val;
+		$ret_val = is_null($glue) ? "WHERE ".$ret_val : $glue.' '.$ret_val;
+		$this->data['where'][] = $ret_val;
+		$this->parts[] = $ret_val;
+		return $this;
+	}
+	
+	public function andWhere($key=null, $data=null, $operand=null, $xor=null, $union=false)
+	{
+		$this->where('and', $key, $data, $operand, $xor, $union);
+		return $this;
+	}
+	
+	public function orWhere($key=null, $data=null, $operand=null, $xor=null, $union=false)
+	{
+		$this->where('or', $key, $data, $operand, $xor, $union);
+		return $this;
 	}
 	
 	/**
@@ -1092,12 +1118,14 @@ class DB extends Query
 	public function fields($f=null, $union=null, $d=null)
 	{
 		$ret_val = '';
-		$u = array("where" => "",
-		"from" => "",
-		"join" => "",
-		"fields" => "",
-		"values" => "");
-		switch($this->query['type'])
+		$u = [
+			"where" => "",
+			"from" => "",
+			"join" => "",
+			"fields" => "",
+			"values" => ""
+		];
+		switch($this->type)
 		{
 			case 'select':
 			case 'delete':
@@ -1116,19 +1144,19 @@ class DB extends Query
 			$u['from'] = ' ';
 			break;
 		}
-		switch(empty($f))
+		switch(sizeof((array)$f) == 0)
 		{
 			case true:
-			switch($this->query['type'])
+			switch($this->type)
 			{
 				case 'select':
-				$this->query['data']['fields'] = "*";
+				$this->data['fields'] = "*";
 				$u['from'] .= "`".static::$active['db']['name'].'`.`'.static::$active['table']['name']."`";
 				$u['fields'] = '*';
 				break;
 				
 				case 'delete':
-				$this->query['data']['fields'] = "";
+				$this->data['fields'] = "";
 				$u['from'] .= "`".static::$active['db']['name'].'`.`'.static::$active['table']['name']."`";
 				$u['fields'] = '';
 				break;
@@ -1140,7 +1168,7 @@ class DB extends Query
 			{
 				case self::SEL_UNION_ALL:
 				case self::SEL_UNION:
-				$this->query['string'] = "";
+				$this->parts = [];
 				$u['join'] = ' UNION ';
 				$u['from'] = "";
 				switch($union)
@@ -1156,7 +1184,7 @@ class DB extends Query
 				$u['from'] .= "`".static::$active['db']['name'].'`.`'.static::$active['table']['name']."`";
 				break;
 			}
-			switch($this->query['type'])
+			switch($this->type)
 			{
 				case 'insert':
 				//forumalate fields part of query
@@ -1164,7 +1192,16 @@ class DB extends Query
 				break;
 				
 				case 'select':
-				$u['fields'] = Helper::splitF($f, $u['join'], false);
+				switch(1)
+				{
+					case $f == 'primaryKey':
+					$f = $this->primaryKey();
+					break;
+					
+					default:
+					$u['fields'] = Helper::splitF($f, $u['join'], false);
+					break;
+				}
 				break;
 				
 				case 'update':
@@ -1173,33 +1210,33 @@ class DB extends Query
 			}
 			break;
 		}
-		$this->query['data']['bind']['fields'] = array();
-		$this->query['data']['bind']['data'] = array();
-		$this->query['data']['bind']['raw'] = array();
-		$this->query['data']['values'] = "";
+		$this->data['bind']['fields'] = [];
+		$this->data['bind']['data'] = [];
+		$this->data['bind']['raw'] = [];
+		$this->data['values'] = "";
 		switch(!empty($f) && !empty($d))
 		{
 			case true:
 			$pdo_data = $this->pdoKeys($f, 0, $d);
 			$bind_fields = array_keys($pdo_data['pdo_data']);
 			$bind_data = array_values($pdo_data['pdo_data']);
-			$this->query['data']['bind']['fields'] = $bind_fields;
-			$this->query['data']['bind']['data'] = $bind_data;
-			$this->query['data']['bind']['raw'] = $pdo_data;
-			switch($this->query['type'])
+			$this->data['bind']['fields'] = $bind_fields;
+			$this->data['bind']['data'] = $bind_data;
+			$this->data['bind']['raw'] = $pdo_data;
+			switch($this->type)
 			{
 				case 'insert':
 				switch(is_array($pdo_data) && (sizeof($pdo_data) >= 1))
 				{
 					case true:
-					$values = array();
-					$bind_fields = is_array($bind_fields[0]) ? $bind_fields : array($bind_fields);
+					$values = [];
+					$bind_fields = (array) $bind_fields;
 					foreach($bind_fields as $fields)
 					{
-						$values[] = " VALUES(".implode(',', ($fields)).")";
+						$values[] = "VALUES(".implode(',', ($fields)).")";
 					}
 					$values = Helper::splitF($values, ', ');
-					$this->query['data']['values'] = $values;
+					$this->data['values'] = $values;
 					break;
 				}
 				break;
@@ -1208,36 +1245,35 @@ class DB extends Query
 				switch(is_array($pdo_data) && (sizeof($pdo_data) >= 1))
 				{
 					case true:
-					$this->query['data']['values'] =  $this->prepareConditional(array('values' => $pdo_data['data']['keys']), array('values' => $bind_fields), '=', ',');;
+					$this->data['values'] =  $this->prepareConditional(['values' => $pdo_data['data']['keys']], ['values' => $bind_fields], '=', ',');;
 					break;
 				}
 				break;
 			}
 			break;
 		}
-		$this->query['data']['fields'] = $u['fields'];
-		$this->query['data']['from'] = $u['from'];
-		$this->query['data']['union'] = $u['where'];
-		switch($this->query['type'])
+		$this->data['fields'] = $u['fields'];
+		$this->data['from'] = $u['from'];
+		$this->data['union'] = $u['where'];
+		switch($this->type)
 		{
 			case 'insert':
-			$ret_val = $this->query['data']['from'].$this->query['data']['fields'].$this->query['data']['union'].$this->query['data']['values'];
+			$this->parts[] = $this->data['from'].$this->data['fields'].$this->data['union'].$this->data['values'];
 			break;
 			
 			case 'select':
-			$ret_val = $this->query['data']['fields'].$this->query['data']['from'].$this->query['data']['union'].$this->query['data']['values'];
+			$this->parts[] = $this->data['fields'].$this->data['from'].$this->data['union'].$this->data['values'];
 			break;
 			
 			case 'update':
-			$ret_val = $this->query['data']['from'].$this->query['data']['fields'].$this->query['data']['union'].$this->query['data']['values'];
+			$this->parts[] = $this->data['from'].$this->data['fields'].$this->data['union'].$this->data['values'];
 			break;
 			
 			case 'delete':
-			$ret_val = $this->query['data']['from'];
+			$this->parts[] = $this->data['from'];
 			break;
 		}
-		$this->query['string'] .= $ret_val;
-		return $ret_val;
+		return $this;
 	}
 	
 	/**
@@ -1249,8 +1285,7 @@ class DB extends Query
 	 */
 	public function ordering($o, $union, $u=null)
 	{
-		$ret_val = '';
-		$u = is_array($u) ? $u : array($u);
+		$u = (array) $u;
 		$u['orderby'] = isset($u['orderby']) ? $u['orderby'] : '';
 		$u['groupby'] = isset($u['groupby']) ? $u['groupby'] : '';
 		$u['gbfields'] = '';
@@ -1259,15 +1294,15 @@ class DB extends Query
 		{
 			case true:
 			$u['groupby'] = "GROUP BY";
-			$u['gbfields'] = Helper::splitC(explode(',', $o['groupby']), $this->query['data']['direction'], " ", ', ', false, false, false);
+			$u['gbfields'] = Helper::splitC(explode(',', $o['groupby']), $this->data['direction'], " ", ', ', false, false, false);
 			unset($o['groupby']);
-			$this->query['data']['groupby'] = $u['gbfields'];
+			$this->data['groupby'] = $u['gbfields'];
 			break;
 		}
 		switch(1)
 		{
 			case $o == self::SEL_RAND:
-			$o = array("RAND()");
+			$o = ["RAND()"];
 			break;
 			
 			case is_string($o):
@@ -1285,13 +1320,12 @@ class DB extends Query
 		{
 			case false:
 			$u['orderby'] .= "ORDER BY";
-			$u['obfields'] = Helper::splitC($o, $this->query['data']['direction'], " ", ', ', false, false, false);
-			$this->query['data']['orderby'] = $u['obfields'];
+			$u['obfields'] = Helper::splitC($o, $this->data['direction'], " ", ', ', false, false, false);
+			$this->data['orderby'] = $u['obfields'];
 			break;
 		}
-		$ret_val = $u['groupby']." ".$u['gbfields']." ".$u['orderby']." ".$u['obfields']." ";
-		$this->query['string'] .= " $ret_val ";
-		return $ret_val;
+		array_push($this->parts, $u['groupby'], $u['gbfields'], $u['orderby'], $u['obfields']);
+		return $this;
 	}
 	
 	/**
@@ -1319,8 +1353,9 @@ class DB extends Query
 			$ret_val = empty($a) ? 'DESC' : $a;
 			break;
 		}
-		$this->query['data']['direction'] = $ret_val;
-		return $ret_val;
+		$this->data['direction'] = $ret_val;
+		$this->parts[] = $ret_val;
+		return $this;
 	}
 	
 	/**
@@ -1337,18 +1372,18 @@ class DB extends Query
 			switch(($offset == 0) && ($offset > -1) || !$offset)
 			{
 				case true:
-				$ret_val .= " LIMIT $limit";
+				$ret_val = "LIMIT $limit";
 				break;
 				
 				case false:
-				$ret_val .= " LIMIT $offset, $limit";
+				$ret_val = "LIMIT $offset, $limit";
 				break;
 			}
 			break;
 		}
-		$this->query['data']['limit'] = $ret_val;
-		$this->query['string'] .= $ret_val;
-		return $ret_val;
+		$this->data['limit'] = $ret_val;
+		$this->parts[] = $ret_val;
+		return $this;
 	}
 	
 	/**
@@ -1445,8 +1480,8 @@ class DB extends Query
 				$data = $keys;
 				break;
 			}
-			$keys['values'] = is_array($keys['values']) ? $keys['values'] : array($keys['values']);
-			$data['values'] = is_array($data['values']) ? $data['values'] : array($data['values']);
+			$keys['values'] = (array) $keys['values'];
+			$data['values'] = (array) $data['values'];
 			$operand = is_array($operand) ? $operand : array_fill(0, sizeof($keys['values']), $operand);
 			$xor = is_array($xor) ? $xor : array_fill(0, sizeof($keys['values']), $xor);
 			$data['values'] = (!empty($data['prep']) || !empty($data['app'])) ? explode(',', $data['prep'].implode($data['app'].','.$data['prep'], $data['values']).$data['app']) : $data['values']; 
@@ -1466,12 +1501,14 @@ class DB extends Query
 	*/
 	public function pdoKeys($array, $start=0, $data=null)
 	{
-		$ret_val = array('data' => array('keys' => array(), 'data' => array()), 
-		'pdo_data' => array());
+		$ret_val = [
+			'data' => ['keys' => [], 'data' => []], 
+			'pdo_data' => []
+		];
 		switch(empty($array))
 		{
 			case false;
-			$array = is_array($array) ? $array : array($array);
+			$array = (array) $array;
 			$counter = $start;
 			foreach($array as $idx=>$val)
 			{
@@ -1547,14 +1584,14 @@ class DB extends Query
 	 */
 	public function pdoBindData($queries, $fields, $data)
 	{
-		$queries = is_array($queries) ? $queries : array($queries);
-		$fields = is_array($fields) ? $fields : array($fields);
-		$data = is_array($data) ? $data : array($data);
-		$this->resource['prepared'] = $this->connection->createCommand($this->query['string']);
+		$queries = (array) $queries;
+		$fields = (array) $fields;
+		$data = (array) $data;
+		$this->resource['prepared'] = $this->connection->createCommand($this->query);
 		$this->resource['prepared']->prepare();
 		foreach($queries as $query)
 		{
-			switch((sizeof($fields) >= 1) && @is_array($fields))
+			switch((sizeof($fields) >= 1))
 			{
 				case true:
 				foreach($fields as $idx=>$field)
@@ -1632,11 +1669,11 @@ class DB extends Query
 					break;
 					
 					case 'args':
-					$args = array();
+					$args = [];
 					ob_start();
 					foreach($e as $num=>$arg)
 					{
-						$arg = is_array($arg) ? $arg : array($arg);
+						$arg = (array) $arg;
 						$args[] = $arg;
 					}
 					$trace .= wordwrap("$key: ".@implode(', ', $this->var_dump_string($args))."\n", 128);
@@ -1658,7 +1695,7 @@ class DB extends Query
 			echo "Class Logger doesn't exist<br>";
 		}
 		$this->free();
-		$this->query['string'] = "";
+		$this->query = "";
 		if(@$this->_on['error']['backtrace'] !== false)
 		{
 			echo "<pre>";
@@ -1682,11 +1719,11 @@ class DB extends Query
 				break;
 				
 				default:
-				$c['data'] = is_array($c['data']) ? $c['data'] : array($c['data']);
+				$c['data'] = (array) $c['data'];
 				$pdo_data = $this->pdoKeys($c['key'], 0, $c['data']);
 				$bind_fields = array_keys($pdo_data['pdo_data']);
 				$bind_data = array_values($pdo_data['pdo_data']);
-				$loc_query .= $this->prepareConditional(array('values' => $pdo_data['data']['data']), array('values' => $pdo_data['data']['keys']), @$c['operand'], @$c['xor']);
+				$loc_query .= $this->prepareConditional(['values' => $pdo_data['data']['data']], ['values' => $pdo_data['data']['keys']], @$c['operand'], @$c['xor']);
 				$this->pdoBindData($loc_query, @$bind_fields, @$bind_data);
 				$prepared = true;
 				break;
@@ -1696,7 +1733,7 @@ class DB extends Query
 			default:
 			break;
 		}
-		$loc_query = is_array($loc_query) ? $loc_query : array($loc_query);
+		$loc_query = (array) $loc_query;
 		$loc_maxRows = 0;
 		foreach($loc_query as $query)
 		{
@@ -1777,9 +1814,10 @@ class DB extends Query
 	/**
 	* Return the unencrypted password for this current host and user
 	 */
-	private function getPassword()
+	public function getPassword()
 	{
-		return base64_decode(convert_uudecode($this->_password));
+		$ret_val = base64_decode(convert_uudecode($this->_password));
+		return !$ret_val ? $this->_password : $ret_val;
 	}
 	
 	/**
@@ -1787,21 +1825,45 @@ class DB extends Query
 	 */
 	private function maxQuery()
 	{
-		$this->query['max'] = "SELECT COUNT(*)";
-		$this->query['max'] .= is_null($this->score) ? '' : ",MAX($this->score) AS best_match ";
-		$this->query['max'] .= " FROM ".static::$active['db']['name'].'.'.static::$active['table']['name'].$this->query['data']['where'];
+		$this->maxQuery = ["SELECT COUNT(*)"];
+		$this->maxQuery[] = is_null($this->score) ? '' : ",MAX($this->score) AS best_match";
+		$this->maxQuery[] = "FROM ".static::$active['db']['name'].'.'.static::$active['table']['name'].$this->data['where'];
 	}
 	
 	/**
 	* Bind the quey using PDO binding
 	 * @param mixed $queries
 	 */
-	private function bindQuery($queries, $bind_fields=null, $bind_data=null)
+	public function build($withMax=false)
 	{
+		$this->query = '';
+		$this->populateQuery();
+		$this->query = implode(' ', $this->query);
+		$queries = [
+			'data' => $this->query
+		];
+		if($withMax)
+		{
+			$queries['max'] = implode(' ', $this->maxQuery);
+		}
 		foreach($queries as $type=>$query)
 		{
-			$this->pdoBindData($query, $this->query['data']['bind']['fields'], $this->query['data']['bind']['data']);
+			$this->pdoBindData($query, $this->data['bind']['fields'], $this->data['bind']['data']);
 		}
+	}
+	
+	private function populateQuery()
+	{
+		foreach($this->parts as $type=>$part)
+		{
+			switch(gettype($part))
+			{
+				case 'string':
+				$this->query[] = $part;
+				break;
+			}
+		}
+		$this->query = array_filter($this->query);
 	}
 }
 ?>

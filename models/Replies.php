@@ -39,7 +39,7 @@ class Replies extends BaseWidget
 		$this->_supportedConstraints['key'] = [3, 'key'];
 		parent::init();
 		//constrain for admin user
-		switch(\Yii::$app->user->identity->isAdmin())
+		switch(isset(\Yii::$app->user) && \Yii::$app->user->identity->isAdmin())
 		{
 			case false:
 			$this->queryFilters['hidden'] = 0;

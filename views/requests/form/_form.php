@@ -32,7 +32,7 @@ $action = $model->getIsNewRecord() ? 'create' : 'update';
 	<?php endif ?>
 		<?= Html::tag('div', '', ['id' => 'alert']); ?>
 		<?php $form = ActiveForm::begin([
-			"action" => "/".$model->isWhat()."/$action/".$model->id,
+			"action" => "/".$model->isWhat()."/$action".($action == 'update' ? "/".$model->id : ''),
 			"type" => ActiveForm::TYPE_HORIZONTAL,
 			'options' => [
 				"role" => $action.$model->formName(),

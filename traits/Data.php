@@ -25,15 +25,26 @@ trait Data {
 	{
 		$query = parent::find($options);
 		static::aliasColumns($query);
-		if($model)
+		if(is_object($model))
 		{
-			static::applyFilters($query, $model->queryFilters);
-			switch(empty($model->withThese))
-			{
-				case false:
+			if(!empty($model->withThese))
 				$query->with($model->withThese);
-				break;
+			foreach($model->queryFilters as $filter=>$value)
+			{
+				switch($filter)
+				{
+					case 'select':
+					case 'indexby':
+					case 'orderby':
+					if(is_string($value) && ($value == 'primaryKey'))
+					{
+						unset($model->queryFilters[$filter]);
+						$query->$filter(static::primaryKey()[0]);
+					}
+					break;
+				}
 			}
+			static::applyFilters($query, $model->queryFilters);
 		}
 		return $query;
 	}

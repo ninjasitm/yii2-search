@@ -25,7 +25,9 @@ use nitm\helpers\Cache;
      */
     public function getAuthor()
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'author_id'])->with('profile');
+        return $this->hasOne(\nitm\models\User::className(), ['id' => 'author_id'])
+			->select(['id', 'username', 'disabled'])
+			->with('profile');
     }
 	
 	public function author()
@@ -38,7 +40,9 @@ use nitm\helpers\Cache;
      */
     public function getEditor()
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'editor_id']);
+        return $this->hasOne(\nitm\models\User::className(), ['id' => 'editor_id'])
+			->select(['id', 'username', 'disabled'])
+			->with('profile');
     }
 	
 	public function editor()
@@ -51,7 +55,9 @@ use nitm\helpers\Cache;
      */
     public function getCompletedBy()
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'completed_by']);
+        return $this->hasOne(\nitm\models\User::className(), ['id' => 'completed_by'])
+			->select(['id', 'username', 'disabled'])
+			->with('profile');
     }
 	
 	public function completedBy()
@@ -64,7 +70,9 @@ use nitm\helpers\Cache;
      */
     public function getResolvedBy()
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'resolved_by']);
+        return $this->hasOne(\nitm\models\User::className(), ['id' => 'resolved_by'])
+			->select(['id', 'username', 'disabled'])
+			->with('profile');
     }
 	
 	public function resolvedBy()
@@ -77,7 +85,9 @@ use nitm\helpers\Cache;
      */
     public function getClosedBy()
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'closed_by']);
+        return $this->hasOne(\nitm\models\User::className(), ['id' => 'closed_by'])
+			->select(['id', 'username', 'disabled'])
+			->with('profile');
     }
 	
 	public function closedBy()
@@ -90,7 +100,9 @@ use nitm\helpers\Cache;
      */
     public function getDisabledBy()
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'disabled_by']);
+        return $this->hasOne(\nitm\models\User::className(), ['id' => 'disabled_by'])
+			->select(['id', 'username', 'disabled'])
+			->with('profile');
     }
 	
 	public function disabledBy()
@@ -103,7 +115,8 @@ use nitm\helpers\Cache;
      */
     public function getType()
     {
-        return $this->hasOne(\nitm\models\Category::className(), ['id' => 'type_id']);
+        return $this->hasOne(\nitm\models\Category::className(), ['id' => 'type_id'])
+			->select(['id', 'parent_ids', 'parent_type', 'name', 'slug']);
     }
 	
 	public function type()
@@ -116,7 +129,8 @@ use nitm\helpers\Cache;
      */
     public function getCategory()
     {
-        return $this->hasOne(\nitm\models\Category::className(), ['id' => 'category_id']);
+        return $this->hasOne(\nitm\models\Category::className(), ['id' => 'category_id'])
+			->select(['id', 'parent_ids', 'parent_type', 'name', 'slug']);
     }
 	
 	public function category()

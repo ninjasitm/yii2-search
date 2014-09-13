@@ -51,7 +51,6 @@ class Request extends Entity
 	public function init()
 	{
 		parent::init();
-		$this->initConfig(static::isWhat());
 	}
 
     /**

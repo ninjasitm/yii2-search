@@ -1,4 +1,6 @@
 <?php
+namespace nitm\helpers\search;
+
 // Search_Indexer class
 // Can be extended later but by default
 // will include base methods for adding 

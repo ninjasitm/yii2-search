@@ -139,22 +139,4 @@ class Issues extends BaseWidget
 		$statuses = array_keys(self::$statuses);
 		return array_combine($statuses, array_map('ucfirst', $statuses));
 	}
-	
-	/**
-	 * Return the resolve author information
-	 * @return User
-	 */
-	public function getResolveUser()
-	{
-		return $this->hasOne(User::className(), ['id' => 'resolved_by']);; 
-	}
-	
-	/**
-	 * Return the close author information
-	 * @return User
-	 */
-	public function getCloseUser()
-	{
-		return $this->hasOne(User::className(), ['id' => 'closed_by']);; 
-	}
 }

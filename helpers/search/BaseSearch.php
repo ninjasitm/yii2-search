@@ -7,10 +7,11 @@ namespace nitm\helpers\search;
  
 class BaseSearch extends \yii\elasticsearch\ActiveRecord
 {
-	public $verbose;
+	public $mock;
+	public $verbose = 0;
+	public $offset = 0;
 	public $limit = 500;
 	public $model;
-	public $stats = [];
 	public $score;
 	public $info = [];
 	public $string = "";
@@ -22,55 +23,33 @@ class BaseSearch extends \yii\elasticsearch\ActiveRecord
 		'max' => 0
 	];
 	
-	private $_database;
-	private $_table;
+	protected static $_database;
+	protected static $_table;
 	
-    /**
-	 * Get the duration of the seach query
-     */
-    public function duration()
-    {
-		return $this->stats['end'] - $this->stats['start'];
-    }
-	
-	public function start()
+	public static function setIndex($index)
 	{
-		$this->stats['start'] = microtime(1);
+		static::$_database = $index;
 	}
 	
-	public function finish()
+	public static function setType($type)
 	{
-		$this->stats['end'] = microtime(true);
+		static::$_table = $type;
 	}
 	
-	public function setIndex($index)
+	public static function indexName()
 	{
-		$this->_database = $index;
-	}
-	
-	public function setType($type)
-	{
-		$this->_table = $type;
+		return isset(\Yii::$app->params['components.search']['index']) ? \Yii::$app->params['components.search']['index'] : static::index();
 	}
 	
 	public static function index()
 	{
-		return isset($this->_database) ? $this->_database : parent::index();
+		return isset(static::$_database) ? static::$_database : parent::index();
 	}
 	
 	public static function type()
 	{
-		return isset($this->_table) ? $this->_table : parent::type();
+		return isset(static::$_table) ? static::$_table : parent::type();
 	}
-	
-    /**
-	 * Function to initialize solf configuration
-     * @param mixed $config Array for solr configuration      
-     */
-    public function init()
-    {
-		$this->start();
-    }
 	
 	public function search()
 	{

@@ -119,19 +119,21 @@ class User extends \dektrium\user\models\User
 	public function lastActive($update=false)
 	{
 		$ret_val = strtotime('now');
-		$sessionActivity = \Yii::$app->getSession()->get($this->_lastActivity);
-		switch(is_null($sessionActivity))
-		{
-			case true:
-			$user = \Yii::$app->user->identity;
-			$ret_val = !$user->getId() ? strtotime('now') : $user->logged_in_at;
-			break;
-			
-			default:
-			$ret_val = $sessionActivity;
-			break;
-		}
-		if($update) $this->updateActivity();
+		try {
+			$sessionActivity = \Yii::$app->getSession()->get($this->_lastActivity);
+			switch(is_null($sessionActivity))
+			{
+				case true:
+				$user = \Yii::$app->user->identity;
+				$ret_val = !$user->getId() ? strtotime('now') : $user->logged_in_at;
+				break;
+				
+				default:
+				$ret_val = $sessionActivity;
+				break;
+			}
+			if($update) $this->updateActivity();
+		} catch (\Exception $error) {}
 		return $ret_val;
 	}
 	
