@@ -10,7 +10,7 @@
 // There will be the ability to update keywords
 // and such
 
-class SearchElastisearch extends BaseSearch
+class SearchElasticsearch extends BaseSearch
 {
 	public $params = [];
 	public $condition = [];

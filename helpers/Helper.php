@@ -320,6 +320,12 @@ class Helper extends Model
 		return $ret_val;
 	}
 	
+	public static function getCallerName()
+	{
+		$callers = debug_backtrace(null, 3);
+		return $callers[2]['function'];
+	}
+	
 	/*---------------------
 		Protected Functions
 	---------------------*/

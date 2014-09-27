@@ -8,45 +8,58 @@ trait Data {
 	
 	public $queryFilters = [];
 	public $withThese = [];
-	public $filter;
 	
 	protected $_count;
+	protected static $is;
+	protected static $tableName;
+	
+	/*
+	 * What does this claim to be?
+	 */
+	public static function isWhat()
+	{
+		switch(empty(static::$is))
+		{
+			case true:
+			static::$is = strtolower(array_pop(explode('\\', static::className())));
+			break;
+		}
+		return static::$is;
+	}
+	
+	public function beforeSaveEvent($event)
+	{
+	}
+	
+	public function afterSaveEvent($event)
+	{
+	}
+	
+	/**
+	 * Get the unique ID of this object
+	 * @return string|int
+	 */
+	public function getId()
+	{
+		$key = $this->primaryKey();
+		return $this->$key[0];
+	}
+	
+	/*
+	 * Return a string imploded with ucfirst characters
+	 * @param string $name
+	 * @return string
+	 */
+	public static function properName($value)
+	{
+		$ret_val = empty($value) ?  '' : preg_replace('/[\-\_]/', " ", $value);
+		return implode(' ', array_map('ucfirst', explode(' ', $ret_val)));
+	}
 	
 	public function addWith($with)
 	{
 		$with = is_array($with) ? $with : [$with];
 		$this->withThese = array_merge($this->withThese, $with);
-	}
-	
-	/**
-	 * Overriding default find function
-	 */
-	public static function find($model=null, $options=null)
-	{
-		$query = parent::find($options);
-		static::aliasColumns($query);
-		if(is_object($model))
-		{
-			if(!empty($model->withThese))
-				$query->with($model->withThese);
-			foreach($model->queryFilters as $filter=>$value)
-			{
-				switch($filter)
-				{
-					case 'select':
-					case 'indexby':
-					case 'orderby':
-					if(is_string($value) && ($value == 'primaryKey'))
-					{
-						unset($model->queryFilters[$filter]);
-						$query->$filter(static::primaryKey()[0]);
-					}
-					break;
-				}
-			}
-			static::applyFilters($query, $model->queryFilters);
-		}
-		return $query;
 	}
 
     /**
@@ -116,26 +129,45 @@ trait Data {
 	 * @param mixed $separator
 	 * @return array
 	 */
-	public function getJsonList($labelField='name', $separator=' ')
+	public function getJsonList($labelField='name', $separator=' ', $options=[])
 	{
 		$ret_val = [];
-		$items = $this->getModels();
-		switch(is_array($items))
+		foreach($this->getModels() as $item)
 		{
-			case true:
-			foreach($items as $item)
+			$_ = [
+				"id" => $item->getId(),
+				"value" => $item->getId(), 
+				"text" =>  $item->$labelField, 
+				"label" => static::getLabel($item, $label, $separator)
+			];
+			if(isset($options['with']))
 			{
-				$_ = [
-					"id" => $item->getId(),
-					"value" => $item->getId(), 
-					"text" =>  $item->$labelField, 
-					"label" => static::getLabel($item, $label, $separator)
-				];
-				$ret_val[] = $_;
-				break;
+				foreach($options['with'] as $attribute)
+				{
+					switch($attribute)
+					{
+						case 'htmlView':
+						$view = isset($options['view']['file']) ? $options['view']['file'] : "/".$item->isWhat()."/view";
+						$viewOptions = isset($options['view']['options']) ? $options['view']['options'] : ["model" => $item];
+						$_['html'] = \Yii::$app->getView()->renderAjax($view, $viewOptions);
+						break;
+						
+						case 'icon':
+						/*$_['label'] = \lab1\widgets\Thumbnail::widget([
+							"model" => $item->getIcon()->one(), 
+							"htmlIcon" => $item->html_icon,
+							"size" => "tiny",
+							"options" => [
+								"class" => "thumbnail text-center",
+							]
+						]).$_['label'];*/
+						break;
+					}
+				}
 			}
+			$ret_val[] = $_;
 		}
-		return $ret_val;
+		return (sizeof(array_filter($ret_val)) >= 1) ? $ret_val : [['id' => 0, 'text' => "No ".$this->properName($this->isWhat())." Found"]];
 	}
 
 	/*
@@ -183,7 +215,7 @@ trait Data {
 				$properties = explode('.', $l);
 				foreach($properties as $prop)
 				{
-					if($workingItem->hasAttribute($prop) || $workingItem->hasProperty($prop))
+					if(is_object($workingItem) && ($workingItem->hasAttribute($prop) || $workingItem->hasProperty($prop)))
 					{
 						$workingItem = $workingItem->$prop;
 					}

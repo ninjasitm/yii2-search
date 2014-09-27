@@ -59,8 +59,8 @@ class TokenController extends DefaultController implements DefaultControllerInte
 	public function actionIndex()
 	{
 		$searchModel = new TokenSearch;
+		$searchModel->addWith('user');
 		$dataProvider = $searchModel->search($_GET);
-
 		return $this->render('index', [
 			'dataProvider' => $dataProvider,
 			'searchModel' => $searchModel,

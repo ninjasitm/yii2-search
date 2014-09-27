@@ -89,6 +89,58 @@ class DefaultController extends BaseController
 		}
 		return parent::beforeAction($action);
 	}
+
+    /**
+     * Lists all Updates models.
+     * @return mixed
+     */
+    public function actionIndex($className, $options=[])
+    {
+		$options = array_merge([
+			'params' => \Yii::$app->request->getQueryParams(),
+			'with' => [], 
+			'viewOptions' => [], 
+			'construct' => [
+				'queryOptions' => [
+					'orderBy' => ['id' => SORT_DESC]
+				]
+			],
+			'orderBy' => 'id'
+		], $options);
+        $searchModel = new $className($options['construct']);
+		$searchModel->addWith($options['with']);
+        $dataProvider = $searchModel->search($options['params']);
+		$dataProvider->pagination->route = '/'.$this->id.'/search';
+		switch((sizeof($options['params']) == 0) || !isset($options['params']['sort']))
+		{	
+			case true:
+			switch(1)
+			{
+				case $searchModel instanceof \nitm\helpers\BaseElasticSearch:
+				$dataProvider->query->orderBy([
+					$searchModel->primaryModel->primaryKey()[0] => new \yii\db\Expression(json_encode([
+						'order' => SORT_DESC,
+						'ignore_unmapped' => true
+					]))
+				]);
+				break;
+				
+				default:
+				$dataProvider->query->orderBy([
+					$searchModel->primaryModel->primaryKey()[0] => SORT_DESC
+				]);
+				break;
+			}
+			$dataProvider->pagination->params['sort'] = '-'.$searchModel->primaryModel->primaryKey()[0];
+			break;
+		}
+
+        return $this->render('index', array_merge([
+            'dataProvider' => $dataProvider,
+            'searchModel' => $searchModel,
+			'model' => $this->model
+        ], $options['viewOptions']));
+    }
 	
 	public function actionSearch($options=[], $searchOptions=[])
 	{
@@ -113,16 +165,18 @@ class DefaultController extends BaseController
 			default:
 			$class = (isset($options['namespace']) ? rtrim($options['namespace'], '\\')."\BaseSearch" : '\nitm\models\search\BaseSearch');
 			$className = $class::className();
-			$serchModel = new $className($searchModelOptions);
 			break;
 		}
 		
-		if(\Yii::$app->request->isAjax)
+		if(!\Yii::$app->request->isAjax)
+			return $this->actionIndex($className, [
+				'construct' => $searchModelOptions
+			]);
+
+		$searchModel = new $className($searchModelOptions);
+		if(!Response::formatSpecified())
 		{
-			if(!Response::formatSpecified())
-			{
-				$this->setResponseFormat('html');
-			}
+			$this->setResponseFormat('html');
 		}
 		
 		/**
@@ -131,7 +185,8 @@ class DefaultController extends BaseController
 		unset($_REQUEST['__format'], $_GET['__format']);
         $dataProvider = $searchModel->search($_REQUEST);
 		
-		$ret_val['data'] = $this->renderAjax('data', [
+		$view = $this->getViewPath().DIRECTORY_SEPARATOR.ltrim('data', '/').'.php';
+		$ret_val['data'] = $this->renderAjax((file_exists($view) ? 'data' : 'index'), [
 			"dataProvider" => $dataProvider,
 			'searchModel' => $searchModel,
 			'primaryModel' => $this->model

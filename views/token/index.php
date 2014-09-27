@@ -40,7 +40,7 @@ $this->params['breadcrumbs'][] = $this->title;
 				'label' => 'User',
 				'attribute' => 'user_id',
 				'value' => function ($model) {
-					return $model->user->fullName(true);
+					return $model->user()->fullName(true);
 				},
 			],
 			'token:ntext',
@@ -55,8 +55,8 @@ $this->params['breadcrumbs'][] = $this->title;
 		'rowOptions' => function ($model, $key, $index, $grid)
 		{
 			return [
-						"class" => \nitm\helpers\Statuses::getIndicator($model->getStatus())
-					];
+				"class" => \nitm\helpers\Statuses::getIndicator($model->getStatus())
+			];
 		},
 		"tableOptions" => [
 			'class' => 'table table-bordered'

@@ -27,17 +27,19 @@ class Cache extends Model
 	
 	public static function exists($key)
 	{
-		return isset(static::$_cache[$key]);
+		//return isset(static::$_cache[$key]);
+		return static::$cache->exists($key);
 	}
 	
-	public static function setModel($key, $model)
+	public static function setModel($key, $model, $duration=5000)
 	{
-		static::$_cache[$key] = $model;
+		//static::$_cache[$key] = $model;
+		static::$cache->set($key, $model, $duration);
 	}
 	
 	public static function setModelArray($key, $array)
 	{
-		static::$_cache[$key] = $array;
+		static::setModel($key, $array);
 	}
 	
 	/**
@@ -47,16 +49,9 @@ class Cache extends Model
 	 */
 	public static function getModel($key)
 	{
-		//PHP Doesn't support serializing of Closure functions so using local object store
-		//switch(static::$cache->exists($key))
 		$ret_val = null;
-		switch(isset(static::$_cache[$key]))
-		{
-			case true:
-			$ret_val = static::$_cache[$key];
-			//$ret_val = static::$cache->get($key);
-			break;
-		}
+		if(static::$cache->exists($key))
+			$ret_val = static::$cache->get($key);
 		return $ret_val;
 	}
 	
@@ -69,26 +64,12 @@ class Cache extends Model
 	public static function getModelArray($key, $property=null)
 	{
 		//PHP Doesn't support serializing of Closure functions so using local object store
-		//switch(static::$cache->exists($key))
-		$ret_val = [];
-		switch(isset(static::$_cache[$key]))
-		{
-			case true:
-			$ret_val = static::$_cache[$key];
-			//$ret_val = static::$cache->get($key);
-			break;
-			
-			default:
-			switch(1)
-			{
-				case !is_null($property):
-				$ret_val = is_array(static::$property) ? static::$property : [];
-				//static::$cache->set($key, $ret_val, 1000);
-				static::$_cache[$key] = $ret_val;
-				break;
-			}
-			break;
-		}
+		$array = [];
+		//switch(isset(static::$_cache[$key]))
+		if(static::$cache->exists($key))
+			$ret_val = static::$cache->get($key);
+		else
+			$ret_val = [];
 		return $ret_val;
 	}
 }

@@ -11,8 +11,4 @@ use yii\data\ActiveDataProvider;
  */
 class Category extends BaseSearch
 {
-	public function init()
-	{
-		parent::init();
-	}
 }

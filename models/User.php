@@ -44,37 +44,6 @@ class User extends \dektrium\user\models\User
 	{
 		return 'user';
 	}
-	
-	/**
-	 * Get the status value for a user
-	 * @return string
-     */
-	public function status()
-	{
-		return \nitm\models\security\User::getStatus($this);
-	}
-	
-	public function indicator($user)
-	{
-		return \nitm\models\security\User::getIndicator($user);
-	}
-	
-	/**
-     * Get the role value for a user
-	 * @return string name of role
-     */
-	public function role()
-	{
-		return \nitm\models\security\User::getRole($this);
-	}
-	
-	/**
-	 *
-	 */
-	public function isAdmin()
-	{
-		return \nitm\models\security\User::getIsAdmin($this);
-	}
 
 	/**
 	 * Get the records for this provisioning template
@@ -236,16 +205,6 @@ class User extends \dektrium\user\models\User
 	public function hasApiTokens()
 	{
 		return security\User::hasApiTokens($this);
-	}
-	
-	/**
-	 * Does this user have tokens?
-	 * @param User $user object
-	 * @return string
-	 */
-	public function getApiTokens()
-	{
-		return $this->hasMany(\nitm\models\api\Token::className(), ['userid' => 'id'])->all();
 	}
 	
 	/**

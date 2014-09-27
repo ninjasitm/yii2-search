@@ -20,7 +20,7 @@ trait Nitm
 	public function url($attribute='id', $text=null, $url=null) 
 	{
 		$property = is_array($text) ? $text[1] : $text;
-		$text = is_array($text) ? $text[0]->$property : $text;
+		$text = is_array($text) && is_object($text[0]) ? $text[0]->$property : $text[0];
 		$url = is_null($url) ? \Yii::$app->request->url : $url;
 		$urlOptions = array_merge([$url], [$this->formName()."[".$attribute."]" => $this->$attribute]);
 		$htmlOptions = [

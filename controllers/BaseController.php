@@ -126,7 +126,7 @@ class BaseController extends Controller
 				{
 					case file_exists(\Yii::$app->basePath.'/web'.$js['src']):
 					$js['src'] = Yii::$app->UrlManager->baseUrl.$js['src'];
-					$this->view->registerJsFile($js['src'], @$js['depends'], ["position" => $js['position']]);
+					$this->view->registerJsFile($js['src'], ["position" => $js['position']]);
 					break;
 					
 					case file_exists(\Yii::getAlias($js['src'])):

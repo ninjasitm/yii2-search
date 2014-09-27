@@ -39,15 +39,6 @@ trait Query {
 			'updated_at' => null,
 		];
 	}
-	
-	/*
-	 * Function to return the columns to be selected
-	 *
-	 */
-	public static function columns()
-	{
-		return array_keys(static::getTableSchema()->columns);
-	}
 
 	/*
 	 * Apply the filters specified by the end user
@@ -216,7 +207,8 @@ trait Query {
 				switch($class == null)
 				{
 					case true:
-					$o = new \nitm\models\User;
+					$class = \Yii::$app->getModule('nitm')->getSearchClass('user');
+					$o = new $class;
 					$o->addWith('profile');
 					$filters = $o->getList(['profile.name', 'username'], ['(', ')', ' ']);
 					break;
@@ -245,7 +237,7 @@ trait Query {
 				break;
 				
 				case 'order_by':
-				foreach(static::getTableSchema()->columns as $colName=>$info)
+				foreach($this->getTableSchema()->columns as $colName=>$info)
 				{
 					switch($info->type)
 					{
@@ -298,7 +290,7 @@ trait Query {
 	{
 		$pri = static::primaryKey();
 		$ret_val = [];
-		$columns = static::columns();
+		$columns = array_keys(static::getTableSchema()->columns);
 		$has = is_array(static::has()) ? static::has() : null;
 		switch(is_null($has))
 		{
@@ -315,6 +307,10 @@ trait Query {
 					
 					case 1:
 					$property = $special[0];
+					$column = $property;
+					break;
+					
+					default:
 					$column = $property;
 					break;
 				}

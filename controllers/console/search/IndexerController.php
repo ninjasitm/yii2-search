@@ -1,5 +1,8 @@
 <?php
+
 namespace nitm\controllers\console\search;
+
+use nitm\models\DB;
 
 class IndexerController extends \yii\console\Controller
 {
@@ -49,13 +52,16 @@ class IndexerController extends \yii\console\Controller
 	public $mock;
 	
 	protected $model;
+	protected $dbModel;
 	
 	private $_config;
 	
 	public function initParameters()
 	{
 		$this->getIndexer();
+		$this->dbModel = new DB;
 		$this->_config = $this->prepareDataSource();
+		$this->index = !isset($this->index) ? $this->dbModel->getDbName() : $this->index;
 		$this->model = new $this->indexer(array_merge([
 			'mode' => $this->mode,
 			'index' => $this->index,
@@ -65,24 +71,49 @@ class IndexerController extends \yii\console\Controller
 		], $this->_config));
 	}
 	
-    public function actionIndex() 
+    public function actionIndex(array $types=null) 
 	{
 		$this->initParameters();
+		extract($this->getValidTypes($types));
+		call_user_func([$this->model, 'set'.$source], $this->_config[$source]);
 		$this->model->operation('index');
 		return 0;
 	}
 	
-	public function actionUpdate()
+	public function actionUpdate(array $types=null)
 	{
 		$this->initParameters();
+		extract($this->getValidTypes($types));
+		call_user_func([$this->model, 'set'.$source], $this->_config[$source]);
 		$this->model->operation('update');
 		return 0;
 	}
 	
-    public function actionDelete() 
+    public function actionDeleteIndex(array $types=null) 
 	{
 		$this->initParameters();
-		$this->model->opertation('delete');
+		$this->model->log("\n\tDeleting from index: ".$this->index."\n");
+		extract($this->getValidTypes($types));
+		if(sizeof($validTypes) >= 1)
+		{
+			if($all)
+				echo "\n\t\e[31mWARNING\e[0m: You didn't specify which types to delete. Deleting ALL!!. Specify a CSV list if you need to be precise!!\n";
+			call_user_func([$this->model, 'set'.$source], $this->_config[$source]);
+			$this->model->log("\n\tSummary: \n");
+			$this->model->log("\n\t".implode("\n\t", array_map(function ($type) {
+				$stats = $this->getStats($type);
+				return $type." -> Count: ".$stats['hits']['total'];
+			}, $validTypes)));
+			if($this->confirm("\n\n\tAre you sure you want to continue?"))
+				$this->model->operation('delete');
+			else
+				echo "\nAborting delete operation\n";
+		}
+		else
+		{
+			echo "\tThere was an error doing delete on index: ".$this->model->indexName().":\n";
+			echo "\n\t".implode("\t\n\t", $types)."\n";
+		}
 		return 0;
 	}
 	
@@ -141,6 +172,109 @@ class IndexerController extends \yii\console\Controller
 			break;
 		}
 		return $this->indexer;
+	}
+	
+	protected function getStats($type)
+	{
+		return (array) $this->model->operation('stats', ['index' => $this->model->indexName(), 'type' => $type]);
+	}
+	
+	protected function getValidTypes($types=null)
+	{
+		switch(1)
+		{
+			case isset($this->_config['_classes']):
+			$resolvedTypes = $this->_config['_classes'];
+			break;
+			
+			case isset($this->_config['_tables']):
+			$resolvedTypes = $this->_config['_tables'];
+			break;
+			
+			default:
+			$resolvedTypes = $types;
+			break;
+		}
+		$ret_val = [];
+		$all = false;
+		$modelDataSource = '_tables';
+		switch(is_null($types))
+		{
+			case false:
+			/**
+			 * If we're given a specific list of types/tables to deindex then check to make sure it exists according to our config
+			 */
+			$toUnset = [];
+			foreach($types as $idx=>$type)
+			{
+				if(isset($this->_config['_tables']) && in_array($type, $this->_config['_tables']))
+				{
+					$ret_val[] = $type;
+					unset($toUnset[$type]);
+				}
+				else if(isset($this->_config['_tables']) && !in_array($type, $this->_config['_tables']))
+					$toUnset[$type] = true;
+				else if(isset($this->_config['_classes']))
+				{
+					$modelDataSource = '_classes';
+					foreach($this->_config['_classes'] as $ns=>$classes)
+					{
+						foreach($classes as $class=>$options)
+						{
+							if(strtolower($class) == strtolower($type))
+							{
+								$ret_val[] = $type;
+								unset($toUnset[$class]);
+							}
+							else if(!in_array(strtolower($class), $ret_val)) {
+								$toUnset[$class] = true;
+							}
+						}
+						
+					}
+				}
+			}
+			foreach($toUnset as $idx=>$remove)
+			{
+				switch($modelDataSource)
+				{
+					case '_tables':
+					unset($this->_config[$modelDataSource][array_search($type, $this->_config[$modelDataSource])]);
+					break;
+					
+					case '_classes':
+					foreach($this->_config['_classes'] as $ns=>$classes)
+					{
+						foreach($classes as $class=>$options)
+						{
+							if($idx == $class)
+								unset($this->_config[$modelDataSource][$ns][$class]);
+						}
+					}
+					break;
+				}
+			}
+			break;
+			
+			default:
+			$all = true;
+			/**
+			 * Otherwise were deleting everything!
+			 */
+			if(isset($this->_config['_tables']) && in_array($type, $this->_config['_tables']))
+				$ret_val = $this->_config['_tables'];
+			else if(isset($this->_config['_classes']))
+			{
+				$modelDataSource = '_classes';
+				foreach($this->_config['_classes'] as $ns=>$classes)
+				{
+					$classes = array_map('strtolower', array_keys($classes));
+					$ret_val = array_merge($ret_val, $classes);
+				}
+			}
+			break;
+		}
+		return ['validTypes' => $ret_val, 'all' => $all, 'source' => $modelDataSource];
 	}
 }
 

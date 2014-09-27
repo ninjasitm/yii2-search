@@ -55,8 +55,6 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 	];
 	
 	protected $connection;
-	protected static $is;
-	protected static $tableName;
 	protected static $supported;
 	
 	//private members
@@ -368,47 +366,35 @@ class Data extends ActiveRecord implements \nitm\interfaces\DataInterface
 		$this->old['table'] = [];
 	}
 	
-	/*
-	 * What does this claim to be?
-	 */
-	public static function isWhat()
-	{
-		switch(empty(static::$is))
-		{
-			case true:
-			static::$is = strtolower(array_pop(explode('\\', static::className())));
-			break;
-		}
-		return static::$is;
-	}
-	
 	/**
-	 * Get the unique ID of this object
-	 * @return string|int
+	 * Overriding default find function
 	 */
-	public function getId()
+	public static function find($model=null, $options=null)
 	{
-		$key = $this->primaryKey();
-		return $this->$key[0];
-	}
-	
-	/*
-	 * Return a string imploded with ucfirst characters
-	 * @param string $name
-	 * @return string
-	 */
-	public static function properName($value)
-	{
-		$ret_val = empty($value) ?  '' : preg_replace('/[\-\_]/', " ", $value);
-		return implode(' ', array_map('ucfirst', explode(' ', $ret_val)));
-	}
-	
-	public function beforeSaveEvent($event)
-	{
-	}
-	
-	public function afterSaveEvent($event)
-	{
+		$query = parent::find($options);
+		static::aliasColumns($query);
+		if(is_object($model))
+		{
+			if(!empty($model->withThese))
+				$query->with($model->withThese);
+			foreach($model->queryFilters as $filter=>$value)
+			{
+				switch(strtolower($filter))
+				{
+					case 'select':
+					case 'indexby':
+					case 'orderby':
+					if(is_string($value) && ($value == 'primaryKey'))
+					{
+						unset($model->queryFilters[$filter]);
+						$query->$filter(static::primaryKey()[0]);
+					}
+					break;
+				}
+			}
+			static::applyFilters($query, $model->queryFilters);
+		}
+		return $query;
 	}
 	
 	/*---------------------

@@ -8,7 +8,7 @@ use yii\data\ActiveDataProvider;
 /**
  * User represents the model behind the search form about User.
  */
-class User extends Model
+class User extends BaseSearch
 {
 	public $id;
 	public $username;
@@ -153,5 +153,13 @@ class User extends Model
 		} else {
 			$query->orWhere([$attribute => $value]);
 		}
+	}
+	
+	/**
+	 * @return \yii\db\ActiveQuery
+	 */
+	public function getProfile()
+	{
+		return $this->hasOne(\Yii::$app->getModule('dektrium')->manager->profileClass, ['user_id' => 'id']);
 	}
 }

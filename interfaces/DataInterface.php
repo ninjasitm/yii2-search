@@ -13,9 +13,6 @@ interface DataInterface
 	
 	//Return an array with specific parameters that determine whether a record should contain something
 	public static function has();
-	
-	//The columns to return from the table
-	public static function columns();
 }
 
 ?>

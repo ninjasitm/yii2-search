@@ -6,15 +6,15 @@ use nitm\helpers\Session;
 use nitm\models\DB;
 
 class Module extends \yii\base\Module
-{
-	public $useFullnames;
-	
+{	
 	/**
 	 * @string the module id
 	 */
 	public $id = 'nitm';
 	
 	public $controllerNamespace = 'nitm\controllers';
+	
+	public $useFullnames;
 	
 	/*
 	 * @var array options for nitm\models\Configer
@@ -61,6 +61,12 @@ class Module extends \yii\base\Module
 		'allowMultiple' => false,
 		'usePercentages' => true
 	];
+	
+	/*
+	 * @var array The arrap mapping for search classes
+	 */
+	public $searchClassMap = [
+	];
 
 	public function init()
 	{
@@ -77,5 +83,10 @@ class Module extends \yii\base\Module
 		 */
 		\Yii::setAlias('nitm', dirname(__DIR__)."/yii2-module");
 		\Yii::setAlias('nitm/widgets', dirname(__DIR__)."/yii2-widgets");
+	}
+	
+	public function getSearchClass($modelName)
+	{
+		return isset($this->searchClassMap[strtolower($modelName)]) ? $this->searchClassMap[strtolower($modelName)] : '\nitm\models\\'.\nitm\traits\Data::properName($modelName);
 	}
 }

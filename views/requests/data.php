@@ -73,7 +73,7 @@ $this->params['breadcrumbs'][] = $this->title;
 			'attribute' => 'type_id',
 			'label' => 'Type',
 			'value' => function ($model) {
-				return $model->url('type_id', [$model->type(), 'name']);
+				return $model->url('type_id', [$model->typeOf(), 'name']);
 			}
 		],
 		[
@@ -93,7 +93,6 @@ $this->params['breadcrumbs'][] = $this->title;
 			],
 			'format' => 'raw',
 			'attribute' => 'status',
-			'filter' => $primaryModel->getStatuses(),
 			'label' => 'Urgency',
 			'value' => function ($model, $index, $widget) {
 				return $model->url('status', $model->getUrgency());

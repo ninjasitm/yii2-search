@@ -2,6 +2,7 @@
 namespace nitm\traits;
 
 use nitm\helpers\Cache as RealCache;
+use yii\helpers\ArrayHelper;
 
 /**
  * Caching trait for models
@@ -15,7 +16,7 @@ trait Cache {
 	 * @param string $modelClass
 	 * @return instanceof $modelClass
 	 */
-	public function getCachedModel($key, $property=null, $modelClass=null, $options=[])
+	public function getCachedModel($key, $modelClass=null, $property=null, $options=[])
 	{
 		//PHP Doesn't support serializing of Closure functions so using local object store
 		//switch(static::$cache->exists($key))
@@ -23,7 +24,11 @@ trait Cache {
 		switch(RealCache::exists($key))
 		{
 			case true:
-			$ret_val = RealCache::getModel($key);
+			$array = RealCache::getModel($key);
+			try {
+				$ret_val = new $array[0](array_filter($array[1]));
+			} catch (\Exception $e) {
+			}
 			//$ret_val = static::$cache->get($key);
 			break;
 			
@@ -34,7 +39,7 @@ trait Cache {
 				switch($this->hasProperty($property))
 				{
 					case true:
-					$ret_val = is_a($this->$property, $modelClass::className()) ? $this->$property : new $modelClass($options);
+					$ret_val = \nitm\helpers\Relations::getRelatedRecord($property, $this, $modelClass, @$options['construct']);
 					break;
 					
 					default:
@@ -48,7 +53,7 @@ trait Cache {
 						}
 						unset($options['find']);
 						$ret_val = $find->one();
-						$ret_val = !$ret_val ? new $modelClass($options['construct']) : $ret_val;
+						$ret_val = !$ret_val ? new $modelClass(@$options['construct']) : $ret_val;
 						break;
 						
 						default:
@@ -58,7 +63,7 @@ trait Cache {
 					break;
 				}
 				//static::$cache->set($key, $ret_val, 1000);
-				RealCache::setModel($key, $ret_val);
+				RealCache::setModel($key, [$modelClass, ArrayHelper::toArray($ret_val)]);
 				break;
 			}
 			break;
@@ -72,7 +77,7 @@ trait Cache {
 	 * @param string $property
 	 * @return array
 	 */
-	public function getCachedModelArray($key, $property=null, $options=[])
+	public function getCachedModelArray($key, $modelClass=null, $property=null, $options=[])
 	{
 		//PHP Doesn't support serializing of Closure functions so using local object store
 		//switch(static::$cache->exists($key))
@@ -80,21 +85,37 @@ trait Cache {
 		switch(RealCache::exists($key))
 		{
 			case true:
-			$ret_val = RealCache::getModelArray($key);
-			//$ret_val = static::$cache->get($key);
+			$array = RealCache::getModelArray($key);
+			if(class_exists($array[0]))
+			{
+				foreach($array[1] as $values)
+				{
+					$ret_val[] = new $array[0]($values);
+				}
+			}
+			else
+				$ret_val = [];
 			break;
 			
 			default:
-			switch(1)
+			if(!is_null($property))
 			{
-				case !is_null($property):
-				$ret_val = $options;
-				if($this->hasProperty($property))
+				switch(1)
 				{
-					$ret_val = is_array($this->$property) ? $this->$property : $ret_val;
+					case array_key_exists($property, $this->getRelatedRecords()):
+					$ret_val = $this->getRelatedRecords()[$property];
+					break;
+					
+					case $this->hasProperty($property) && is_array($this->$property):
+					$ret_val =  $this->$property;
+					break;
+					
+					default:
+					$ret_val = $options;
+					break;
 				}
 				//static::$cache->set($key, $ret_val, 1000);
-				RealCache::setModelArray($key, $ret_val);
+				RealCache::setModelArray($key, [$modelClass, ArrayHelper::toArray($ret_val)]);
 				break;
 			}
 			break;
@@ -104,10 +125,10 @@ trait Cache {
 	
 	public function setCachedModel($key, $model)
 	{
-		RealCache::setModel($key, $model);
+		RealCache::setModel($key, [$model->className(), $model]);
 	}
 	
-	public function inCache($key)
+	public function exists($key)
 	{
 		return RealCache::exists($key);
 	}

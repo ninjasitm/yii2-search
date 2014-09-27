@@ -6,144 +6,238 @@ use nitm\helpers\Cache;
 /**
  * Traits defined for expanding active relation scopes until yii2 resolves traits issue
  */
- trait Relations {
+
+trait Relations {
+	/**
+	 * User based relations
+	 */
+	
+	protected function getUserRelationQuery($link, $options=[], $className=null)
+	{
+		if(is_null($className))
+		{
+			if(\Yii::$app->hasProperty('user'))
+				$className = \Yii::$app->user->identityClass;
+			else
+				$className = \nitm\models\User::className();
+		}
+		$options['select'] = isset($options['select']) ? $options['select'] : ['id', 'username', 'disabled'];
+		$options['with'] = isset($options['with']) ? $options['select'] : ['profile'];
+		$options['where'] = [];
+		return $this->getRelationQuery($className, $link, $options);
+	}
+	
+	protected function getCachedUserModel($idKey, $className=null)
+	{
+		$className = is_null($className) ? \Yii::$app->user->identityClass : \nitm\models\User::className();
+		return $this->getCachedRelation('user-'.$this->$idKey, $className, [], false, \nitm\helpers\Helper::getCallerName());
+	}
+	 
     /**
+	 * Get user relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getUser()
+    public function getUser($options=[])
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'user_id']);
+		return $this->getUserRelationQuery(['id' => 'user_id'], $options);
     }
 	
 	public function user()
 	{
-		return $this->getCachedRelation('user.'.$this->user_id, 'user', \nitm\models\User::className());
+		return $this->getCachedUserModel('user_id');
 	}
 
     /**
+	 * Get user relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getAuthor()
+    public function getAuthor($options=[])
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'author_id'])
-			->select(['id', 'username', 'disabled'])
-			->with('profile');
+		return $this->getUserRelationQuery(['id' => 'author_id'], $options);
     }
 	
 	public function author()
 	{
-		return $this->getCachedRelation('user.'.$this->author_id, 'author', \nitm\models\User::className());
+		return $this->getCachedUserModel('author_id');
 	}
 
     /**
+	 * Get user relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getEditor()
+    public function getEditor($options=[])
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'editor_id'])
-			->select(['id', 'username', 'disabled'])
-			->with('profile');
+		return $this->getUserRelationQuery(['id' => 'editor_id'], $options);
     }
 	
 	public function editor()
 	{
-		return $this->getCachedRelation('user.'.$this->editor_id, 'editor', \nitm\models\User::className());
+		return $this->getCachedUserModel('editor_id');
 	}
 
     /**
+	 * Get user relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getCompletedBy()
+    public function getCompletedBy($options=[])
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'completed_by'])
-			->select(['id', 'username', 'disabled'])
-			->with('profile');
+		return $this->getUserRelationQuery(['id' => 'completed_by'], $options);
     }
 	
 	public function completedBy()
 	{
-		return $this->getCachedRelation('user.'.$this->completed_by, 'completedBy', \nitm\models\User::className());
+		return $this->getCachedUserModel('completed_by');
 	}
 
     /**
+	 * Get user relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getResolvedBy()
+    public function getResolvedBy($options=[])
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'resolved_by'])
-			->select(['id', 'username', 'disabled'])
-			->with('profile');
+		return $this->getUserRelationQuery(['id' => 'resolved_by'], $options);
     }
 	
 	public function resolvedBy()
 	{
-		return $this->getCachedRelation('user.'.$this->resolved_by, 'resolvedBy', \nitm\models\User::className());
+		return $this->getCachedUserModel('resolved_by');
 	}
 
     /**
+	 * Get user relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getClosedBy()
+    public function getClosedBy($options=[])
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'closed_by'])
-			->select(['id', 'username', 'disabled'])
-			->with('profile');
+		return $this->getUserRelationQuery(['id' => 'closed_by'], $options);
     }
 	
 	public function closedBy()
 	{
-		return $this->getCachedRelation('user.'.$this->closed_by, 'closedBy', \nitm\models\User::className());
+		return $this->getCachedUserModel('closed_by');
 	}
 
     /**
+	 * Get user relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getDisabledBy()
+    public function getDisabledBy($options=[])
     {
-        return $this->hasOne(\nitm\models\User::className(), ['id' => 'disabled_by'])
-			->select(['id', 'username', 'disabled'])
-			->with('profile');
+		return $this->getUserRelationQuery(['id' => 'disabled_by'], $options);
     }
 	
 	public function disabledBy()
 	{
-		return $this->getCachedRelation('user.'.$this->disabled_by, 'disabledBy', \nitm\models\User::className());
-	}	
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getType()
-    {
-        return $this->hasOne(\nitm\models\Category::className(), ['id' => 'type_id'])
-			->select(['id', 'parent_ids', 'parent_type', 'name', 'slug']);
-    }
+		return $this->getCachedUserModel('disabled_by');
+	}
 	
-	public function type()
+	/**
+	 * Category based relations
+	 */
+	
+	protected function getCategoryRelation($link, $options=[], $className=null)
 	{
-		return $this->getCachedRelation('category.'.$this->type_id, 'type', \nitm\models\Category::className());
+		$className = is_null($className) ? \nitm\models\Category::className() : $className;
+		$options['select'] = isset($options['select']) ? $options['select'] : ['id', 'parent_ids', 'name', 'slug'];
+		$options['with'] = isset($options['with']) ? $options['select'] : ['parent'];
+		return $this->getRelationQuery($className, $link, $options);
+	}	
+	
+	protected function getCachedCategoryModel($idKey, $className=null)
+	{
+		$className = is_null($className) ? \nitm\models\Category::className() : $className;
+		return $this->getCachedRelation('category-'.$this->$idKey, $className, [], false, \nitm\helpers\Helper::getCallerName());
 	}
 
     /**
+	 * Get type relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getCategory()
+    public function getType($options=[])
     {
-        return $this->hasOne(\nitm\models\Category::className(), ['id' => 'category_id'])
-			->select(['id', 'parent_ids', 'parent_type', 'name', 'slug']);
+		return $this->getCategoryRelation(['id' => 'type_id'], $options);
+    }
+	/**
+	 * Changed becuase of clash with \yii\elasticsearch\ActiveRecord::type()
+	 */
+	public function typeOf()
+	{
+		 return $this->getCachedCategoryModel('type_id');
+	}
+
+    /**
+	 * Get category relation
+	 * @param array $options Options for the relation
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCategory($options=[])
+    {
+		return $this->getCategoryRelation(['id' => 'category_id'], $options);
     }
 	
 	public function category()
 	{
-		return $this->getCachedRelation('user.'.$this->category_id, 'category', \nitm\models\Category::className());
+		return $this->getCachedCategoryModel('category_id');
+	}
+	
+	/**
+	 * Widget based relations
+	 */
+	protected function getWidgetRelationQuery($className, $link=null, $options=[], $many=false)
+	{
+		$link = !is_array($link) ? ['parent_id' => 'id'] : $link;
+		$options['select'] = isset($options['select']) ? $options['select'] : ['id', 'parent_id', 'parent_type'];
+		$options['with'] = isset($options['with']) ? $options['select'] : ['profile'];
+		$options['andWhere'] = isset($options['andWhere']) ? $options['andWhere'] : ['parent_type' => $this->isWhat()];
+		return $this->getRelationQuery($className, $link, $options, $many);
+	}
+	
+	/**
+	 * Widget based relations
+	 */
+	protected function getWidgetRelationModelQuery($className, $link=null, $options=[])
+	{
+		$link = !is_array($link) ? ['parent_id' => 'id'] : $link;
+		$options['select'] = isset($options['select']) ? $options['select'] : ['id', 'parent_id', 'parent_type'];
+		$options['with'] = isset($options['with']) ? $options['with'] : [];
+		return $this->getRelationQuery($className, $link, $options);
+	}
+	
+	protected function getCachedWidgetModel($className, $idKey=null, $many=false, $options=[])
+	{
+		$relation = \nitm\helpers\Helper::getCallerName();
+		$options['construct'] = isset($options['construct']) ? $options['construct'] : [
+			'parent_id' => $this->getId(), 
+			'parent_type' => $this->isWhat()
+		];
+		$idKey = is_null($idKey) ? ['getId', 'isWhat'] : $idKey;
+		return $this->getCachedRelation($relation.'-'.$this->concatAttributes($idKey), $className, $options, $many, $relation);
+	}
+	
+	protected function concatAttributes($attributes, $glue='-')
+	{
+		$self = $this;
+		$ret_val = array_map(function ($attribute) use($self) {
+			try {
+				return call_user_func([$self, $attribute]);
+			} catch(\Exception $e) {
+				return $self->$attribute;
+			}
+		}, (array)$attributes);
+		return implode($glue, array_filter($ret_val));
 	}
 	
 	public function replyModel()
 	{
-		return $this->replyModel instanceof \nitm\models\Replies ? $this->replyModel : new \nitm\models\Replies([
-			'parent_id' => $this->getId(), 
-			'parent_type' => $this->isWhat()
-		]);
+		return $this->getCachedWidgetModel(\nitm\models\Replies::className());
 	}
 
     /**
@@ -151,13 +245,15 @@ use nitm\helpers\Cache;
      */
     public function getReplyModel()
     {
-        return $this->getRelatedWidgetModel(\nitm\models\Replies::className());
+        return $this->getWidgetRelationModelQuery(\nitm\models\Replies::className());
     }
 
     /**
+	 * Get replies relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getReplies()
+    public function getReplies($options=[])
     {
 		$params = [
 			"parent_type" => $this->isWhat()
@@ -168,7 +264,12 @@ use nitm\helpers\Cache;
 			$params['hidden'] = 0;
 			break;
 		}
-        return $this->hasMany(\nitm\models\Replies::className(), ['parent_id' => 'id'])->andWhere($params)->orderBy(['id' => SORT_DESC])->with('replyTo');
+		$options = array_merge([
+			'orderBy' => ['id' => SORT_DESC],
+			'with' => 'replyTo',
+			'andWhere' => $params
+		], $options);
+        return $this->getWidgetRelationModelQuery(\nitm\models\Replies::className(), null, $options, true);
     }
 	
 	public function replies()
@@ -178,10 +279,7 @@ use nitm\helpers\Cache;
 	
 	public function issueModel()
 	{
-		return $this->issueModel instanceof \nitm\models\Issues ? $this->issueModel : new \nitm\models\Issues([
-			'parent_id' => $this->getId(), 
-			'parent_type' => $this->isWhat()
-		]);
+		return $this->getCachedWidgetModel(\nitm\models\Issues::className());
 	}
 
     /**
@@ -189,15 +287,20 @@ use nitm\helpers\Cache;
      */
     public function getIssueModel()
     {
-        return $this->getRelatedWidgetModel(\nitm\models\Issues::className());
+        return $this->getWidgetRelationModelQuery(\nitm\models\Issues::className());
     }
 
     /**
+	 * Get issues relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getIssues()
+    public function getIssues($options=[])
     {
-        return $this->hasMany(\nitm\models\Issues::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()])->orderBy(['id' => SORT_DESC]);
+		$options = array_merge([
+			'orderBy' => ['id' => SORT_DESC],
+		], $options);
+        return $this->getWidgetRelationModelQuery(\nitm\models\Issues::className(), null, $options, true);
     }
 	
 	public function issues()
@@ -206,11 +309,16 @@ use nitm\helpers\Cache;
 	}
 
     /**
+	 * Get revisions relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getRevisions()
+    public function getRevisions($options=[])
     {
-        return $this->hasMany(\nitm\models\Revisions::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()])->orderBy(['id' => SORT_DESC]);
+		$options = array_merge([
+			'orderBy' => ['id' => SORT_DESC],
+		], $options);
+        return $this->getWidgetRelationModelQuery(\nitm\models\Revisions::className(), null, $options, true);
     }
 	
 	public function revisions()
@@ -220,10 +328,7 @@ use nitm\helpers\Cache;
 	
 	public function revisionModel()
 	{
-		return $this->revisionModel instanceof \nitm\models\Revisions ? $this->revisionModel : new \nitm\models\Revisions([
-			'parent_id' => $this->getId(), 
-			'parent_type' => $this->isWhat()
-		]);
+		return $this->getCachedWidgetModel(\nitm\models\Revisions::className());
 	}
 
     /**
@@ -231,15 +336,17 @@ use nitm\helpers\Cache;
      */
     public function getRevisionModel()
     {
-        return $this->getRelatedWidgetModel(\nitm\models\Revisions::className());
+        return $this->getWidgetRelationModelQuery(\nitm\models\Revisions::className());
     }
 
     /**
+	 * Get votes relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getVotes()
+    public function getVotes($options=[])
     {
-        return $this->hasMany(\nitm\models\Vote::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()]);
+        return $this->getWidgetRelationModelQuery(\nitm\models\Issues::className(), null, $options, true);
     }
 	
 	public function votes()
@@ -249,10 +356,7 @@ use nitm\helpers\Cache;
 	
 	public function voteModel()
 	{
-		return $this->voteModel instanceof \nitm\models\Vote ? $this->voteModel : new \nitm\models\Vote([
-			'parent_id' => $this->getId(), 
-			'parent_type' => $this->isWhat()
-		]);
+		return $this->getCachedWidgetModel(\nitm\models\Vote::className());
 	}
 
     /**
@@ -260,31 +364,33 @@ use nitm\helpers\Cache;
      */
     public function getVoteModel()
     {
-        return $this->getRelatedWidgetModel(\nitm\models\Vote::className(), [
-			//Disabled due to Yii framework inability to return statistical relations
-			//'with' => ['currentUserVoted', 'fetchedValue']
-		]);
+        return $this->getWidgetRelationModelQuery(\nitm\models\Vote::className());
     }
 
     /**
+	 * Get rating relation
+	 * @param array $options Options for the relation
      * @return \yii\db\ActiveQuery
      */
-    public function getRating()
+    public function getRating($options=[])
     {
-        return $this->hasMany(\nitm\models\Rating::className(), ['parent_id' => 'id'])->andWhere(["parent_type" => $this->isWhat()]);
+        return $this->getWidgetRelationModelQuery(\nitm\models\Rating::className(), ['parent_id' => 'id'], [], true);
     }
 	
 	public function rating()
 	{
-		return $this->getCachedRelation('rating.'.$this->isWhat().'.'.$this->getId(), 'rating', null, true);
+		$options = array_merge([
+			'orderBy' => ['id' => SORT_DESC],
+		], $options);
+        return $this->getWidgetRelationModelQuery(\nitm\models\Issues::className(), [
+			'remote_id' => $this->getId(), 
+			'remote_type' => $this->isWhat()
+		], $options, true);
 	}
 	
 	public function ratingModel()
 	{
-		return $this->ratingModel instanceof \nitm\models\Rating ? $this->ratingModel : new \nitm\models\Rating([
-			'parent_id' => $this->getId(), 
-			'parent_type' => $this->isWhat()
-		]);
+		return $this->getCachedWidgetModel(\nitm\models\Rating::className());
 	}
 
     /**
@@ -292,17 +398,17 @@ use nitm\helpers\Cache;
      */
     public function getRatingModel()
     {
-        return $this->getRelatedWidgetModel(\nitm\models\Rating::className(), [
-			//Disabled due to Yii framework inability to return statistical relations
-			//'with' => ['currentUserVoted', 'fetchedValue']
-		]);
+        return $this->getWidgetRelationModelQuery(\nitm\models\Rating::className());
     }
 	
 	public function followModel()
 	{
-		return $this->followModel instanceof \nitm\models\Alerts ? $this->followModel : new \nitm\models\Alerts([
-			'remote_id' => $this->getId(), 
-			'remote_type' => $this->isWhat()
+		return $this->getCachedWidgetModel(\nitm\models\Alerts::className(), null, false, [
+			'select' => ['id', 'remote_id', 'remote_type'],
+			'construct' => [
+				'remote_id' => $this->getId(), 
+				'remote_type' => $this->isWhat()
+			]
 		]);
 	}
 
@@ -311,35 +417,39 @@ use nitm\helpers\Cache;
      */
     public function getFollowModel()
     {
-        return $this->getRelatedWidgetModel(\nitm\models\Alerts::className(), [
+        return $this->getWidgetRelationModelQuery(\nitm\models\Alerts::className(), ['remote_id' => 'id'], [
 			//Disabled due to Yii framework inability to return statistical relations
 			//'with' => ['currentUserVoted', 'fetchedValue']
-			'andWhere' => [
+			'select' => ['id', 'remote_id', 'remote_type'],
+			'where' => [
 				'remote_type' => $this->isWhat(),
 				'user_id' => \Yii::$app->user->getId()
 			]
-		], [
-			'remote_id' => 'id'
 		]);
     }
 	
-	protected function getRelatedWidgetModel($className, $options=[], $link=[])
+	public function getRelationClass($relationClass, $callingClass)
 	{
-		switch(empty($link))
-		{
-			case true:
-			$ret_val = $this->hasOne($className, ['parent_id' => 'id'])
-				->select(['id', 'parent_type', 'parent_id'])
-				->andWhere([$className::tableName().".parent_type" => $this->isWhat()]);
-			break;
-			
-			default:
-			$ret_val = $this->hasOne($className, $link);
-			break;
-		}
+		$parts = explode('\\', $relationClass);
+		$baseName = array_pop($parts);
+		if(\nitm\traits\Search::useSearchClass($callingClass) !== false)
+			$parts[] = 'search';
+		$parts[] = $baseName;
+		return implode('\\', $parts);
+	}
+	
+	protected function getRelationQuery($className, $link, $options=[], $many=false)
+	{
+		$className = $this->getRelationClass($className, get_called_class());
+		$callers = debug_backtrace(null, 3);
+		$relation = $callers[2]['function'];
+		$options['where'] = isset($options['where']) ? $options['where'] : ["parent_type" => $this->isWhat()]; 
+		$options['select'] = isset($options['select']) ? $options['select'] : '*';
 		//Disabled due to Yii framework inability to return statistical relations
 		//if(static::className() != $className)
 			//$ret_val->with(['count', 'newCount']);
+		$relationFunction = ($many === true) ? 'hasMany' : 'hasOne';
+		$ret_val = $this->$relationFunction($className, $link);
 		if(is_array($options) && !empty($options))
 		{
 			foreach($options as $option=>$params)
@@ -350,28 +460,14 @@ use nitm\helpers\Cache;
 		return $ret_val;
 	}
 	
-	public function getCachedRelation($key, $property, $modelClass, $asArray=false, $options=[])
+	public function getCachedRelation($key, $modelClass, $options=[], $many=false, $relation=null)
 	{
-		switch($this->inCache($key))
-		{
-			case true:
-			$ret_val = $this->getCachedModel($key, $options);
-			break;
-			
-			default:
-			switch($asArray)
-			{
-				case false:
-				$ret_val = $this->getCachedModel($key, $property, $modelClass, $options);
-				break;
-				
-				default:
-				$ret_val = $this->getCachedModelArray($key, $property, $options);
-				break;
-			}
-			break;
-		}
-		return $ret_val;
+		$relation = is_null($relation) ? \nitm\helpers\Helper::getCallerName() : $relation;
+		//Disabled due to Yii framework inability to return statistical relations
+		//if(static::className() != $className)
+			//$ret_val->with(['count', 'newCount']);
+		$cacheFunction = $many === true ? 'getCachedModelArray' : 'getCachedModel';
+		return $this->$cacheFunction($key, $modelClass, $relation, $options);
 	}
  }
 ?>

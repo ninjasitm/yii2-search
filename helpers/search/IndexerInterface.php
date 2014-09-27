@@ -49,6 +49,6 @@ interface IndexerInterface
 	/**
 	 * The function that commits the operation
 	 */
-	public function execute($operation, $options);
+	public function api($operation, $options);
 }
 ?>

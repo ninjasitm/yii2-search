@@ -18,6 +18,8 @@ use nitm\interfaces\DataInterface;
 
 class Replies extends BaseWidget
 {
+	use \nitm\traits\relations\Replies;
+	
 	public $maxLength;
 	public $constrain;
 	public $constraints = [];
@@ -155,15 +157,6 @@ class Replies extends BaseWidget
 			break;
 		}
 		return $ret_val;
-	}
-	
-	/**
-	 * Return the reply author_id information
-	 * @param string $what The property to return
-	 */
-	public function getReplyTo()
-	{
-		return $this->hasOne(Replies::className(), ['id' => 'reply_to'])->with('author');
 	}
 
 	/**

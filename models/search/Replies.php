@@ -12,4 +12,5 @@ use nitm\models\Replies as RepliesModel;
  */
 class Replies extends BaseSearch
 {
+	use \nitm\traits\relations\Replies, \nitm\traits\BaseWidget;
 }
