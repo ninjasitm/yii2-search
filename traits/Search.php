@@ -1,12 +1,10 @@
 <?php
-namespace nitm\traits;
+namespace nitm\search\traits;
 
 /**
  * Traits defined for expanding query scopes until yii2 resolves traits issue
  */
 trait Search {
-	
-    public $id;
 	public $text;
 	public $filter = [];
 	public $expand = 'all';
@@ -40,7 +38,7 @@ trait Search {
 	{
 		try {
 			parent::__set($name, $value);
-		} catch(\Exception$error) {
+		} catch(\Exception $error) {
 			$this->{$name} = $value;
 		}
 	}
@@ -49,8 +47,8 @@ trait Search {
 	{
 		try {
 			$ret_val = parent::__get($name);
-		} catch(\yii\base\UnknownPropertyException $error) {
-			if($this->hasProperty($name))
+		} catch(\Exception $error) {
+			if($this->hasProperty($name) && !empty($this->{$name}))
 				$ret_val = $this->{$name};
 			else
 				$ret_val = $this->hasAttribute($name) ? $this->getAttribute($name) : null;
@@ -63,6 +61,7 @@ trait Search {
      */
     public function attributeLabels()
     {
+		$ret_val = [];
 		foreach($this->attributes() as $attr)
 		{
 			$ret_val[$attr] = \Yii::t('app', $this->properName($attr));
