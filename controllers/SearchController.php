@@ -26,7 +26,7 @@ class SearchController extends DefaultController
 	
 	public function init()
 	{
-		$class = isset($this->searchClass) ? \nitm\models\BaseSearch::className() : $this->searchClass;
+		$class = !isset($this->searchClass) ? \nitm\search\BaseSearch::className() : $this->searchClass;
 		$this->model = new $class([
 			'scenario' => 'default',
 			'primaryModelClass' => $class::className(),
@@ -61,8 +61,17 @@ class SearchController extends DefaultController
 			],
 			'orderBy' => '_score'
 		];
+		/*if(\Yii::$app->reuqyest->get('_type'))
+		{
+			$properName = \nitm\models\Data::properClassName($attributes['_type']);
+			$class = $this->namespace.'search\\'.$properName;
+			$this->model = new $class([
+				'text' => \Yii::$app->request->get('q')]
+			];
+		}
+		else
+			$this->model->text = \Yii::$app->request->get('q');*/
 		$this->model->setType('_search');
-		$this->model->text = \Yii::$app->request->get('q');
 		$parts = $this->parseQuery(\Yii::$app->request->get('q'));
 		$body = [
 			'query' => isset($parts['boost']) ? $parts['boost'] : null,
@@ -71,6 +80,9 @@ class SearchController extends DefaultController
 				['created_at' => ['order' => 'desc', 'ignore_unmapped' => true]]
 			]
 		];
+		$dataProvider = $this->model->search(\Yii::$app->request->get());
+		print_r($dataProvider->query);
+		exit;
 		$models = [];
 		if(sizeof($parts) >= 1 && !empty($this->model->text))
 		{
@@ -86,6 +98,7 @@ class SearchController extends DefaultController
 			}
 			if($success)
 			{
+				if(is_array($results))
 				foreach($results['hits']['hits'] as $attributes)
 				{
 					$properName = \nitm\models\Data::properClassName($attributes['_type']);
@@ -121,7 +134,8 @@ class SearchController extends DefaultController
 					'total' => @$results['hits']['total'],
 					'max_score' => @$results['hits']['max_score']
 				]
-			], $options['viewOptions']))
+			], $options['viewOptions'])),
+			'message' => "Found ".@(int)$results['hits']['total']." results matching your search"
 		];
 		Response::$viewOptions['args']['content'] = $ret_val['data'];
 		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
@@ -136,6 +150,8 @@ class SearchController extends DefaultController
 		//If types were specified then get them
 		if(isset($query[$this->nestedPrefix.'_type']) && sizeof($query[$this->nestedPrefix.'_type']) >= 1)
 			$userSpecifiedTypes = $query[$this->nestedPrefix.'_type'];
+		elseif(\Yii::$app->request->get('_type'))
+			$userSpecifiedTypes = [\Yii::$app->request->get('_type')];
 		$types = $this->getTypes($query['parts'], isset($userSpecifiedTypes) ? $userSpecifiedTypes : false);
 		
 		//We don't want these in our query anymore
@@ -143,7 +159,7 @@ class SearchController extends DefaultController
 		
 		//If the user specified anything then we must match it otherwise we're doing a loose search
 		$mustMatch = (sizeof($query) >= 2) ? true : false;
-		$ret_val['route'] = $this->model->indexName().'/'.implode(',', $types).'/_search/';
+		$ret_val['route'] = $this->model->index().'/'.implode(',', $types).'/_search/';
 		$ret_val['boost'] = $this->getTypeBoost($types, $mustMatch, $query);
 		return $ret_val;
 	}
@@ -324,7 +340,7 @@ class SearchController extends DefaultController
 		$ret_val[$boostMethod]['score_mode'] = 'multiply';
 		$ret_val[$boostMethod]['boost_mode'] = 'sum';
 		$ret_val[$boostMethod] = array_filter($ret_val[$boostMethod]);
-		print_r($ret_val);
+		//print_r($ret_val);
 		//exit;
 		return $ret_val;
 	}

@@ -14,27 +14,12 @@ trait ElasticSearchTrait
 {
 	public static $noSanitizeType = false; 
 	
+	protected static $_type;
 	protected static $_database;
 	protected static $_table;
-	protected static $_type;
+	protected static $_indexType;
 	protected static $_columns;
 	protected $_tableSchema;
-	
-	public function init()
-	{
-		if(!isset($this->primaryModelClass))
-		{
-			$class = $this->getModelClass(static::formName());
-			$this->primaryModelClass = $class;
-		}
-		else
-		{
-			$class = $this->primaryModelClass;
-		}
-		if(!class_exists($class))
-			$class = get_called_class();
-		static::setType($class::isWhat(), $class::tableName());
-	}
 	
 	/*public static function tableName()
 	{
@@ -57,12 +42,12 @@ trait ElasticSearchTrait
 	
 	public static function indexName()
 	{
-		return isset(\Yii::$app->params['components.search']['index']) ? \Yii::$app->params['components.search']['index'] : static::index();
+		return isset(static::$_database) ? static::$_database : \nitm\models\DB::getDbName();
 	}
 	
 	public static function index()
 	{
-		return isset(static::$_database) ? static::$_database : \nitm\models\DB::getDbName();
+		return isset(\Yii::$app->params['components.search']['index']) ? \Yii::$app->params['components.search']['index'] : static::indexName();
 	}
 	
 	public static function type()
@@ -77,7 +62,7 @@ trait ElasticSearchTrait
 	
 	public function getMapping()
 	{
-		return $this->getDb()->get([$this->indexName(), $this->type(), '_mapping']);
+		return $this->getDb()->get([$this->index(), $this->type(), '_mapping']);
 	}
 	
 	public function columns()
@@ -87,7 +72,7 @@ trait ElasticSearchTrait
 		if(!isset(static::$_columns[$this->type()]))
 		{
 			$columns = $this->getMapping();
-			$properties = isset($columns[$this->indexName()]['mappings'][$this->type()]) ? $columns[$this->indexName()]['mappings'][$this->type()]['properties'] : [];
+			$properties = isset($columns[$this->index()]['mappings'][$this->type()]) ? $columns[$this->index()]['mappings'][$this->type()]['properties'] : [];
 			static::$_columns[$this->type()] = !empty($properties) ? array_combine(array_keys($properties), array_map(function ($name, $col){
 				$type = isset($col['type']) ? $col['type'] : 'string';
 				return new\yii\db\ColumnSchema([

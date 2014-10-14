@@ -11,11 +11,25 @@ use nitm\models\DB;
  
 class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord
 {
-	use traits\ElasticSearchTrait, 
-	\nitm\traits\Search,
-	\nitm\traits\Data;
+	use traits\ElasticSearchTrait, traits\Search, \nitm\traits\Data;
 	
 	public $score;
+	
+	public function init()
+	{
+		if(!isset($this->primaryModelClass))
+		{
+			$class = $this->getModelClass(static::formName());
+			$this->primaryModelClass = $class;
+		}
+		else
+		{
+			$class = $this->primaryModelClass;
+		}
+		if(!class_exists($class))
+			$class = get_called_class();
+		static::setType($class::isWhat(), $class::tableName());
+	}
 	
 	public function getId()
 	{
