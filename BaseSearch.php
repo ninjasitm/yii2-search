@@ -9,9 +9,9 @@ use yii\data\ActiveDataProvider;
 /**
  * BaseSearch represents the model behind the search form about `nitm\search\BaseSearch`.
  */
-class BaseSearch extends \nitm\models\Data
+class BaseSearch extends \nitm\models\Data implements SearchInterface
 {
-	use traits\Search, \nitm\traits\Nitm;
+	use traits\SearchTrait, \nitm\traits\Nitm;
 	
 	public function init()
 	{

@@ -9,7 +9,7 @@ use nitm\models\DB;
  * Class containing commong functions used by solr indexer and searcher class
  */
  
-trait BaseIndexer
+trait BaseIndexerTrait
 {
 	public $mock;
 	public $mode;
@@ -23,7 +23,7 @@ trait BaseIndexer
 	public $model;
 	public $info = [];
 	
-	protected $type = 'index';
+	protected $type;
 	protected $idKey;
 	
 	protected $bulk = ["update" => [], "delete" => [], "index" => []];
@@ -232,7 +232,7 @@ trait BaseIndexer
 	public function log($text, $levelRequired=1)
 	{
 		$this->_logText .= $text;
-		if($this->verbose >= $levelRequired)
+		if((int)$this->verbose >= $levelRequired)
 			echo $text;
 	}
 	
@@ -280,7 +280,7 @@ trait BaseIndexer
 	
 	protected function prepareMetainfo($type, $table)
 	{
-		$this->setType($type, $table);
+		$this->setIndexType($type, $table);
 		$this->dbModel->setTable(static::$_table);
 		$this->_info['table'][static::$_table] = $this->dbModel->getTableStatus(static::$_table);
 		$this->_info['tableInfo'][static::$_table] = $this->dbModel->getTableInfo(null, static::$_table);
@@ -293,11 +293,11 @@ trait BaseIndexer
 	{
 		foreach($this->_stack as $table=>$options)
 		{
-			echo "\n\tPulling from stack: ".$options['type']." $table\n";
+			//echo "\n\tPulling from stack: ".$options['type']." $table\n";
 			if(isset($options['namespace']))
 				$this->namespace = $options['namespace'];
 			$this->prepareMetainfo((isset($options['type']) ? $options['type'] : $table), $table);
-			call_user_func_array($options['worker'], $options['args']);
+			$result = call_user_func_array($options['worker'], $options['args']);
 			unset($this->_stack[$table]);
 		}
 	}
@@ -311,6 +311,8 @@ trait BaseIndexer
 		$ret_val = false;
 		if(is_array($data) && sizeof($data)>=1)
 		{	
+			$this->totals['chunk'] = sizeof($data);
+			$this->log(" [".$this->totals['chunk']."]: ");
 			$this->progressStart('prepare', sizeof($data));
 			foreach($data as $idx=>$result)
 			{
@@ -325,7 +327,7 @@ trait BaseIndexer
 		else
 		{
 			$this->bulkSet($this->type, []);
-			$this->log("\n\t\t\tNothing to ".$this->type." from: ".static::index()."->".static::type());	
+			$this->log("\n\t\tNothing to ".$this->type." from: ".static::index()."->".static::type());	
 		}
 		return $ret_val;
 	}
@@ -340,34 +342,36 @@ trait BaseIndexer
 	 */
 	protected function parse($query, $callback)
 	{
-		$this->totals['chunk'] = 0;
 		//Is the indexed column available? If not find everything
 		$findAll = array_key_exists('indexed', $this->_attributes) ? false :true;
 		if(($findAll === false && !$this->reIndex) && ($this->type != 'delete'))
 			$query->where(['not', 'indexed=1']);
-		$this->log("\n\tPerforming: ".$this->type." on ".static::index()."->".static::type()." Items: ".$this->tableInfo('Rows'));
-		$this->offset = 0;
+		$this->log("\n\tPerforming: ".$this->type." on ".static::index()."->".static::type()." Items: ".$this->tableRows());
 		
-		//Do somethig before indexing
+		//Do something before $this->type
 		$event = strtoupper('before_search_'.$this->type);
 		$this->trigger(constant('\nitm\search\BaseIndexer::'.$event));
 		
-		for($i=0; $i<($this->tableInfo('Rows')/$this->limit);$i++)
+		$this->totals[$this->type] = $this->tableRows();
+		$this->totals['current'] = $this->totals['chunk'] = $this->offset = 0;
+		
+		for($i=0; $i<($this->tableRows()/$this->limit);$i++)
 		{
+			$this->totals['current'] = 0;
 			$this->offset = $this->limit * $i;
-			$this->log("\n\t\tPreparing chunk: $i :");
+			$this->log("\n\t\tPreparing chunk: $i [starting at ".$this->offset."] ");
 			switch(1)
 			{
-				case $this->tableInfo('Rows') <= $this->limit:
-				$count =  $this->tableInfo('Rows');
+				case $this->tableRows() <= $this->limit:
+				$count =  $this->tableRows();
 				break;
 				
-				case ($this->tableInfo('Rows') - ($this->offset)) > $this->limit:
+				case ($this->tableRows() - ($this->offset)) > $this->limit:
 				$count = $this->limit;
 				break;
 				
 				default:
-				$count = $this->tableInfo('Rows') - ($this->offset);
+				$count = $this->tableRows() - ($this->offset);
 				break;
 			}
 			$this->progressStart($this->type, $count);
@@ -378,7 +382,8 @@ trait BaseIndexer
 		$event = strtoupper('after_search_'.$this->type);
 		$this->trigger(constant('\nitm\search\BaseIndexer::'.$event));
 		
-		$this->log("\n\tResult: ".$this->totals['chunk']." out of ".$this->tableInfo('Rows')." entries");
+		$this->totals['total'] += $this->totals['current'];
+		$this->log("\n\tResult: ".$this->totals['current']." out of ".$this->totals[$this->type]." entries\n");
 	}
 	
 	protected function bulk($index=null, $id=null)
@@ -413,6 +418,12 @@ trait BaseIndexer
 			return $this->_info['tableInfo'][static::tableName()];
 		else
 			return $this->_info['tableInfo'][static::tableName()][$key];
+	}
+	
+	protected function tableRows($key=null)
+	{
+		$this->dbModel->execute("SELECT COUNT(*) FROM ".$this->dbModel->tableName());
+		return $this->dbModel->result()[0];
 	}
 	
 	/**

@@ -18,7 +18,7 @@ trait ElasticSearchTrait
 	protected static $_database;
 	protected static $_table;
 	protected static $_indexType;
-	protected static $_columns;
+	protected static $_columns = [];
 	protected $_tableSchema;
 	
 	/*public static function tableName()
@@ -34,13 +34,13 @@ trait ElasticSearchTrait
 		static::$_database = $index;
 	}
 	
-	public static function setType($type, $table=null)
+	public static function setIndexType($type, $table=null)
 	{
 		static::$_type = $type;
 		static::$_table = is_null($table) ? $type : $table;
 	}
 	
-	public static function indexName()
+	public static function dbName()
 	{
 		return isset(static::$_database) ? static::$_database : \nitm\models\DB::getDbName();
 	}
@@ -69,14 +69,14 @@ trait ElasticSearchTrait
 	{
 		if(!$this->type())
 			return ['_id', '_type', '_index'];
-		if(!isset(static::$_columns[$this->type()]))
+		if(!array_key_exists($this->type(), static::$_columns))
 		{
 			$columns = $this->getMapping();
 			$properties = isset($columns[$this->index()]['mappings'][$this->type()]) ? $columns[$this->index()]['mappings'][$this->type()]['properties'] : [];
 			static::$_columns[$this->type()] = !empty($properties) ? array_combine(array_keys($properties), array_map(function ($name, $col){
 				$type = isset($col['type']) ? $col['type'] : 'string';
 				return new\yii\db\ColumnSchema([
-					'name' => $name,
+					'name' => $col,
 					'type' => $type,
 					'phpType' => $type,
 					'dbType' => $type

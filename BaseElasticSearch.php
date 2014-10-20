@@ -9,9 +9,9 @@ use nitm\models\DB;
  * Class containing commong functions used by solr indexer and searcher class
  */
  
-class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord
+class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements SearchInterface
 {
-	use traits\ElasticSearchTrait, traits\Search, \nitm\traits\Data;
+	use traits\ElasticSearchTrait, traits\SearchTrait, \nitm\traits\Data;
 	
 	public $score;
 	
@@ -28,7 +28,7 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord
 		}
 		if(!class_exists($class))
 			$class = get_called_class();
-		static::setType($class::isWhat(), $class::tableName());
+		static::setIndexType($class::isWhat(), $class::tableName());
 	}
 	
 	public function getId()
@@ -88,11 +88,11 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord
 	public static function getTableSchema()
 	{
 		return new \yii\db\TableSchema([
-			'schemaName' => static::indexName(),
+			'schemaName' => static::index(),
 			'columns' => (new static)->columns(),
 			'primaryKey' => '_id',
 			'name' => static::type(),
-			'fullName' => static::indexName().'.'.static::type()
+			'fullName' => static::index().'.'.static::type()
 		]);
 	}
 	

@@ -111,7 +111,7 @@ class IndexerController extends \yii\console\Controller
 		}
 		else
 		{
-			echo "\tThere was an error doing delete on index: ".$this->model->indexName().":\n";
+			echo "\tThere was an error doing delete on index: ".$this->model->index().":\n";
 			echo "\n\t".implode("\t\n\t", $types)."\n";
 		}
 		return 0;
@@ -176,7 +176,7 @@ class IndexerController extends \yii\console\Controller
 	
 	protected function getStats($type)
 	{
-		return (array) $this->model->operation('stats', ['index' => $this->model->indexName(), 'type' => $type]);
+		return (array) $this->model->operation('stats', ['index' => $this->model->index(), 'type' => $type]);
 	}
 	
 	protected function getValidTypes($types=null)

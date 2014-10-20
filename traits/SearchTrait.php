@@ -4,7 +4,7 @@ namespace nitm\search\traits;
 /**
  * Traits defined for expanding query scopes until yii2 resolves traits issue
  */
-trait Search {
+trait SearchTrait {
 	public $text;
 	public $filter = [];
 	public $expand = 'all';
@@ -288,6 +288,7 @@ trait Search {
 				break;
 				
 				case 'text':
+				case 'q':
 				if(!empty($value)) 
 				{
 					$this->text = $value;
@@ -322,8 +323,9 @@ trait Search {
 		$params = array_intersect_key($params, array_flip($this->attributes()));
 		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(empty($params) && !$this->useEmptyParams)) : $this->exclusiveSearch;
 		$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->attributes(), array_fill(0, sizeof($this->attributes()), '')) : $params;
-		if(!empty($params)) $this->setProperties(array_keys($params), array_values($params));
+		if(sizeof($params) >= 1) $this->setProperties(array_keys($params), array_values($params));
 		$params = [$this->primaryModel->formName() => $params];
+		return $params;
 	}
 }
 ?>
