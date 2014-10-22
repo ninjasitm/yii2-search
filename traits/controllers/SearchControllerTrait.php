@@ -70,7 +70,7 @@ trait SearchControllerTrait {
 				if(is_array($results))
 				foreach($results['hits']['hits'] as $attributes)
 				{
-					$properName = \nitm\models\Data::properName($attributes['_type']);
+					$properName = \nitm\models\Data::properClassName($attributes['_type']);
 					$class = $this->getSearchModelClass($properName);
 					if(!class_exists($class))
 						$class = '\nitm\models\search\\'.$properName;
@@ -211,7 +211,7 @@ trait SearchControllerTrait {
 				 */
 				if(($prevKey !== false) && (((strpos($next, ':') !== false) && sizeof($parts) == 1) || !$next) && ($prevKey && is_array($filters) && !in_array($prevKey, $filters)))
 				{
-					$isNested = strpos($prevKey, ':') !== false;
+					$isNested = strpos($prev, ':') !== false;
 					$ret_val[($isNested ? 'nested' : 'filter')][$prevKey][0] .= ' '.$parts[0];
 					unset($string[$idx]);
 				}
@@ -273,7 +273,7 @@ trait SearchControllerTrait {
 					['match' => ['_all' => ['query' => '*']]]
 				];*/
 			$nested = [];
-			foreach($filters['nested'] as $match=>$values)
+			foreach($filters['nested'] as $match=>$value)
 			{
 				$nested[] = [
 					'nested' => [

@@ -173,9 +173,19 @@ class IndexerElasticsearch extends BaseElasticSearch
 			break;
 			
 			case 'tinyint':
-			$ret_val['type'] = 'boolean';
+			switch($info['dbType'])
+			{
+				case 'tinyint(1)':
+				$ret_val['type'] = 'boolean';
+				$ret_val['null_value'] = false;
+				break;
+				
+				default:
+				$ret_val['type'] = 'integer';
+				$ret_val['null_value'] = 0;
+				break;
+			}
 			$ret_val['store'] = true;
-			$ret_val['null_value'] = false;
 			$ret_val['include_in_all'] = true;
 			break;
 			
@@ -660,7 +670,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			switch(array_shift(explode('(', $info['dbType'])))
 			{
 				case 'tinyint':
-				$item[$f] = (boolean)$v;
+				$item[$f] = $info['dbType'] == 'tinyint(1)' ? (boolean)$v : $v;
 				break;
 			}
 		}

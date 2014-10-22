@@ -77,6 +77,7 @@ trait SearchTrait {
 			$this->addQueryOptions();
             return $this->dataProvider;
         }
+		
 		foreach($params[$this->primaryModel->formName()] as $attr=>$value)
 		{
 			if(isset($this->primaryModel->getTableSchema()->columns[$attr]))
