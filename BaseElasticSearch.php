@@ -31,6 +31,16 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		static::setIndexType($class::isWhat(), $class::tableName());
 	}
 	
+	public function behaviors()
+	{
+		$behaviors = [
+			'behaviors' => [
+				'class' => \yii\base\Behavior::className()
+			]
+		];
+		return array_merge(parent::behaviors(), $behaviors);
+	}
+	
 	public function getId()
 	{
 		return parent::getPrimaryKey();
@@ -46,7 +56,10 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 	
 	public function reset()
 	{
-		$this->primaryModel = new $this->primaryModelClass;
+		if(class_exists($this->primaryModelClass))
+			$this->primaryModel = new $this->primaryModelClass;
+		else
+			$this->primaryModel = new static;
         $query = static::find($this);
         $this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
