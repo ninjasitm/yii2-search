@@ -5,6 +5,8 @@ namespace nitm\search\traits;
  * Traits defined for expanding query scopes until yii2 resolves traits issue
  */
 trait SearchTrait {
+	
+	public static $noSanitizeType = false; 
 	public $text;
 	public $filter = [];
 	public $expand = 'all';
@@ -105,7 +107,8 @@ trait SearchTrait {
 	
 	public function reset()
 	{
-		$this->primaryModel = new $this->primaryModelClass;
+		if(!$this->primaryModel)
+			$this->primaryModel = new $this->primaryModelClass;
         $query = $this->primaryModel->find($this);
         $this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,

@@ -11,9 +11,7 @@ use Yii;
  */
 
 trait ElasticSearchTrait
-{
-	public static $noSanitizeType = false; 
-	
+{	
 	protected static $_type;
 	protected static $_database;
 	protected static $_table;

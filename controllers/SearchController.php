@@ -67,4 +67,89 @@ class SearchController extends DefaultController
 		Response::$viewOptions['args']['content'] = $ret_val['data'];
 		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
     }
+	
+	public function actionFilter($type, $options=[], $searchOptions=[])
+	{
+		$ret_val = [
+			"success" => false, 
+			'action' => 'filter',
+			"format" => $this->getResponseFormat(),
+			'message' => "No data found for this filter"
+		];
+
+		$searchModelOptions = array_merge([
+			'inclusiveSearch' => true,
+			'booleanSearch' => true,
+		], $searchOptions);
+		
+		$className = $this->getSearchClass($options);
+		if(!\Yii::$app->request->isAjax)
+		{
+			return $this->actionIndex($className, [
+				'construct' => $searchModelOptions,
+				'stats' => []
+			]);
+		}
+		
+		$this->model = new $className($searchModelOptions);
+		
+		list($results, $dataProvider) = $this->search([
+			'type' => $type
+		]);
+		
+		$dataProvider->pagination->route = '/search/filter';
+		
+		$view = isset($options['view']) ? $options['view'] : 'index';
+		
+		$ret_val['data'] = $this->renderAjax($view, [
+			"dataProvider" => $dataProvider,
+			'searchModel' => $this->model,
+			'primaryModel' => $this->model->primaryModel
+		]);
+		if(!\Yii::$app->request->isAjax)
+		{
+			$ret_val['data'] = Html::tag('div',
+				\yii\widgets\Breadcrumbs::widget(['links' => [
+					[
+						'label' => $searchModel->primaryModel->properName($searchModel->primaryModel->isWhat()), 
+						'url' => $searchModel->primaryModel->isWhat()
+					],
+					[
+						'label' => 'Search',
+					]
+				]]).
+				$ret_val['data'], ['class' => 'col-md-12 col-lg-12']
+			);
+			$this->setResponseFormat('html');
+		}
+		$ret_val['message'] = !$dataProvider->getCount() ? $ret_val['message'] : "Found ".$dataProvider->getTotalCount()." results matching your search";
+		Response::$viewOptions['args'] = [
+			"content" => $ret_val['data'],
+		];
+		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
+	}
+	
+	protected function getSearchClass($options)
+	{
+		if(!isset($options['className']))
+		{
+			$class = (isset($options['namespace']) ? $options['namespace'] : '\nitm\models\search\\').$this->model->formName();
+			switch(class_exists($class))
+			{
+				case true:
+				$className = $class::className();
+				break;
+				
+				default:
+				$class = (isset($options['namespace']) ? rtrim($options['namespace'], '\\')."\BaseSearch" : '\nitm\models\search\BaseSearch');
+				$className = $class::className();
+				break;
+			}
+		}
+		else
+		{
+			$className = $options['className'];
+		}
+		return $className;
+	}
 }
