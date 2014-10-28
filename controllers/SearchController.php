@@ -32,7 +32,7 @@ class SearchController extends DefaultController
 			'useEmptyParams' => true,
 		]);
 		$class::$noSanitizeType = true;
-		$this->engine = \Yii::$app->params['components.search']['engine'];
+		$this->engine = \Yii::$app->getModule('nitm-search')->engine;
 		parent::init();
 	}
 	
