@@ -149,9 +149,9 @@ trait SearchControllerTrait {
 				switch (1)
 				{
 					//If this exact type is already predefined then get all the matches
-					case sizeof($matching = @preg_grep("/^$type*/", array_keys(\Yii::$app->params['components.search.'.$this->engine]['boost']))) >= 1:
+					case sizeof($matching = @preg_grep("/^$type*/", array_keys(\Yii::$app->getModule('nitm-search')->settings[$this->engine]['boost']))) >= 1:
 					//Otherwise if it is close to a certain type then get them
-					case sizeof(($matching = array_filter(array_keys(\Yii::$app->params['components.search.'.$this->engine]['boost']), function ($correctType) use($type) {
+					case sizeof(($matching = array_filter(array_keys(\Yii::$app->getModule('nitm-search')->settings[$this->engine]['boost']), function ($correctType) use($type) {
 						similar_text($type, strtolower($correctType), $percent);
 						//echo "Percentage match for ".$correctType." against $type is ".$percent."<br>";
 						return $percent >= 80;
@@ -296,9 +296,9 @@ trait SearchControllerTrait {
 		$ret_val[$boostMethod]['query'] = $query;
 		foreach((array)$types as $type)
 		{
-			if(!isset(\Yii::$app->params['components.search.'.$this->engine]['boost'][$type]))
+			if(!isset(\Yii::$app->getModule('nitm-search')->settings[$this->engine]['boost'][$type]))
 				continue;
-			$boost = \Yii::$app->params['components.search.'.$this->engine]['boost'][$type];
+			$boost = \Yii::$app->getModule('nitm-search')->settings[$this->engine]['boost'][$type];
 			$ret_val[$boostMethod][$key][] = [
 				'filter' => [
 					'term' => [

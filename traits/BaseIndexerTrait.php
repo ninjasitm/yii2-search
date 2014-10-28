@@ -27,7 +27,7 @@ trait BaseIndexerTrait
 	protected $idKey;
 	
 	protected $bulk = ["update" => [], "delete" => [], "index" => []];
-	protected $dbModel;
+	protected static $dbModel;
 	protected $currentUser;
 	
 	protected $_logText = '';
@@ -65,6 +65,13 @@ trait BaseIndexerTrait
 	public function getClasses()
 	{
 		return $this->_classes;
+	}
+	
+	protected static function getDbModel()
+	{
+		if(!isset(static::$dbModel))
+			static::$dbModel = new DB;
+		return static::$dbModel;
 	}
 	
 	public function getTables()
@@ -201,7 +208,7 @@ trait BaseIndexerTrait
 			{
 				$this->addIndexField();
 			}
-			$this->dbModel->update('indexed', 1)
+			static::getDbModel()->update('indexed', 1)
 				->where(null, array_values($this->_indexUpdate), array_keys($this->_indexUpdate), null, 'OR')
 				->run();	
 		}
@@ -273,7 +280,7 @@ trait BaseIndexerTrait
 		return $ret_val;
 	}
 	
-	protected function fingerprint($item)
+	public static function fingerprint($item)
 	{
 		return md5(json_encode((array)$item));
 	}
@@ -281,11 +288,11 @@ trait BaseIndexerTrait
 	protected function prepareMetainfo($type, $table)
 	{
 		$this->setIndexType($type, $table);
-		$this->dbModel->setTable(static::$_table);
-		$this->_info['table'][static::$_table] = $this->dbModel->getTableStatus(static::$_table);
-		$this->_info['tableInfo'][static::$_table] = $this->dbModel->getTableInfo(null, static::$_table);
+		static::getDbModel()->setTable(static::$_table);
+		$this->_info['table'][static::$_table] = static::getDbModel()->getTableStatus(static::$_table);
+		$this->_info['tableInfo'][static::$_table] = static::getDbModel()->getTableInfo(null, static::$_table);
 		$this->_attributes = ArrayHelper::toArray($this->_info['table'][static::$_table]->columns);
-		$this->idKey = $this->dbModel->primaryKey();
+		$this->idKey = static::getDbModel()->primaryKey();
 		$this->idKey = is_array($this->idKey) ? array_pop($this->idKey) : $this->idKey;
 	}
 	
@@ -422,8 +429,8 @@ trait BaseIndexerTrait
 	
 	protected function tableRows($key=null)
 	{
-		$this->dbModel->execute("SELECT COUNT(*) FROM ".$this->dbModel->tableName());
-		return $this->dbModel->result()[0];
+		static::getDbModel()->execute("SELECT COUNT(*) FROM ".static::getDbModel()->tableName());
+		return static::getDbModel()->result()[0];
 	}
 	
 	/**

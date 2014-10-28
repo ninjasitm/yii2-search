@@ -45,7 +45,7 @@ trait ElasticSearchTrait
 	
 	public static function index()
 	{
-		return isset(\Yii::$app->params['components.search']['index']) ? \Yii::$app->params['components.search']['index'] : static::indexName();
+		return isset(\Yii::$app->getModule('nitm-search')->index) ? \Yii::$app->getModule('nitm-search')->index : static::indexName();
 	}
 	
 	public static function type()
