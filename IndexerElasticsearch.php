@@ -229,7 +229,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 	 */
 	public function getMapping()
 	{
-		return $this->apiInternal('get', ['url' => '_mapping', null, false]);
+		return static::api('get', ['url' => '_mapping', null, false]);
 	}
 	
 	public function operation($operation, $options=[])
@@ -681,9 +681,9 @@ class IndexerElasticsearch extends BaseElasticSearch
 	{
 		foreach((array)$item as $f=>$v)
 		{
-			if(!isset($this->columns[$f]))
+			if(!isset(static::columns()[$f]))
 				continue;
-			$info = \yii\helpers\ArrayHelper::toArray($this->columns[$f]);
+			$info = \yii\helpers\ArrayHelper::toArray(static::columns()[$f]);
 			switch(array_shift(explode('(', $info['dbType'])))
 			{
 				case 'tinyint':

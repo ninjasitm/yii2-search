@@ -60,18 +60,18 @@ trait ElasticSearchTrait
 	
 	public function getMapping()
 	{
-		return $this->getDb()->get([$this->index(), $this->type(), '_mapping']);
+		return static::getDb()->get([static::index(), static::type(), '_mapping']);
 	}
 	
 	public function columns()
 	{
-		if(!$this->type())
+		if(!static::type())
 			return ['_id', '_type', '_index'];
-		if(!array_key_exists($this->type(), static::$_columns))
+		if(!array_key_exists(static::type(), static::$_columns))
 		{
-			$columns = $this->getMapping();
-			$properties = isset($columns[$this->index()]['mappings'][$this->type()]) ? $columns[$this->index()]['mappings'][$this->type()]['properties'] : [];
-			static::$_columns[$this->type()] = !empty($properties) ? array_combine(array_keys($properties), array_map(function ($name, $col){
+			$columns = static::getMapping();
+			$properties = isset($columns[static::index()]['mappings'][static::type()]) ? $columns[static::index()]['mappings'][static::type()]['properties'] : [];
+			static::$_columns[static::type()] = !empty($properties) ? array_combine(array_keys($properties), array_map(function ($name, $col){
 				$type = isset($col['type']) ? $col['type'] : 'string';
 				return new\yii\db\ColumnSchema([
 					'name' => $col,
@@ -81,7 +81,7 @@ trait ElasticSearchTrait
 				]);
 			}, $properties, array_keys($properties))) : [];
 		}
-		return static::$_columns[$this->type()];
+		return static::$_columns[static::type()];
 	}
 	
 	public function attributes()
