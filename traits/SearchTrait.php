@@ -6,14 +6,14 @@ namespace nitm\search\traits;
  */
 trait SearchTrait {
 	
-	public static $noSanitizeType = false; 
+	public static $sanitizeType = true; 
 	public $text;
 	public $filter = [];
 	public $expand = 'all';
 	
 	public $primaryModel;
 	public $primaryModelClass;
-	public $namespace = '\nitm\models\\';
+	public static $namespace = '\nitm\models\\';
 	public $useEmptyParams;
 	
 	public $queryOptions = [];
@@ -119,7 +119,7 @@ trait SearchTrait {
 	
 	public function getModelClass($class)
 	{
-		return rtrim($this->namespace, '\\').'\\'.array_pop(explode('\\', $class));
+		return rtrim(static::$namespace, '\\').'\\'.array_pop(explode('\\', $class));
 	}
 	
 	public static function useSearchClass($callingClass)

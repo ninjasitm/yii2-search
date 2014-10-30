@@ -33,17 +33,15 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 	{
 		$class = get_called_class();
 		$model = new $class;
-		if($model->hasProperty('namespace') && !empty($model->namespace))
-			$namespace = $model->namespace;
+		if($model->hasProperty('namespace') && !empty($class::$namespace))
+			$namespace = $class::$namespace;
 		else
 		{
 			$reflectedModel = new \ReflectionClass($class);
 			$namespace = explode('\\', $reflectedModel->getNamespaceName());
 			$namespace = implode('\\', ($namespace[sizeof($namespace)-1] == 'search' ? array_slice($namespace, 0, sizeof($namespace)-1) : $namespace));
 		}
-		$modelClass = (new $class([
-			'namespace' => $namespace
-		]))->getModelClass(static::className());
+		$modelClass = (new $class())->getModelClass(static::className());
 		if(class_exists($modelClass))
 		{
 			static::$tableName = (new $modelClass)->tableName();

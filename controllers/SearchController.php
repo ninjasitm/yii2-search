@@ -7,6 +7,7 @@ use nitm\controllers\DefaultController;
 use yii\web\NotFoundHttpException;
 use yii\web\VerbFilter;
 use nitm\helpers\Response;
+use \yii\helpers\Html;
 
 /**
  * SearchController implements the CRUD actions for Search model.
@@ -31,7 +32,7 @@ class SearchController extends DefaultController
 			'primaryModelClass' => $class::className(),
 			'useEmptyParams' => true,
 		]);
-		$class::$noSanitizeType = true;
+		$class::$sanitizeType = false;
 		$this->engine = \Yii::$app->getModule('nitm-search')->engine;
 		parent::init();
 	}
@@ -83,18 +84,19 @@ class SearchController extends DefaultController
 		], $searchOptions);
 		
 		$className = $this->getSearchClass($options);
-		if(!\Yii::$app->request->isAjax)
+		/*if(!\Yii::$app->request->isAjax)
 		{
 			return $this->actionIndex($className, [
 				'construct' => $searchModelOptions,
 				'stats' => []
 			]);
-		}
+		}*/
 		
 		$this->model = new $className($searchModelOptions);
-		
+		$this->model->setIndexType($type);
 		list($results, $dataProvider) = $this->search([
-			'type' => $type
+			'forceType' => true,
+			'types' => $type
 		]);
 		
 		$dataProvider->pagination->route = '/search/filter';
@@ -111,11 +113,11 @@ class SearchController extends DefaultController
 			$ret_val['data'] = Html::tag('div',
 				\yii\widgets\Breadcrumbs::widget(['links' => [
 					[
-						'label' => $searchModel->primaryModel->properName($searchModel->primaryModel->isWhat()), 
-						'url' => $searchModel->primaryModel->isWhat()
+						'label' => $this->model->primaryModel->properName($this->model->primaryModel->isWhat()), 
+						'url' => $this->model->primaryModel->isWhat()
 					],
 					[
-						'label' => 'Search',
+						'label' => 'Filter',
 					]
 				]]).
 				$ret_val['data'], ['class' => 'col-md-12 col-lg-12']

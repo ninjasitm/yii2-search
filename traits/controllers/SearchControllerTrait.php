@@ -7,8 +7,11 @@ namespace nitm\search\traits\controllers;
 trait SearchControllerTrait {
 	
 	public $namespace;
+	public $type;
+	
 	protected $engine;
 	protected $nestedPrefix = 'nested:';
+	protected $forceType;
 	
 	public function getSearchModelClass($class)
 	{
@@ -23,9 +26,9 @@ trait SearchControllerTrait {
 	public function search($options=[])
 	{
 		$options = array_merge([
-			'type' => '_search',
+			'types' => '_search',
 			'q' => \Yii::$app->request->get('q'),
-			'params' => \Yii::$app->request->getQueryParams(),
+			'params' => \Yii::$app->request->get(),
 			'with' => [], 
 			'viewOptions' => [], 
 			'construct' => [
@@ -33,30 +36,53 @@ trait SearchControllerTrait {
 					'orderBy' => ['_score' => SORT_DESC]
 				]
 			],
+			'limit' => \Yii::$app->request->get('limit') ? \Yii::$app->request->get('limit') : 10,
 			'sort' => [
-				['_score' => ['order' => 'desc']],
-				['created_at' => ['order' => 'desc', 'ignore_unmapped' => true]]
+				'_score' => ['order' => 'desc'],
+				'created_at' => ['order' => 'desc', 'ignore_unmapped' => true]
 			]
 		], $options);
-		$this->model->setIndexType($options['type']);
+		
+		$this->type = $options['types'];
+		$this->model->setIndexType($this->type);
+		
+		//We can force types even if the user specified them in teh query string
+		if(isset($options['forceType']))
+			$this->forceType = $options['forceType'];
+			
 		//Set filtering and url based options
 		$params = \Yii::$app->request->get();
 		$params['q'] = isset($params['q']) ? $params['q'] : $options['q'];
-		$command = $this->model->search($params)->query->createCommand();
+		
+		/**
+		 * Setup data parts
+		 */
+		$dataProvider = $this->model->search($params);
 		//Parse the query and extract the parts
 		$parts = $this->parseQuery($this->model->text);
-		$command->queryParts['query'] = isset($parts['boost']) ? $parts['boost'] : $command->queryParts['query'];
-		$command->queryParts['sort'] = isset($options['sort']) ? $options['sort'] : $command->queryParts['sort'];
-		$command->queryParts['filter'] = (array)@array_merge((array)@$command->queryParts['filter'], (array)$parts['filter']);
-		if(sizeof(array_filter($command->queryParts['filter'])) == 0)
-			 unset($command->queryParts['filter']);
-		//print_r($parts);
-		//exit;
+		$query = $dataProvider->query;
+		$command = $query->createCommand();
+		
+		/**
+		 * Setup the query parts
+		 */
+		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
+		//$query->highlight(true);
+		$query->query(isset($parts['query']) ? $parts['query'] : $command->queryParts['query']);
+		$query->orderBy($options['sort']);
+		$parts['filter'] = isset($parts['filter']) ? $parts['filter'] : [];
+		$query->where(array_merge((array)$query->where, $parts['filter']));
+		
+		if($this->forceType === true)
+			$query->type = $options['types'];
+		else
+			$query->type = (isset($parts['types']) ? $parts['types'] : $options['types']);
+
 		$models = $results = [];
 		if(sizeof($command->queryParts) >= 1 || !empty($this->model->text))
 		{
 			try {
-				$results = $command->db->get((isset($parts['route']) ? $parts['route'] : $options['type']), [], json_encode($command->queryParts));
+				$results = $query->search();
 				$success = true;
 			} catch (\Exception $e) {
 				$success = false;
@@ -67,10 +93,13 @@ trait SearchControllerTrait {
 			}
 			if($success)
 			{
-				if(is_array($results))
+				$models = $results['hits']['hits'];
+				/*if(is_array($results))
 				foreach($results['hits']['hits'] as $attributes)
 				{
 					$properName = \nitm\models\Data::properClassName($attributes['_type']);
+					print_r($attributes);
+					exit;
 					$class = $this->getSearchModelClass($properName);
 					if(!class_exists($class))
 						$class = '\nitm\models\search\\'.$properName;
@@ -78,21 +107,20 @@ trait SearchControllerTrait {
 					$this->model->setIndexType($attributes['_type']);
 					$model->setAttributes($attributes['_source'], false);
 					$models[] = $model;
-				}
+				}*/
 			}
 		}
 		else
 		{
 			$this->model->addError('info', "Empty string provided!!");
 		}
-        $dataProvider = new \yii\data\ArrayDataProvider([
-			'allModels' => $models
-		]);
+		//Setup data provider. Manually set the totalcount and models to enable proper pagination
+        $dataProvider = new \yii\data\ArrayDataProvider;
+		$dataProvider->setTotalCount($results['hits']['total']);count($results['hits']['hits']);
+		//Must happen afeter setting the total count
+		$dataProvider->setModels($models);
+		$dataProvider->pagination->totalCount = $dataProvider->getTotalCount();
 		//$dataProvider = $this->model->search(\Yii::$app->request->get());
-		$dataProvider->pagination->route = \Yii::$app->urlManager->createUrl([
-			'/search/'.$this->model->index(), 
-			'q' => $this->model->text,
-		]);
 		return [$results, $dataProvider];
 	}
 	
@@ -125,8 +153,9 @@ trait SearchControllerTrait {
 			$ret_val['filter'] = $query['filter'];
 			unset($query['filter']);
 		}
-		$ret_val['route'] = $this->model->index().'/'.implode(',', $types).'/_search/';
-		$ret_val['boost'] = $this->getTypeBoost($types, $mustMatch, $query);
+		$ret_val['types'] = (sizeof($types) == 0 )? '_all' : implode(',', $types);
+		$ret_val['route'] = $this->model->index().'/'.$ret_val['types'].'/_search/';
+		$ret_val['query'] = $this->getTypeBoost($types, $mustMatch, $query);
 		return $ret_val;
 	}
 	
@@ -138,12 +167,18 @@ trait SearchControllerTrait {
 	 */
 	protected function getTypes($string=null, $types=null)
 	{
-		$ret_val = [];
+		//If the type is forced then don't check the types further
+		if($this->forceType === true)
+			return [$this->type];
+		
+		$ret_val = [];	
 		$types = array_filter(array_merge((array)$string, (array)$types));
 		if(sizeof($types) >= 1)
 		{
 			foreach($types as $idx=>$type)
 			{
+				if(strlen($type) < 3)
+					continue;
 				$type = strtolower($type);
 				//echo "Checking for $type<br>";
 				switch (1)
@@ -197,7 +232,7 @@ trait SearchControllerTrait {
 				
 				//If this is an equal query: name=value then split it accordingly
 				case((sizeof($parts = explode('=', $part)) == 2)):
-				$ret_val['filters'][$parts[0]] = $parts[1];
+				$ret_val['filter'][$parts[0]] = $parts[1];
 				unset($string[$idx]);
 				break;
 				
@@ -218,14 +253,15 @@ trait SearchControllerTrait {
 				break;
 			}
 		}
-		if(isset($ret_val['filters']))
+		/*if(isset($ret_val['filters']))
 			$ret_val['filter'][($this->model->exclusiveSearch ? 'and' : 'or')] = array_map(function($value, $key) {
 				return [
 					'in' => [
 						$key => [$value]
 					]
 				];
-			}, $ret_val['filters'], array_keys($ret_val['filters']));
+			}, $ret_val['filters'], array_keys($ret_val['filters']));*/
+		
 		$ret_val['parts'] = $string;
 		//print_r($ret_val);
 		//exit;

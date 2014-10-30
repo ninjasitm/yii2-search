@@ -48,14 +48,17 @@ class ActiveElasticQuery extends ActiveQuery
 		return $this;
 	}
 
-    protected function normalizeOrderBy($columns)
+    public function normalizeOrderBy($columns)
     {
         if (is_array($columns)) {
-            return array_map(function ($value) {
-				$value = !is_array($value) ? ['order' => $value] : $value;
-				$value['ignore_unmapped'] = true;
-				return $value;
-			}, $columns);
+			$result = [];
+            foreach($columns as $key=>$value) {
+				if(is_array($value))
+					$value['ignore_unmapped'] = true;
+				else
+					$value = ['order' => $value, 'ignore_unmapped' => true];
+				$result[$key] = $value;
+			};
         } else {
             $columns = preg_split('/\s*,\s*/', trim($columns), -1, PREG_SPLIT_NO_EMPTY);
             $result = [];
@@ -69,8 +72,8 @@ class ActiveElasticQuery extends ActiveQuery
 					];
                 }
             }
-            return $result;
         }
+        return $result;
     }
 	
 

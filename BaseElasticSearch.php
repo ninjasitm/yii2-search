@@ -11,9 +11,7 @@ use nitm\models\DB;
  
 class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements SearchInterface
 {
-	use traits\ElasticSearchTrait, traits\SearchTrait, \nitm\traits\Data, \nitm\traits\Query;
-	
-	public $score;
+	use traits\ElasticSearchTrait, traits\SearchTrait, \nitm\traits\Data, \nitm\traits\Query, \nitm\traits\Relations;
 	
 	public function init()
 	{
@@ -52,6 +50,21 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		 * For some reason needed to implement this to allow population of relations
 		 */
 		return self::__get($name);
+	}
+	
+	public static function instantiate($attributes)
+	{
+		$properName = \nitm\models\Data::properClassName($attributes['_type']);
+		$class = static::$namespace.'search\\'.$properName;
+		if(!class_exists($class))
+			$class = '\nitm\models\search\\'.$properName;
+		//$model = new static();
+		//$model->setAttributes($attributes['_source'], false);
+		$model = new $class();
+		$model->load($attributes['_source'], false);
+		$model->_type = $attributes['_type'];
+		$model->_index = $attributes['_index'];
+		return $model;
 	}
 	
 	public function reset()

@@ -12,7 +12,10 @@ use Yii;
 
 trait ElasticSearchTrait
 {	
-	protected static $_type;
+	//public $_type;
+	//public $_index;
+	public static $_localType;
+	
 	protected static $_database;
 	protected static $_table;
 	protected static $_indexType;
@@ -34,8 +37,16 @@ trait ElasticSearchTrait
 	
 	public static function setIndexType($type, $table=null)
 	{
-		static::$_type = $type;
+		static::$_localType = $type;
 		static::$_table = is_null($table) ? $type : $table;
+	}
+	
+	public function formName()
+	{
+		if(isset(static::$_localType))
+			return ucfirst(static::$_localType);
+		else
+			return parent::formName();
 	}
 	
 	public static function dbName()
@@ -50,7 +61,7 @@ trait ElasticSearchTrait
 	
 	public static function type()
 	{
-		return static::$_type;
+		return static::$_localType;
 	}
 	
 	public static function tableName()
