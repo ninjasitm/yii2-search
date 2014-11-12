@@ -107,8 +107,10 @@ trait SearchTrait {
 	
 	public function reset()
 	{
+		$class = $this->primaryModelClass;
+		
 		if(!$this->primaryModel)
-			$this->primaryModel = new $this->primaryModelClass;
+			$this->primaryModel = new $class;
         $query = $this->primaryModel->find($this);
         $this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,

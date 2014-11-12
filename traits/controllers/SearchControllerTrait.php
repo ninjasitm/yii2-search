@@ -48,8 +48,7 @@ trait SearchControllerTrait {
 		
 		//We can force types even if the user specified them in teh query string
 		if(isset($options['forceType']))
-			$this->forceType = $options['forceType'];
-			
+			$this->forceType = $options['forceType'];	
 		//Set filtering and url based options
 		$params = \Yii::$app->request->get();
 		$params['q'] = isset($params['q']) ? $params['q'] : $options['q'];

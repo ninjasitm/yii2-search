@@ -96,7 +96,8 @@ class SearchController extends DefaultController
 		$this->model->setIndexType($type);
 		list($results, $dataProvider) = $this->search([
 			'forceType' => true,
-			'types' => $type
+			'types' => $type,
+			'isWhat' => $type
 		]);
 		
 		$dataProvider->pagination->route = '/search/filter';
@@ -106,7 +107,8 @@ class SearchController extends DefaultController
 		$ret_val['data'] = $this->renderAjax($view, [
 			"dataProvider" => $dataProvider,
 			'searchModel' => $this->model,
-			'primaryModel' => $this->model->primaryModel
+			'primaryModel' => $this->model->primaryModel,
+			'isWhat' => $type
 		]);
 		if(!\Yii::$app->request->isAjax)
 		{

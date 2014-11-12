@@ -21,9 +21,7 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 			$this->primaryModelClass = $class;
 		}
 		else
-		{
 			$class = $this->primaryModelClass;
-		}
 		if(!class_exists($class))
 			$class = get_called_class();
 		static::setIndexType($class::isWhat(), $class::tableName());

@@ -14,15 +14,19 @@ trait ModelIndexerTrait
 	protected function updateSearchEntry($event)
 	{
 		$module = \Yii::$app->getModule('nitm-search');
-		$indexer = $module->getIndexer();
-		$attributes = $indexer::normalize($event->sender->findOne($event->sender->getId())->toArray());
-		$attributes['_md5'] = $module->fingerprint($attributes);
-		$options = [
-			'url' => $this->isWhat().'/'.$event->sender->getId(), 
-			json_encode($attributes), 
-			true
-		];
-		return $indexer::api('put', $options);
+		if(is_object($module))
+		{
+			$indexer = $module->getIndexer();
+			$attributes = $indexer::normalize($event->sender->findOne($event->sender->getId())->toArray());
+			$attributes['_md5'] = $module->fingerprint($attributes);
+			$options = [
+				'url' => $this->isWhat().'/'.$event->sender->getId(), 
+				json_encode($attributes), 
+				true
+			];
+			return $indexer::api('put', $options);
+		}
+		return false;
 	}
 }
 ?>
