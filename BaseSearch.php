@@ -52,4 +52,9 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 		}
 		return static::$tableName;
 	}
+	
+	public static function type()
+	{
+		return static::isWhat();
+	}
 }

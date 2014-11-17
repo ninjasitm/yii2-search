@@ -672,26 +672,5 @@ class IndexerElasticsearch extends BaseElasticSearch
 		}
 		
 	}
-	
-	/**
-	 * Convert some common properties
-	 * @param array $item
-	 */
-	public static function normalize(&$item)
-	{
-		foreach((array)$item as $f=>$v)
-		{
-			if(!isset(static::columns()[$f]))
-				continue;
-			$info = \yii\helpers\ArrayHelper::toArray(static::columns()[$f]);
-			switch(array_shift(explode('(', $info['dbType'])))
-			{
-				case 'tinyint':
-				$item[$f] = $info['dbType'] == 'tinyint(1)' ? (boolean)$v : $v;
-				break;
-			}
-		}
-		return $item;
-	}
 }
 ?>

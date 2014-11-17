@@ -50,6 +50,9 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		return self::__get($name);
 	}
 	
+	/**
+	 * This function properly maps the object to the correct class
+	 */
 	public static function instantiate($attributes)
 	{
 		$properName = \nitm\models\Data::properClassName($attributes['_type']);
@@ -62,6 +65,8 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		$model->load($attributes['_source'], false);
 		$model->_type = $attributes['_type'];
 		$model->_index = $attributes['_index'];
+		static::setIndexType($model->_type);
+		static::normalize($model, true);
 		return $model;
 	}
 	
@@ -181,6 +186,43 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		//$this->dataProvider->query->query = ['query_string' => $value];
 		$this->useEmptyParams = true;
 		return ['q' => $value];
+	}
+	
+	/**
+	 * Convert some common properties
+	 * @param array $item
+	 * @param boolean decode the item
+	 * @return array
+	 */
+	public static function normalize(&$item, $decode=false)
+	{
+		foreach((array)$item as $f=>$v)
+		{
+			if(!isset(static::columns()[$f]))
+				continue;
+			$info = \yii\helpers\ArrayHelper::toArray(static::columns()[$f]);
+			switch(array_shift(explode('(', $info['dbType'])))
+			{
+				case 'tinyint':
+				$item[$f] = $info['dbType'] == 'tinyint(1)' ? (boolean)$v : $v;
+				break;
+				
+				case 'text':
+				case 'varchar':
+				case 'string':
+				$args = [$v, ENT_COMPAT|ENT_HTML5, ini_get("default_charset")];
+				if($decode)
+					$func = 'html_entity_decode';
+				else
+				{
+					$func = 'htmlentities';
+					$args[] = false;
+				}
+				$item[$f] = call_user_func_array($func, $args);
+				break;
+			}
+		}
+		return $item;
 	}
 }
 ?>

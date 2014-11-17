@@ -129,6 +129,17 @@ trait SearchTrait {
 		return strpos(strtolower($callingClass), 'models\search') !== false;
 	}
 	
+	/**
+	 * Convert some common properties
+	 * @param array $item
+	 * @param boolean decode the item
+	 * @return array|object
+	 */
+	public static function normalize(&$item, $decode=false)
+	{
+		return $item;
+	}
+	
 	protected function addConditions()
 	{
 		foreach($this->conditions as $type=>$condition)

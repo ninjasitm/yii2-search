@@ -92,6 +92,9 @@ trait SearchControllerTrait {
 			}
 			if($success)
 			{
+				/**
+				 * The models are instantiated in Search::instantiate function
+				 */
 				$models = $results['hits']['hits'];
 				/*if(is_array($results))
 				foreach($results['hits']['hits'] as $attributes)
@@ -115,7 +118,7 @@ trait SearchControllerTrait {
 		}
 		//Setup data provider. Manually set the totalcount and models to enable proper pagination
         $dataProvider = new \yii\data\ArrayDataProvider;
-		$dataProvider->setTotalCount($results['hits']['total']);count($results['hits']['hits']);
+		$dataProvider->setTotalCount($results['hits']['total']);
 		//Must happen afeter setting the total count
 		$dataProvider->setModels($models);
 		$dataProvider->pagination->totalCount = $dataProvider->getTotalCount();
