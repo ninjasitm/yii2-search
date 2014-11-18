@@ -269,6 +269,7 @@ trait SearchTrait {
 				case 'andhaving':
 				case 'orhaving':
 				case 'union':
+				case 'select':
 				$this->dataProvider->query->$type($queryOpts);
 				break;
 			}

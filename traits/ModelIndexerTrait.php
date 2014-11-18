@@ -28,7 +28,7 @@ trait ModelIndexerTrait
 				return $indexer::api('put', $options);
 			}
 			return false;
-		} catch \Exception $e {
+		} catch (\Exception $e) {
 			//Only throw this error if we're debugging
 			if(YII_DEBUG)
 				throw $e;
