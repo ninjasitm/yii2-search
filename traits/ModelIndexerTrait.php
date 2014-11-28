@@ -18,7 +18,7 @@ trait ModelIndexerTrait
 			if(is_object($module))
 			{
 				$indexer = $module->getIndexer();
-				$attributes = $indexer::normalize($event->sender->findOne($event->sender->getId())->toArray());
+				$attributes = $indexer::normalize($event->sender->findOne($event->sender->getId())->getAttributes());
 				$attributes['_md5'] = $module->fingerprint($attributes);
 				$options = [
 					'url' => $this->isWhat().'/'.$event->sender->getId(), 
