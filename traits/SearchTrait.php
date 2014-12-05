@@ -27,7 +27,6 @@ trait SearchTrait {
 	public $inclusiveSearch;
 	public $exclusiveSearch;
 	public $mergeInclusive;
-	
 	protected $dataProvider;
 	protected $conditions = [];
 	
@@ -73,7 +72,7 @@ trait SearchTrait {
 
     public function search($params=[])
     {
-		$this->reset();
+		$this->restart();
 		$params = $this->filterParams($params);
         if (!($this->load($params[$this->primaryModel->formName()], false) && $this->validate())) {
 			$this->addQueryOptions();
@@ -105,18 +104,42 @@ trait SearchTrait {
         return $this->dataProvider;
     }
 	
-	public function reset()
+	public function restart()
 	{
-		$class = $this->primaryModelClass;
-		
-		if(!$this->primaryModel)
-			$this->primaryModel = new $class;
+		$oldType = $this->type();
+		if(!$this->primaryModel && $this->getPrimaryModelClass()) {
+			$class = $this->getPrimaryModelClass();
+			$this->primaryModel = new $class();
+		}
         $query = $this->primaryModel->find($this);
         $this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
         ]);
 		$this->conditions = [];
+		$this->setIndexType($oldType);
 		return $this;
+	}
+	
+	public function getPrimaryModelClass()
+	{
+		if(!isset($this->primaryModelClass))
+			$this->setPrimaryModelClass();
+		return $this->primaryModelClass;
+	}
+	
+	public function setPrimaryModelClass($class=null)
+	{
+		if(!is_null($class) && class_exists($class))
+			$this->primaryModelClass = $class;
+		else {
+			if(!isset($this->primaryModelClass))
+			{
+				$class = $this->getModelClass($this->properClassName(static::formName()));
+				$this->primaryModelClass = class_exists($class) ? $class : static::className();
+			}
+			else
+				$this->primaryModelClass = static::className();
+		}
 	}
 	
 	public function getModelClass($class)

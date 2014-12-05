@@ -15,8 +15,7 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 	
 	public function init()
 	{
-		$class = $this->getModelClass(static::formName());
-		$this->primaryModelClass =  $class;
+		$this->setPrimaryModelClass(static::formName());
 	}
 	
 	public function behaviors()
@@ -56,5 +55,10 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 	public static function type()
 	{
 		return static::isWhat();
+	}
+	
+	public static function setIndexType()
+	{
+		return true;
 	}
 }
