@@ -363,7 +363,8 @@ trait SearchTrait {
 	{
 		$params = array_intersect_key($params, array_flip($this->attributes()));
 		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(empty($params) && !$this->useEmptyParams)) : $this->exclusiveSearch;
-		$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->attributes(), array_fill(0, sizeof($this->attributes()), '')) : $params;
+		if(sizeof($this->attributes()) >= 1)
+			$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->attributes(), array_fill(0, sizeof($this->attributes()), '')) : $params;
 		if(sizeof($params) >= 1) $this->setProperties(array_keys($params), array_values($params));
 		$params = [$this->primaryModel->formName() => $params];
 		return $params;
