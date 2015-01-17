@@ -22,6 +22,7 @@ class Module extends \yii\base\Module
 	
 	private $_supportedIndexers = [
 		'elasticsearch' => '\nitm\search\IndexerElasticsearch',
+		'mongo' => '\nitm\search\IndexerMongo',
 		'db' => '\nitm\search\Indexer',
 	];
 

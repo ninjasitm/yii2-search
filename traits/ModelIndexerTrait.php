@@ -11,17 +11,23 @@ use nitm\models\DB;
  
 trait ModelIndexerTrait
 {
+	public $disableSearchIndexing = false;
+	
 	protected function updateSearchEntry($event)
 	{
+		if($this->disableSearchIndexing)
+			return;
+			
 		try {
 			$module = \Yii::$app->getModule('nitm-search');
 			if(is_object($module))
 			{
 				$indexer = $module->getIndexer();
-				$attributes = $indexer::normalize($event->sender->findOne($event->sender->getId())->getAttributes());
+				$attributes = $indexer::normalize($event->sender->getAttributes(), false, $event->sender->getTableSchema()->columns);
+				
 				$attributes['_md5'] = $module->fingerprint($attributes);
 				$options = [
-					'url' => $this->isWhat().'/'.$event->sender->getId(), 
+					'url' => $event->sender->isWhat().'/'.$event->sender->getId(), 
 					json_encode($attributes), 
 					true
 				];
@@ -33,6 +39,11 @@ trait ModelIndexerTrait
 			if(YII_DEBUG)
 				throw $e;
 		}
+	}
+	
+	protected function handleSearchRecord(&$event)
+	{
+		return $event;
 	}
 }
 ?>

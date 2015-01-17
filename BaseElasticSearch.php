@@ -43,67 +43,11 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 	}
 	
 	/**
-	 * This function properly maps the object to the correct class
-	 */
-	public static function instantiate($attributes)
-	{
-		$properName = \nitm\models\Data::properClassName($attributes['_type']);
-		$class = static::$namespace.'search\\'.$properName;
-		if(!class_exists($class))
-			$class = '\nitm\models\search\\'.$properName;
-		//$model = new static();
-		//$model->setAttributes($attributes['_source'], false);
-		$model = new $class();
-		$model->load($attributes['_source'], false);
-		$model->_type = $attributes['_type'];
-		$model->_index = $attributes['_index'];
-		static::setIndexType($model->_type);
-		static::normalize($model, true);
-		return $model;
-	}
-	
-	public function reset()
-	{
-		if(class_exists($this->primaryModelClass))
-			$this->primaryModel = new $this->primaryModelClass;
-		else
-			$this->primaryModel = new static;
-        $query = static::find($this);
-        $this->dataProvider = new \yii\data\ActiveDataProvider([
-            'query' => $query,
-        ]);
-		$this->conditions = [];
-		return $this;
-	}
-	
-	/**
 	 * Overriding default find function
 	 */
 	public static function find($model=null, $options=null)
 	{
-		$query = \Yii::createObject(\nitm\search\query\ActiveElasticQuery::className(), [get_called_class()]);
-		if(is_object($model))
-		{
-			if(!empty($model->withThese))
-				$query->with($model->withThese);
-			foreach($model->queryFilters as $filter=>$value)
-			{
-				switch(strtolower($filter))
-				{
-					case 'select':
-					case 'indexby':
-					case 'orderby':
-					if(is_string($value) && ($value == 'primaryKey'))
-					{
-						unset($model->queryFilters[$filter]);
-						$query->$filter(static::primaryKey()[0]);
-					}
-					break;
-				}
-			}
-			static::applyFilters($query, $model->queryFilters);
-		}
-		return $query;
+		return static::findInternal(\nitm\search\query\ActiveElasticQuery::className(), $model, $options);
 	}
 	
 	public static function getTableSchema()
@@ -180,46 +124,11 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		return ['q' => $value];
 	}
 	
-	/**
-	 * Convert some common properties
-	 * @param array $item
-	 * @param boolean decode the item
-	 * @return array
-	 */
-	public static function normalize(&$item, $decode=false)
+	public static function instantiate($attributes)
 	{
-		foreach((array)$item as $f=>$v)
-		{
-			if(!isset(static::columns()[$f]))
-				continue;
-			$info = \yii\helpers\ArrayHelper::toArray(static::columns()[$f]);
-			switch(array_shift(explode('(', $info['dbType'])))
-			{
-				case 'tinyint':
-				$item[$f] = $info['dbType'] == 'tinyint(1)' ? (boolean)$v : $v;
-				break;
-				
-				case 'text':
-				case 'varchar':
-				case 'string':
-				if(is_array($v)) {
-					$item[$f] = static::normalize($v, $decode);
-				}
-				/*else {
-					$args = [$v, ENT_COMPAT|ENT_HTML5, ini_get("default_charset")];
-					if($decode)
-						$func = 'html_entity_decode';
-					else
-					{
-						$func = 'htmlentities';
-						$args[] = false;
-					}
-					$item[$f] = call_user_func_array($func, $args);
-				}*/
-				break;
-			}
-		}
-		return $item;
+		$model = static::instantiateInternal($attributes['_source'], $attributes['_type']);
+		static::setIndexType($model->isWhat());
+		return $model;
 	}
 }
 ?>

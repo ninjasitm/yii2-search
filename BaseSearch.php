@@ -61,4 +61,12 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 	{
 		return true;
 	}
+	
+	/**
+	 * Overriding default find function
+	 */
+	public static function find($model=null, $options=null)
+	{
+		return static::findInternal(\yii\db\ActiveQuery::className(), $model, $options);
+	}
 }
