@@ -76,7 +76,7 @@ trait SearchTrait {
     {
 		$this->restart();
 		$params = $this->filterParams($params);
-        if (!($this->load($params[$this->primaryModel->formName()], false) && $this->validate())) {
+        if (!($this->load($params, $this->primaryModel->formName()) && $this->validate(null, true))) {
 			$this->addQueryOptions();
             return $this->dataProvider;
         }
