@@ -56,7 +56,7 @@ trait MongoTrait
 	
 	public static function index()
 	{
-		return isset(\Yii::$app->getModule('nitm-search')->index) ? \Yii::$app->getModule('nitm-search')->index : static::indexName();
+		return isset(\Yii::$app->getModule('nitm-search')->index) ? \Yii::$app->getModule('nitm-search')->index : static::dbName();
 	}
 	
 	public static function type()
@@ -71,7 +71,7 @@ trait MongoTrait
 	
 	public function getMapping()
 	{
-		return (array)$this->getCollection()->mongoCollection->getIndexInfo();
+		return (array)static::getCollection()->mongoCollection->getIndexInfo();
 	}
 	
 	public function columns()
@@ -96,7 +96,7 @@ trait MongoTrait
 				]);
 			}
 		}
-		return static::$_columns[static::type()];
+		return \yii\helpers\ArrayHelper::getValue(static::$_columns, static::type(), []);
 	}
 	
 	public function attributes()

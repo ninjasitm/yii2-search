@@ -54,7 +54,6 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 	{
 		return new \yii\db\TableSchema([
 			'schemaName' => static::index(),
-			'columns' => (new static)->columns(),
 			'primaryKey' => '_id',
 			'name' => static::type(),
 			'fullName' => static::index().'.'.static::type(),

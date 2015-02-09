@@ -44,7 +44,7 @@ class ActiveMongoQuery extends \yii\mongodb\ActiveQuery
      * @param Connection $db the database connection used to execute the query.
      * @return \MongoCursor mongo cursor instance.
      */
-    protected function buildCursor($db = null)
+   /* protected function buildCursor($db = null)
     {
         $cursor = $this->getCollection($db)->find([], []);
         if (!empty($this->orderBy)) {
@@ -54,5 +54,5 @@ class ActiveMongoQuery extends \yii\mongodb\ActiveQuery
         $cursor->skip($this->offset);
 		
 		return $cursor;
-    }
+    }*/
 }
