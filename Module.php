@@ -5,13 +5,15 @@ namespace nitm\search;
 class Module extends \yii\base\Module
 {	
 	/**
-	 * @string the module id
+	 * @string the this id
 	 */
 	public $id = 'nitmSearch';
 	
 	public $engine;
 	
 	public $settings = [];
+	
+	public $disableIndexing = false;
 	
 	/**
 	 * The name of the index to use
@@ -23,16 +25,21 @@ class Module extends \yii\base\Module
 	private $_supportedIndexers = [
 		'elasticsearch' => '\nitm\search\IndexerElasticsearch',
 		'mongo' => '\nitm\search\IndexerMongo',
+		
 		'db' => '\nitm\search\Indexer',
 	];
+	const EVENT_PREPARE = 'prepare';
+	const EVENT_PROCESS = 'process';
 
 	public function init()
 	{
 		parent::init();
 		/**
-		 * Aliases for nitm search module
+		 * Aliases for nitm search this
 		 */
 		\Yii::setAlias('nitm/search', dirname(__DIR__));
+		
+		$this->on(self::EVENT_PROCESS, [$this, 'processRecord']);
 	}
 	
 	public function getIndexer($name=null)
@@ -60,5 +67,35 @@ class Module extends \yii\base\Module
 	public function fingerprint($item)
 	{
 		return BaseIndexer::fingerprint($item);
+	}
+	
+	protected function updateSearchEntry($event)
+	{
+		if($this->disableIndexing)
+			return;
+			
+		$indexer = $this->getIndexer();
+		$attributes = $indexer::normalize($event->sender->getAttributes(), false, $event->sender->getTableSchema()->columns);
+		/**
+		 * Need to enable better support for different search indexers here
+		 */
+		$attributes['_md5'] = $this->fingerprint($attributes);
+		$options = [
+			'url' => $event->sender->isWhat().'/'.$event->sender->getId(), 
+			json_encode($attributes), 
+			true
+		];
+		return $indexer::api('put', $options);
+	}
+	
+	protected function handleSearchRecord(&$event)
+	{
+		return $event;
+	}
+	
+	public function processRecord($event)
+	{
+		$this->handleSearchRecord($event);
+		return $this->updateSearchEntry($event);
 	}
 }
