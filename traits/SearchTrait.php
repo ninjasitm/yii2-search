@@ -303,7 +303,7 @@ trait SearchTrait {
 	
 	private function addQueryOptions()
 	{
-		foreach($this->queryOptions as $type=>$queryOpts)
+		foreach((array)$this->queryOptions as $type=>$queryOpts)
 		{
 			switch(strtolower($type))
 			{
