@@ -210,15 +210,20 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 				case 'text':
 				case 'varchar':
 				case 'string':
-				$args = [$v, ENT_COMPAT|ENT_HTML5, ini_get("default_charset")];
-				if($decode)
-					$func = 'html_entity_decode';
-				else
-				{
-					$func = 'htmlentities';
-					$args[] = false;
+				if(is_array($v)) {
+					$item[$f] = static::normalize($v, $decode);
 				}
-				$item[$f] = call_user_func_array($func, $args);
+				/*else {
+					$args = [$v, ENT_COMPAT|ENT_HTML5, ini_get("default_charset")];
+					if($decode)
+						$func = 'html_entity_decode';
+					else
+					{
+						$func = 'htmlentities';
+						$args[] = false;
+					}
+					$item[$f] = call_user_func_array($func, $args);
+				}*/
 				break;
 			}
 		}
