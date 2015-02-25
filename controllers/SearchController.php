@@ -151,9 +151,7 @@ class SearchController extends DefaultController
 			}
 		}
 		else
-		{
 			$className = $options['className'];
-		}
 		return $className;
 	}
 }

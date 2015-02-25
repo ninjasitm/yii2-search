@@ -5,7 +5,7 @@ use yii\helpers\ArrayHelper;
 use nitm\models\DB;
 
 /**
- * IndexerElastisearch class
+ * IndexerMongo class
  * Can be extended later but by default
  * will include base methods for adding 
  * data to a search database and automatic
@@ -17,35 +17,21 @@ use nitm\models\DB;
  * and such
 */
 	
-class IndexerElasticsearch extends BaseElasticSearch
+class IndexerMongo extends BaseMongo
 {
 	use traits\BaseIndexerTrait;
 	
 	public $deleteIndexes;
 	
 	/**
-	 * Schedule for the river 
-	 * Example:  = "05 00 * * * ?" runs every 5 minutes
-	 */
-	public $schedule;
-	/**
 	 * By default use node 0
 	 */
 	public $node = 0;
+	
 	/**
-	 * The URL for the elasticsearch server
+	 * The URL for the mongo server
 	 */
 	public $url;
-	/**
-	 * The JDBC infomration if necessary. The following format is supported:
-	 * [
-	 *		'url' => URL of the database server including port (jdbc:mysql:localhost:3306)
-	 * 		'username' => Username,
-	 *		'password' => Password,
-	 * 		'options' => [] Options for the PUT request
-	 * ]
-	 */
-	public $jdbc;
 	
 	public $nestedMapping = [];
 	
@@ -58,7 +44,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 	{
 		parent::init();
 		$this->setIndex(!isset($this->_database) ? static::getDbModel()->getDbName() : $this->_database);
-		$this->url = !isset($this->url) ? \Yii::$app->elasticsearch->nodes[$this->node] : $this->url;
+		$this->url = !isset($this->url) ? \Yii::$app->mongo->nodes[$this->node] : $this->url;
 		$this->initEvents();
 	}
 	
@@ -122,125 +108,51 @@ class IndexerElasticsearch extends BaseElasticSearch
 	public function updateMapping($mapping, $attributes, $options=[])
 	{
 		$mapping = count($mapping) == 0 ? [] : $mapping;
-		$mapping[$this->index()]['mappings'][$this->type()]['_all'] = ['enabled' => true];
 		foreach($attributes as $attribute)
 		{
 			switch(isset($options['withThese']) && in_array($attribute, (array)$options['withThese']))
 			{
 				case true:
-				$class = $this->namespace.$this->properClassName($this->type());
+				$class = $this->namespace.$this->properClassName($event->sender->type());
 				$primaryModel = new $class;
 				$relationGetter = 'get'.$attribute;
 				$relatedQuery = $primaryModel->$relationGetter();
 				$linkModelClass = $relatedQuery->modelClass;
 				$relatedColumns = $linkModelClass::getTableSchema()->columns;
 				$relatedAttributes = is_array($relatedQuery->select) ? $relatedQuery->select : array_keys($relatedColumns);
-				@$mapping[$this->index()]['mappings'][$this->type()]['properties'][$attribute] = [
-					'type' => 'nested',
-					'include_in_all' => true,
-					'include_in_parent' => true
-				];
+				@$mapping[$attribute] = ['name' => $attribute];
 				foreach($relatedAttributes as $relatedProperty)
-				{
-					@$mapping[$this->index()]['mappings'][$this->type()]['properties'][$attribute]['properties'][$relatedProperty] = $this->getFieldAttributes($attribute, $relatedColumns[$relatedProperty], true);
-				}
+					@$mapping[$attribute][$relatedProperty] = $this->getFieldAttributes($attribute, $relatedColumns[$relatedProperty], true);
 				break;
 				
 				default:
-				@$mapping[$this->index()]['mappings'][$this->type()]['properties'][$attribute] = $this->getFieldAttributes($attribute, $this->columns[$attribute]);
+				@$mapping[$attribute] = $this->getFieldAttributes($attribute, $this->columns[$attribute]);
 				break;
 			}
 		}
-		$put = [
-			'url' => '_mapping?ignore_conflicts=true',
-			json_encode($mapping[$this->index()]['mappings']), 
-			true
-		];
 		if($this->reIndex)
-			$this->apiInternal('delete', ['url' => '_mapping']);
-		$this->apiInternal('put', $put);
+			$this->apiInternal('deleteIndex');
+		if(count($mapping) >= 1)
+			foreach($mapping as $index)
+				$this->apiInternal('createIndex', $index);
 	}
 	
 	protected function getFieldAttributes($field, $info, $all = false)
 	{
 		$info = \yii\helpers\ArrayHelper::toArray($info);
-		$ret_val = [
-			'include_in_all' => $all,
-			'type' => $info['phpType'],
-			'null_value' => 0
-		];
-		$baseType = array_shift(explode('(', $info['dbType']));
-		switch($baseType)
-		{
-			case 'timestamp':
-			$ret_val['null_value'] = '0000-00-00 00:00:00';
-			$ret_val['type'] = 'date';
-			$ret_val['format'] = "yyyy-MM-dd HH:mm:ss";
-			$ret_val['boost'] = 2;
-			$ret_val['store'] = true;
-			$ret_val['ignore_malformed'] = true;
-			$ret_val['include_in_all'] = true;
-			break;
-			
-			case 'tinyint':
-			switch($info['dbType'])
-			{
-				case 'tinyint(1)':
-				$ret_val['type'] = 'boolean';
-				$ret_val['null_value'] = false;
-				break;
-				
-				default:
-				$ret_val['type'] = 'integer';
-				$ret_val['null_value'] = 0;
-				break;
-			}
-			$ret_val['store'] = true;
-			$ret_val['include_in_all'] = true;
-			break;
-			
-			case 'bigint':
-			case 'int':
-			$ret_val['store'] = true;
-			$ret_val['include_in_all'] = true;
-			$ret_val['type'] = 'long';
-			break;
-			
-			case 'smallint':
-			$ret_val['type'] = 'integer';
-			$ret_val['store'] = true;
-			$ret_val['include_in_all'] = true;
-			break;
-			
-			case 'resource':
-			case 'binary':
-			case 'blob':
-			$ret_val['type'] = 'string';
-			$ret_val['store'] = 'no';
-			$ret_val['index'] = 'no';
-			break;
-			
-			case 'text':
-			case 'varchar':
-			$ret_val['type'] = 'string';
-			$ret_val['store'] = true;
-			$ret_val['index'] = 'analyzed';
-			$ret_val['boost'] = 2;
-			$ret_val['include_in_all'] = true;
-			break;
-		}
-		$userMapping = isset($this->module->settings['elasticsearch']['mapping'][$field]) ? $this->module->settings['elasticsearch']['mapping'][$field] : null;
-		$ret_val = is_null($userMapping) ? $ret_val : array_merge($ret_val, $userMapping);
+		$ret_val = ['name' => $field];
+		$userMapping = isset($this->module->settings['mongo']['mapping'][$field]) ? $this->module->settings['mongo']['mapping'][$field] : null;
+		$ret_val = is_null($userMapping) ? $ret_val : $userMapping;
 		return $ret_val;
 	}
 	
 	/**
-	 * Get the mapping from the ElasticSearch server
+	 * Get the mapping from the Mongo server
 	 * @return array
 	 */
 	public function getMapping()
 	{
-		return static::api('get', ['url' => '_mapping', null, false]);
+		return static::api('getIndexes');
 	}
 	
 	public function operation($operation, $options=[])
@@ -279,17 +191,11 @@ class IndexerElasticsearch extends BaseElasticSearch
 			break;
 			
 			case 'stats':
-			$options['url'] = '_search';
-			$oldJdbcOptions = $this->jdbc['options'];
-			$this->jdbc['options'] = [
-				'q' => '*',
-				'search_type' => 'count'
-			];
 			$originalMock = $this->mock;
 			$this->mock = false;
-			$ret_val = $this->apiInternal('get', $options);
+			//$ret_val = $this->apiInternal('get', $options);
+			$ret_val = [];
 			$this->mock = $originalMock;
-			$this->jdbc['options'] = $oldJdbcOptions;
 			return $ret_val;
 			break;
 			
@@ -327,11 +233,6 @@ class IndexerElasticsearch extends BaseElasticSearch
 			break;
 			
 			default:
-			if(!isset($this->jdbc))
-			{
-				//By default use components value
-				$this->jdbc = static::getJdbcOptions();
-			}
 			$prepare = 'FromSql';
 			$dataSource = '_tables';
 			break;
@@ -341,17 +242,6 @@ class IndexerElasticsearch extends BaseElasticSearch
 		$prepare = 'prepare'.$prepare;
 		$this->$prepare($queryFilters);
 		$this->type = $operation;
-	}
-	
-	protected static function getJdbcOptions()
-	{
-		return [
-			'options' => [],
-			'url' => 'mysql:'.static::getDbModel()->host,
-			'username' => static::getDbModel()->username,
-			'password' => static::getDbModel()->getPassword()
-			
-		];
 	}
 	
 	/**
@@ -388,31 +278,6 @@ class IndexerElasticsearch extends BaseElasticSearch
 	}
 	
 	/**
-	 * Use SQL to push using a PUT command
-	 * @param string $sql SQL
-	 */
-	public function pushRiver($sql)
-	{
-		$options = [
-			'type' => 'jdbc',
-			'jdbc' => [
-				'url' => $this->jdbc['url'].'/'.static::index(),
-				'user' => $this->jdbc['username'],
-				'password' => $this->jdbc['password'],
-				'sql' => $sql,
-				'index' => static::index(),
-				'type' => static::type(),
-			]
-		];
-		if(isset($this->schedule))
-			$options['jdbc']['schedule'] = $this->schedule;
-		if(!$this->mock)
-			static::getDb()->post(['_river', static::index(), static::type()], $this->jdbc['options'], json_encode($options), true);
-		else
-			$this->log(json_encode($options, JSON_PRETTY_PRINT));
-	}
-	
-	/**
 	 * Perform an operation
 	 * @param string $operation
 	 * @param array $data
@@ -438,16 +303,10 @@ class IndexerElasticsearch extends BaseElasticSearch
 			break;
 			
 			default:
-			$url = isset($options['index']) ? [$options['index']] : [static::index()];
-			$url[] = isset($options['type']) ? $options['type'] : static::type();
-			if(isset($options['url']))
-				array_push($url, $options['url']);
-			else
-				$options['url'] = [$url];
-			unset($options['index'], $options['type'], $options['url']);
-			$apiOptions = isset($options['apiOptions']) ? $options['apiOptions'] : [];
-			array_unshift($options, implode('/', array_filter($url)), (array)$apiOptions);
-			return call_user_func_array([static::getDb(), $operation], $options);
+			unset($options['index'], $options['type'], $options['url'], $options['mock']);
+			//$apiOptions = isset($options['apiOptions']) ? $options['apiOptions'] : [];
+			//array_unshift($options, implode('/', array_filter($url)), (array)$apiOptions);
+			return call_user_func_array([static::getDb()->getCollection(static::collectionName()), $operation], $options);
 			break;
 		}
 	}
@@ -475,18 +334,14 @@ class IndexerElasticsearch extends BaseElasticSearch
 			{
 				$this->normalize($item);
 				$this->progress('index', null, null, null, true);
-				$create[] = json_encode(['index' => ['_type' => static::type(), '_id' => $item['_id']]]);
 				$item['_md5'] = $this->fingerprint($item);
-				$create[] = json_encode($item);
+				$create[] = $item;
 				$this->totals['current']++;
 			};
-			$create[] = "{}";
 			$options = [
-				'url' => '_bulk', 
-				implode("\n", $create), 
-				true
+				$create
 			];
-			if(sizeof($create) >= 1 && ($result = $this->apiInternal('post', $options)))
+			if(sizeof($create) >= 1 && ($result = $this->apiInternal('batchInsert', $options)))
 			{
 				$this->bulkLog('index');
 			}
@@ -510,15 +365,9 @@ class IndexerElasticsearch extends BaseElasticSearch
 		{
 			$update = [];
 			$delete = [];
-			/**
-			 * First get all of the ids and fingerprints
-			 */
-			$this->jdbc['options']['ids'] = array_map(function ($value) {
-				return $value['_id'];
-			}, $this->bulk('update'));
-			$existing = $this->apiInternal('get', [
-				'url' => '_mget',
-			]);
+			
+			$existing = iterator_to_array($this->apiInternal('find'), false);
+			
 			$this->log("\n\t\tUpdating :");
 			foreach((array)$existing as $item=>$idx) 
 			{
@@ -528,11 +377,13 @@ class IndexerElasticsearch extends BaseElasticSearch
 				{
 					if($self->bulk('update', $item['_id'])['_md5'] != $item['_md5'])
 					{
-						$update[] = ['update' => ['_id' => $item['_id']]];
-						unset($item['_id']);
+						$condition = ['_id' => new \MongoId($item['_id'])];
 						$item['_md5'] = $this->fingerprint($this->bulk('update', $item['_id']));
-						$update[] = $item;
-						$sel->totals['current']++;
+						if($this->apiInternal('update', $condition, $item))
+						{
+							$update[] = $item;
+							$sel->totals['current']++;
+						}
 					}
 				}
 				else
@@ -540,17 +391,11 @@ class IndexerElasticsearch extends BaseElasticSearch
 					$delete[] = $item['_id'];
 				}
 			};
-			$url = [$this->index(), $this->type(), '_bulk'];
-			if((sizeof($update) >= 1) && ($result = $this->apiInternal('post', [
-				'url' => '_bulk',
-				implode("\n", json_encode($udpate))
-			])))
-			{
+			if(sizeof($update) >= 1) {
 				$this->log("\n\\t\tUpdated: ".$this->totals['current']." out of ".$this->tableInfo('Rows')." entries\n");
 				$this->bulkLog('update');
 			}
-			else
-			{
+			else {
 				$this->log("\n\t\tNothing to Update\n");
 			}
 			$this->log("\n\tDebug: ".var_export($result, true)."\n", 2);
@@ -583,20 +428,15 @@ class IndexerElasticsearch extends BaseElasticSearch
 					if(isset($item['_id']) && !is_null($item['_id']))
 					{
 						$this->bulkSet('delete', $idx, [
-							'delete' => [
-								'_id' => $item['_id'],
-								'_type' => static::type(),
-								'_index' => static::index()
-							]
+							'_id' =>new \MongoID( $item['_id'])
 						]);
 						$this->totals['current']++;
 					}
 				}
 				$options = [
-					'url' => '_bulk', 
-					implode("\n", array_map('json_encode', $this->bulk('delete'))),
+					$this->bulk('delete')
 				];
-				if($result = $this->apiInternal('post', $options))
+				if($result = $this->apiInternal('update', $options))
 				{
 					$this->log("\n\t\tDeleted: ".$this->totals['current']." entries\n");
 					$this->bulkLog('delete');

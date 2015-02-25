@@ -1,6 +1,8 @@
 <?php
 namespace nitm\search\traits\controllers;
 
+use yii\helpers\ArrayHelper;
+
 /**
  * SearchController traits
 	 */
@@ -44,7 +46,7 @@ trait SearchControllerTrait {
 		], $options);
 		
 		$this->type = $options['types'];
-		$this->model->setIndexType($this->type);
+		//$this->model->setIndexType($this->type);
 		
 		//We can force types even if the user specified them in teh query string
 		if(isset($options['forceType']))
@@ -61,6 +63,9 @@ trait SearchControllerTrait {
 		$parts = $this->parseQuery($this->model->text);
 		$query = $dataProvider->query;
 		$command = $query->createCommand();
+		
+		//print_r($query);
+		//exit;
 		
 		/**
 		 * Setup the query parts

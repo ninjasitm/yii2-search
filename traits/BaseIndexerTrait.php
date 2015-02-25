@@ -440,5 +440,76 @@ trait BaseIndexerTrait
 	{
 		$this->_stack[$id] = $options;
 	}
+	
+	/**
+	 * Use model classes to gather data
+	 */
+	public function prepareFromClasses($options=[])
+	{
+		if(empty($this->_classes))
+			return;
+		foreach($this->_classes as $namespace=>$classes)
+		{
+			foreach($classes as $modelName=>$attributes)
+			{
+				$localOptions = $options;
+				$class = $namespace.$modelName;
+				$class::$initClassConfig = false;
+				$localOptions['initLocalConfig'] = false;
+				$localOptions = array_merge((array)$attributes, $localOptions);
+				$model = new $class($localOptions);
+				$this->stack($model->tableName(), [
+					'type' => $model->isWhat(),
+					'namespace' => $namespace,
+					'worker' => [$this, 'parse'],
+					'args' => [
+						$class::find($model), 
+						function ($query, $self) {
+							$self->log("\n\t\t".$query->limit($self->limit)
+								->offset($self->offset)->createCommand()->getSql(), 3);
+							$results = $query->limit($self->limit)
+								->offset($self->offset)
+								->all();
+							//Doing this here to merge related records
+							foreach($results as $idx=>$related)
+							{
+								$related = array_merge($related->getAttributes(), ArrayHelper::toArray($related->relatedRecords));
+								$results[$idx] = $related;
+							}
+							$self->parseChunk($results);
+							return $self->runOperation();
+						}
+					]
+				]);
+			}
+		}
+	}
+	
+	/**
+	 * Use tables to prepare the data
+	 */
+	public function prepareFromTables($options=[])
+	{
+		if(empty($this->_tables))
+			return;
+		foreach($this->_tables as $table)
+		{
+			$this->stack($table, [
+				'worker' => [$this, 'parse'],
+				'args' => [
+					static::getDbModel(), 
+					function ($query, $self) use($options) {
+						$query->select(@$options['queryFilters']['select'])
+						 ->limit($self->limit, $self->offset);
+						if(isset($options['queryFilters']['where']))
+							call_user_func_array([$query, 'where'], $options['queryFilters']['where']);
+						$query->run();
+						$self->parseChunk($query->result(DB::R_ASS, true));
+						return $self->runOperation();
+					}
+				]
+			]);
+		}
+	}
 }
 ?>

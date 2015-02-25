@@ -6,14 +6,12 @@ namespace nitm\search\traits;
  */
 trait SearchTrait {
 	
-	public static $sanitizeType = true; 
 	public $text;
 	public $filter = [];
 	public $expand = 'all';
 	
 	public $primaryModel;
 	public $primaryModelClass;
-	public static $namespace = '\nitm\models\\';
 	public $useEmptyParams;
 	
 	public $queryOptions = [];
@@ -27,6 +25,9 @@ trait SearchTrait {
 	public $inclusiveSearch;
 	public $exclusiveSearch;
 	public $mergeInclusive;
+	
+	public static $sanitizeType = true; 
+	public static $namespace = '\nitm\models\\';
 	
 	protected $dataProvider;
 	protected $conditions = [];
@@ -73,9 +74,9 @@ trait SearchTrait {
 
     public function search($params=[])
     {
-		$this->reset();
+		$this->restart();
 		$params = $this->filterParams($params);
-        if (!($this->load($params[$this->primaryModel->formName()], false) && $this->validate())) {
+        if (!($this->load($params, $this->primaryModel->formName()) && $this->validate(null, true))) {
 			$this->addQueryOptions();
             return $this->dataProvider;
         }
@@ -105,18 +106,83 @@ trait SearchTrait {
         return $this->dataProvider;
     }
 	
-	public function reset()
+	/**
+	 * Overriding default find function
+	 */
+	protected static function findInternal($className, $model=null, $options=null)
 	{
-		$class = $this->primaryModelClass;
-		
+		$query = \Yii::createObject($className, [get_called_class()]);
+		if(is_object($model))
+		{
+			if(!empty($model->withThese))
+				$query->with($model->withThese);
+			foreach($model->queryFilters as $filter=>$value)
+			{
+				switch(strtolower($filter))
+				{
+					case 'select':
+					case 'indexby':
+					case 'orderby':
+					if(is_string($value) && ($value == 'primaryKey'))
+					{
+						unset($model->queryFilters[$filter]);
+						$query->$filter(static::primaryKey()[0]);
+					}
+					break;
+				}
+			}
+			static::applyFilters($query, $model->queryFilters);
+		}
+		return $query;
+	}
+	
+	public function restart()
+	{
+		$oldType = $this->type();
 		if(!$this->primaryModel)
-			$this->primaryModel = new $class;
+		{
+			$class = $this->getPrimaryModelClass();
+			if(class_exists($class)) 
+				$options = [];
+			else {
+				$class = "\\nitm\search\\".ucFirst($this->engine)."Search";
+				$options = [
+					'indexType' => $this->type(),
+				];
+			}
+			if($this->enine == 'db')
+				$options['noDbInit'] = true;
+			$this->primaryModel = new $class($options);
+		}
         $query = $this->primaryModel->find($this);
         $this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
         ]);
 		$this->conditions = [];
+		$this->setIndexType($oldType);
 		return $this;
+	}
+	
+	public function getPrimaryModelClass()
+	{
+		if(!isset($this->primaryModelClass))
+			$this->setPrimaryModelClass();
+		return $this->primaryModelClass;
+	}
+	
+	public function setPrimaryModelClass($class=null)
+	{
+		if(!is_null($class) && class_exists($class))
+			$this->primaryModelClass = $class;
+		else {
+			if(!isset($this->primaryModelClass))
+			{
+				$class = $this->getModelClass($this->properClassName(static::formName()));
+				$this->primaryModelClass = class_exists($class) ? $class : static::className();
+			}
+			else
+				$this->primaryModelClass = static::className();
+		}
 	}
 	
 	public function getModelClass($class)
@@ -127,17 +193,6 @@ trait SearchTrait {
 	public static function useSearchClass($callingClass)
 	{
 		return strpos(strtolower($callingClass), 'models\search') !== false;
-	}
-	
-	/**
-	 * Convert some common properties
-	 * @param array $item
-	 * @param boolean decode the item
-	 * @return array|object
-	 */
-	public static function normalize(&$item, $decode=false)
-	{
-		return $item;
 	}
 	
 	protected function addConditions()
@@ -340,10 +395,93 @@ trait SearchTrait {
 	{
 		$params = array_intersect_key($params, array_flip($this->attributes()));
 		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(empty($params) && !$this->useEmptyParams)) : $this->exclusiveSearch;
-		$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->attributes(), array_fill(0, sizeof($this->attributes()), '')) : $params;
+		if(sizeof($this->attributes()) >= 1)
+			$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->attributes(), array_fill(0, sizeof($this->attributes()), '')) : $params;
 		if(sizeof($params) >= 1) $this->setProperties(array_keys($params), array_values($params));
 		$params = [$this->primaryModel->formName() => $params];
 		return $params;
+	}
+	
+	/**
+	 * This function properly maps the object to the correct class
+	 */
+	protected static function instantiateInternal($attributes, $type=null)
+	{
+		$type = isset($attributes['_type']) ? $attributes['_type'] : $type;
+		if(!is_null($type))
+			$properName = \nitm\models\Data::properClassName($type);
+		else 
+			$properName = static::formName();
+			
+		$class = rtrim(static::$namespace, '\\').'\\search\\'.$properName;
+		
+		if(!class_exists($class))
+			$class = static::className();
+
+		$model = new $class();
+		$model->setAttributes($attributes, false);
+		static::normalize($model, true);
+		return $model;
+	}
+	
+	/**
+	 * Convert some common properties
+	 * @param array $item
+	 * @param boolean decode the item
+	 * @return array
+	 */
+	public static function normalize(&$item, $decode=false, $columns=null)
+	{
+		$columns = is_array($columns) ? $columns : static::columns();
+		
+		foreach((array)$item as $f=>$v)
+		{
+			if(!isset($columns[$f]))
+				continue;
+			$info = \yii\helpers\ArrayHelper::toArray($columns[$f]);
+			switch(array_shift(explode('(', $info['dbType'])))
+			{
+				case 'tinyint':
+				$item[$f] = $info['dbType'] == 'tinyint(1)' ? (boolean)$v : $v;
+				break;
+				
+				case 'blob':
+				case 'longblob':
+				case 'mediumblob':
+				unset($item[$f]);
+				continue;
+				break;
+				
+				case 'timestamp':
+				/**
+				 * This is most likely a timestamp behavior.
+				 * Convert it to a time value here
+				 */
+				if(is_object($v))
+					$item[$f] = time();
+				break;
+				
+				case 'text':
+				case 'varchar':
+				case 'string':
+				if(is_array($v)) {
+					$item[$f] = static::normalize($v, $decode, $columns);
+				}
+				/*else {
+					$args = [$v, ENT_COMPAT|ENT_HTML5, ini_get("default_charset")];
+					if($decode)
+						$func = 'html_entity_decode';
+					else
+					{
+						$func = 'htmlentities';
+						$args[] = false;
+					}
+					$item[$f] = call_user_func_array($func, $args);
+				}*/
+				break;
+			}
+		}
+		return $item;
 	}
 }
 ?>

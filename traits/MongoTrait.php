@@ -4,15 +4,13 @@ namespace nitm\search\traits;
 
 use Yii;
 
-use yii\helpers\ArrayHelper;
-
 /**
  * trait Alerts
  * May merge into nitm Module
  * @package nitm\module
  */
 
-trait ElasticSearchTrait
+trait MongoTrait
 {	
 	//public $_type;
 	//public $_index;
@@ -46,7 +44,7 @@ trait ElasticSearchTrait
 	public function formName()
 	{
 		if(isset(static::$_localType))
-			return \nitm\traits\Data::properClassName(static::$_localType);
+			return ucfirst(static::$_localType);
 		else
 			return parent::formName();
 	}
@@ -58,7 +56,7 @@ trait ElasticSearchTrait
 	
 	public static function index()
 	{
-		return isset(\Yii::$app->getModule('nitm-search')->index) ? \Yii::$app->getModule('nitm-search')->index : static::indexName();
+		return isset(\Yii::$app->getModule('nitm-search')->index) ? \Yii::$app->getModule('nitm-search')->index : static::dbName();
 	}
 	
 	public static function type()
@@ -73,48 +71,32 @@ trait ElasticSearchTrait
 	
 	public function getMapping()
 	{
-		return static::getDb()->get([static::index(), static::type(), '_mapping']);
+		return (array)static::getCollection()->mongoCollection->getIndexInfo();
 	}
 	
 	public function columns()
 	{
 		if(!static::type())
-			return static::defaultColumns();
-			
+			return [
+				new\yii\db\ColumnSchema([
+					'name' => '_id',
+					'type' => 'int',
+					'phpType' => 'integer',
+					'dbType' => 'int'
+				])
+			];
 		if(!array_key_exists(static::type(), static::$_columns))
 		{
-			$columns = ArrayHelper::getValue(static::getMapping(), static::index().'.mappings.'.static::type().'.properties', []);
-			//if(is_null($columns))
-				//$columns = static::defaultColumns();
-			//else
-				//$columns = array_merge(static::defaultColumns(), $columns);
-			
-			static::$_columns[static::type()] = !empty($columns) ? array_combine(array_keys($columns), array_map(function ($name, $col){
-				$type = isset($col['type']) ? $col['type'] : 'string';
-				return new\yii\db\ColumnSchema([
-					'name' => $col,
-					'type' => $type,
-					'phpType' => $type,
-					'dbType' => $type
+			foreach(static::getMapping() as $key) {
+				static::$_columns[static::type()][key($key['key'])] = new\yii\db\ColumnSchema([
+					'name' => key($key['key']),
+					'type' => 'string',
+					'phpType' => 'string',
+					'dbType' => 'string'
 				]);
-			}, $columns, array_keys($columns))) : [];
+			}
 		}
-		return static::$_columns[static::type()];
-	}
-	
-	protected function defaultColumns() 
-	{
-		$defaultColumns = ['_id' => 'int', '_type' => 'string', '_index' => 'string'];
-		foreach($defaultColumns as $name=>$type) 
-		{
-			$defaultColumns[$name] = new \yii\db\ColumnSchema([
-				'name' => $type, 
-				'type' => $type, 
-				'phpType' => $type, 
-				'dbType' => $type
-			]);
-		}
-		return $defaultColumns;
+		return \yii\helpers\ArrayHelper::getValue(static::$_columns, static::type(), []);
 	}
 	
 	public function attributes()
