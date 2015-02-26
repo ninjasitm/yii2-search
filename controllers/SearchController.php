@@ -127,10 +127,10 @@ class SearchController extends DefaultController
 			$this->setResponseFormat('html');
 		}
 		$ret_val['message'] = !$dataProvider->getCount() ? $ret_val['message'] : "Found ".$dataProvider->getTotalCount()." results matching your search";
-		Response::$viewOptions['args'] = [
+		Response::viewOptions('args', [
 			"content" => $ret_val['data'],
-		];
-		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
+		]);
+		return $this->renderResponse($ret_val, Response::viewOptions(), \Yii::$app->request->isAjax);
 	}
 	
 	protected function getSearchClass($options)
