@@ -76,10 +76,13 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
         if (is_string($value) && trim($value) === '') {
             return;
         }
+		
+		$value = (is_array($value) && count($value) == 1) ? current($value) : $value;
+		
 		switch(1)
 		{
-			case is_numeric($value) && !$partialMatch:
-			case is_bool($value) && !$partialMatch:
+			case is_numeric($value):
+			case \nitm\helpers\Helper::boolval($value):
 			case is_array($value) && !$partialMatch:
             switch($this->inclusiveSearch && !$this->exclusiveSearch)
 			{

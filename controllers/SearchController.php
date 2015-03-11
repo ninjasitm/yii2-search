@@ -49,7 +49,7 @@ class SearchController extends DefaultController
      * @return mixed
      */
     public function actionIndex($options=[])
-    {	
+    {
 		list($results, $dataProvider) = $this->search();
         $ret_val = [
 			'success' => true,
@@ -65,8 +65,8 @@ class SearchController extends DefaultController
 			], (array)@$options['viewOptions'])),
 			'message' => "Found ".@(int)$results['hits']['total']." results matching your search"
 		];
-		Response::$viewOptions['args']['content'] = $ret_val['data'];
-		return $this->renderResponse($ret_val, Response::$viewOptions, \Yii::$app->request->isAjax);
+		Response::viewOptions('args.content', $ret_val['data']);
+		return $this->renderResponse($ret_val, Response::viewOptions(), \Yii::$app->request->isAjax);
     }
 	
 	public function actionFilter($type, $options=[], $searchOptions=[])

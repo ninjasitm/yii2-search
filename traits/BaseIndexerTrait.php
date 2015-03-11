@@ -56,7 +56,7 @@ trait BaseIndexerTrait
 	 * 		...
 	 * ]
 	 */
-	public function set_Classes($classes=[])
+	public function setClasses($classes=[])
 	{
 		$this->_source = 'classes';
 		$this->_classes = $classes;
@@ -441,6 +441,25 @@ trait BaseIndexerTrait
 		$this->_stack[$id] = $options;
 	}
 	
+	public static function prepareModel($model, $options)
+	{
+		$ret_val = $model->getAttributes();
+		if(isset($options['withThese']))
+		{
+			foreach((array) $options['withThese'] as $with)
+			{
+				$relation = 'get'.$with;
+				if($model->hasMethod($relation)) {
+					$query =  $model->$relation();
+					$ret_val[$with] = $query->asArray()->all();
+					if(!$query->multiple)
+						$ret_val[$with] = array_shift($ret_val[$with]);
+				}
+			}
+		}
+		return static::normalize($ret_val, false, $model->getTableSchema()->columns);
+	}
+	
 	/**
 	 * Use model classes to gather data
 	 */
@@ -454,6 +473,8 @@ trait BaseIndexerTrait
 			{
 				$localOptions = $options;
 				$class = $namespace.$modelName;
+				if(is_null($class::getDb()->schema->getTableSchema($class::tablename(), true)))
+					continue;
 				$class::$initClassConfig = false;
 				$localOptions['initLocalConfig'] = false;
 				$localOptions = array_merge((array)$attributes, $localOptions);

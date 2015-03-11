@@ -15,6 +15,8 @@ class Module extends \yii\base\Module
 	
 	public $disableIndexing = false;
 	
+	public $classes = [];
+	
 	/**
 	 * The name of the index to use
 	 */
@@ -28,6 +30,9 @@ class Module extends \yii\base\Module
 		
 		'db' => '\nitm\search\Indexer',
 	];
+	
+	private $_indexers = [];
+	
 	const EVENT_PREPARE = 'prepare';
 	const EVENT_PROCESS = 'process';
 
@@ -47,6 +52,19 @@ class Module extends \yii\base\Module
 		$name = is_null($name) ? $this->engine : $name;
 		if(isset($this->_supportedIndexers[$name]))
 			return $this->_supportedIndexers[$name];
+	}
+	
+	public function getIndexerObject($name=null)
+	{
+		$name = is_null($name) ? $this->engine : $name;
+		if(!isset($this->_indexers[$name])) {
+			$class = $this->getIndexer($name);
+			$this->_indexers[$name] = new $class([
+				'classes' => $this->classes
+			]);
+		}
+		if(isset($this->_indexers[$name]))
+			return $this->_indexers[$name];
 	}
 	
 	public function getIndex()
@@ -69,17 +87,25 @@ class Module extends \yii\base\Module
 		return BaseIndexer::fingerprint($item);
 	}
 	
+	protected function getModelOptions($class)
+	{
+		$class = explode('\\', $class);
+		$modelClass = array_pop($class);
+		$namespace = '\\'.implode('\\', $class).'\\';
+		$attributes = \yii\helpers\ArrayHelper::getValue($this->classes, $namespace.'.'.$modelClass, null);
+		return $attributes;
+	}
+	
 	protected function updateSearchEntry($event)
 	{
 		if($this->disableIndexing)
 			return;
 			
 		$indexer = $this->getIndexer();
-		$attributes = $indexer::normalize($event->sender->getAttributes(), false, $event->sender->getTableSchema()->columns);
 		/**
 		 * Need to enable better support for different search indexers here
 		 */
-		$attributes['_md5'] = $this->fingerprint($attributes);
+		$attributes['_md5'] = $this->fingerprint($indexer::prepareModel($event->sender, (array)$this->getModelOptions($event->sender->className())));
 		$options = [
 			'url' => $event->sender->isWhat().'/'.$event->sender->getId(), 
 			json_encode($attributes), 

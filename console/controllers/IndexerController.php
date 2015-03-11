@@ -183,12 +183,12 @@ class IndexerController extends \yii\console\Controller
 	{
 		switch(1)
 		{
-			case isset($this->_config['_classes']):
-			$resolvedTypes = $this->_config['_classes'];
+			case isset($this->_config['classes']):
+			$resolvedTypes = $this->_config['classes'];
 			break;
 			
-			case isset($this->_config['_tables']):
-			$resolvedTypes = $this->_config['_tables'];
+			case isset($this->_config['tables']):
+			$resolvedTypes = $this->_config['tables'];
 			break;
 			
 			default:
@@ -197,7 +197,7 @@ class IndexerController extends \yii\console\Controller
 		}
 		$ret_val = [];
 		$all = false;
-		$modelDataSource = '_tables';
+		$modelDataSource = 'tables';
 		switch(is_null($types))
 		{
 			case false:
@@ -207,17 +207,17 @@ class IndexerController extends \yii\console\Controller
 			$toUnset = [];
 			foreach($types as $idx=>$type)
 			{
-				if(isset($this->_config['_tables']) && in_array($type, $this->_config['_tables']))
+				if(isset($this->_config['tables']) && in_array($type, $this->_config['tables']))
 				{
 					$ret_val[] = $type;
 					unset($toUnset[$type]);
 				}
-				else if(isset($this->_config['_tables']) && !in_array($type, $this->_config['_tables']))
+				else if(isset($this->_config['tables']) && !in_array($type, $this->_config['tables']))
 					$toUnset[$type] = true;
-				else if(isset($this->_config['_classes']))
+				else if(isset($this->_config['classes']))
 				{
-					$modelDataSource = '_classes';
-					foreach($this->_config['_classes'] as $ns=>$classes)
+					$modelDataSource = 'classes';
+					foreach($this->_config['classes'] as $ns=>$classes)
 					{
 						foreach($classes as $class=>$options)
 						{
@@ -238,12 +238,12 @@ class IndexerController extends \yii\console\Controller
 			{
 				switch($modelDataSource)
 				{
-					case '_tables':
+					case 'tables':
 					unset($this->_config[$modelDataSource][array_search($type, $this->_config[$modelDataSource])]);
 					break;
 					
-					case '_classes':
-					foreach($this->_config['_classes'] as $ns=>$classes)
+					case 'classes':
+					foreach($this->_config['classes'] as $ns=>$classes)
 					{
 						foreach($classes as $class=>$options)
 						{
@@ -261,12 +261,12 @@ class IndexerController extends \yii\console\Controller
 			/**
 			 * Otherwise were deleting everything!
 			 */
-			if(isset($this->_config['_tables']) && in_array($type, $this->_config['_tables']))
-				$ret_val = $this->_config['_tables'];
-			else if(isset($this->_config['_classes']))
+			if(isset($this->_config['tables']) && in_array($type, $this->_config['tables']))
+				$ret_val = $this->_config['tables'];
+			else if(isset($this->_config['classes']))
 			{
-				$modelDataSource = '_classes';
-				foreach($this->_config['_classes'] as $ns=>$classes)
+				$modelDataSource = 'classes';
+				foreach($this->_config['classes'] as $ns=>$classes)
 				{
 					$classes = array_map('strtolower', array_keys($classes));
 					$ret_val = array_merge($ret_val, $classes);

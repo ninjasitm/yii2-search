@@ -90,8 +90,7 @@ trait SearchControllerTrait {
 				$success = true;
 			} catch (\Exception $e) {
 				$success = false;
-				if(defined('YII_DEBUG') && YII_DEBUG === true)
-				{
+				if(defined('YII_DEBUG') && YII_DEBUG === true) {
 					throw $e;
 				}
 			}
@@ -124,7 +123,7 @@ trait SearchControllerTrait {
 		//Setup data provider. Manually set the totalcount and models to enable proper pagination
         $dataProvider = new \yii\data\ArrayDataProvider;
 		$dataProvider->setTotalCount($results['hits']['total']);
-		//Must happen afeter setting the total count
+		//Must happen after setting the total count
 		$dataProvider->setModels($models);
 		$dataProvider->pagination->totalCount = $dataProvider->getTotalCount();
 		//$dataProvider = $this->model->search(\Yii::$app->request->get());

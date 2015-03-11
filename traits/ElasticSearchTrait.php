@@ -79,7 +79,11 @@ trait ElasticSearchTrait
 	public function columns()
 	{
 		if(!static::type())
-			return static::defaultColumns();
+			return static::defaultColumns([
+				'_id' => 'int', 
+				'_type' => 'string', 
+				'_index' => 'string'
+			]);
 			
 		if(!array_key_exists(static::type(), static::$_columns))
 		{
@@ -89,32 +93,21 @@ trait ElasticSearchTrait
 			//else
 				//$columns = array_merge(static::defaultColumns(), $columns);
 			
-			static::$_columns[static::type()] = !empty($columns) ? array_combine(array_keys($columns), array_map(function ($name, $col){
+			static::$_columns[static::type()] = !empty($columns) ? array_combine(array_keys($columns), array_map(function ($col, $name){
 				$type = isset($col['type']) ? $col['type'] : 'string';
 				return new\yii\db\ColumnSchema([
-					'name' => $col,
+					'name' => $name,
 					'type' => $type,
 					'phpType' => $type,
 					'dbType' => $type
 				]);
 			}, $columns, array_keys($columns))) : [];
 		}
-		return static::$_columns[static::type()];
-	}
-	
-	protected function defaultColumns() 
-	{
-		$defaultColumns = ['_id' => 'int', '_type' => 'string', '_index' => 'string'];
-		foreach($defaultColumns as $name=>$type) 
-		{
-			$defaultColumns[$name] = new \yii\db\ColumnSchema([
-				'name' => $type, 
-				'type' => $type, 
-				'phpType' => $type, 
-				'dbType' => $type
-			]);
-		}
-		return $defaultColumns;
+		return ArrayHelper::getValue(static::$_columns, static::type(), static::defaultColumns([
+			'_id' => 'int', 
+			'_type' => 'string', 
+			'_index' => 'string'
+		]));
 	}
 	
 	public function attributes()

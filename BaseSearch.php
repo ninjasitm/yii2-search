@@ -62,6 +62,10 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 		return true;
 	}
 	
+	public function columns() {
+		return static::getTableSchema()->columns;
+	}
+	
 	/**
 	 * Overriding default find function
 	 */

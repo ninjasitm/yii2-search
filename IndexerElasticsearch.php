@@ -336,7 +336,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			$dataSource = '_tables';
 			break;
 		}
-		if(is_array($this->$dataSource) && empty($this->$dataSource))
+		if(is_array($this->$dataSource) && !count($this->$dataSource))
 			return false;
 		$prepare = 'prepare'.$prepare;
 		$this->$prepare($queryFilters);

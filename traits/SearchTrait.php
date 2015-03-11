@@ -83,9 +83,9 @@ trait SearchTrait {
 		
 		foreach($params[$this->primaryModel->formName()] as $attr=>$value)
 		{
-			if(isset($this->primaryModel->getTableSchema()->columns[$attr]))
+			if(array_key_exists($attr, $this->columns()))
 			{
-				$column = $this->primaryModel->getTableSchema()->columns[$attr];
+				$column = \yii\helpers\ArrayHelper::getvalue($this->columns(), $attr);
 				switch($column->phpType)
 				{
 					case 'integer':
@@ -207,19 +207,22 @@ trait SearchTrait {
 
     protected function addCondition($attribute, $value, $partialMatch=false)
     {
-        if (($pos = strrpos($attribute, '.')) !== false) {
+        if (($pos = strrpos($attribute, '.')) !== false)
             $modelAttribute = substr($attribute, $pos + 1);
-        } else {
+		else
             $modelAttribute = $attribute;
-        }
-        if (is_string($value) && trim($value) === '') {
+			
+        if (is_string($value) && trim($value) === '')
             return;
-        }
+		
+		$value = (is_array($value) && count($value) == 1) ? current($value) : $value;
+		
 		switch(1)
 		{
-			case is_numeric($value) && !$partialMatch:
-			case is_bool($value) && !$partialMatch:
+			case is_numeric($value):
+			case \nitm\helpers\Helper::boolval($value):
 			case is_array($value) && !$partialMatch:
+			
             switch($this->inclusiveSearch && !$this->exclusiveSearch)
 			{
 				case true:
@@ -417,9 +420,27 @@ trait SearchTrait {
 		
 		if(!class_exists($class))
 			$class = static::className();
-
 		$model = new $class();
+		$relations = [];
+		foreach($attributes as $name=>$value)
+		{
+			if(is_array($value))
+			{
+				$relations[$name] = $value;
+				unset($attributes[$name]);
+			}
+		}
 		$model->setAttributes($attributes, false);
+		foreach($relations as $name=>$value)
+		{
+			if(is_array($value)) 
+				if($model->hasMethod('get'.$name)) {
+					$model->populateRelation($name, \Yii::createObject(array_merge([
+						'class' => $model->{'get'.$name}()->modelClass
+					], $value)));
+				}
+				
+		}
 		static::normalize($model, true);
 		return $model;
 	}
@@ -482,6 +503,21 @@ trait SearchTrait {
 			}
 		}
 		return $item;
+	}
+	
+	protected function defaultColumns() 
+	{
+		$defaultColumns = ['_id' => 'int', '_type' => 'string', '_index' => 'string'];
+		foreach($defaultColumns as $name=>$type) 
+		{
+			$defaultColumns[$name] = new \yii\db\ColumnSchema([
+				'name' => $type, 
+				'type' => $type, 
+				'phpType' => $type, 
+				'dbType' => $type
+			]);
+		}
+		return $defaultColumns;
 	}
 }
 ?>
