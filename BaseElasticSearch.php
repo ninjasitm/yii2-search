@@ -129,44 +129,9 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 	
 	public static function instantiate($attributes)
 	{
-<<<<<<< HEAD
-		foreach((array)$item as $f=>$v)
-		{
-			if(!isset(static::columns()[$f]))
-				continue;
-			$info = \yii\helpers\ArrayHelper::toArray(static::columns()[$f]);
-			switch(array_shift(explode('(', $info['dbType'])))
-			{
-				case 'tinyint':
-				$item[$f] = $info['dbType'] == 'tinyint(1)' ? (boolean)$v : $v;
-				break;
-				
-				case 'text':
-				case 'varchar':
-				case 'string':
-				if(is_array($v)) {
-					$item[$f] = static::normalize($v, $decode);
-				}
-				/*else {
-					$args = [$v, ENT_COMPAT|ENT_HTML5, ini_get("default_charset")];
-					if($decode)
-						$func = 'html_entity_decode';
-					else
-					{
-						$func = 'htmlentities';
-						$args[] = false;
-					}
-					$item[$f] = call_user_func_array($func, $args);
-				}*/
-				break;
-			}
-		}
-		return $item;
-=======
 		$model = static::instantiateInternal($attributes['_source'], $attributes['_type']);
 		static::setIndexType($model->isWhat());
 		return $model;
->>>>>>> 7874bd28874ec7ab6524ea09dd05fd285e3e9a6d
 	}
 }
 ?>
