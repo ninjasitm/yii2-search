@@ -105,7 +105,8 @@ class Module extends \yii\base\Module
 		/**
 		 * Need to enable better support for different search indexers here
 		 */
-		$attributes['_md5'] = $this->fingerprint($indexer::prepareModel($event->sender, (array)$this->getModelOptions($event->sender->className())));
+		$attributes = $indexer::prepareModel($event->sender, (array)$this->getModelOptions($event->sender->className()));
+		$attributes['_md5'] = $this->fingerprint($attributes);
 		$options = [
 			'url' => $event->sender->isWhat().'/'.$event->sender->getId(), 
 			json_encode($attributes), 
