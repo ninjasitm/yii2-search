@@ -107,12 +107,31 @@ class Module extends \yii\base\Module
 		 */
 		$attributes = $indexer::prepareModel($event->sender, (array)$this->getModelOptions($event->sender->className()));
 		$attributes['_md5'] = $this->fingerprint($attributes);
+		
+		switch($event->sender->getScenario())
+		{
+			case 'create':
+			$op = '_'.$event->sender->getScenario();
+			$method = 'put';
+			break;
+			
+			case 'delete':
+			$op = '';
+			$method = 'delete';
+			break;
+			
+			default:
+			$op = '_update';
+			$method = 'post';
+			break;
+		}
+		
 		$options = [
-			'url' => $event->sender->isWhat().'/'.$event->sender->getId(), 
+			'url' => $event->sender->isWhat().'/'.$event->sender->getId().$op, 
 			json_encode($attributes), 
 			true
 		];
-		return $indexer::api('put', $options);
+		return $indexer::api($method, $options);
 	}
 	
 	protected function handleSearchRecord(&$event)
