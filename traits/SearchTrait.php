@@ -437,7 +437,7 @@ trait SearchTrait {
 				if($model->hasMethod('get'.$name)) {
 					$model->populateRelation($name, \Yii::createObject(array_merge([
 						'class' => $model->{'get'.$name}()->modelClass
-					], $value)));
+					], @is_array(current($value)) ? array_pop($value) : $value)));
 				}
 				
 		}

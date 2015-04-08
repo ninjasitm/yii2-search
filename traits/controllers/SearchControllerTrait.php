@@ -41,7 +41,7 @@ trait SearchControllerTrait {
 			'limit' => \Yii::$app->request->get('limit') ? \Yii::$app->request->get('limit') : 10,
 			'sort' => [
 				'_score' => ['order' => 'desc'],
-				'created_at' => ['order' => 'desc', 'ignore_unmapped' => true]
+				'id' => ['order' => 'desc', 'ignore_unmapped' => true]
 			]
 		], $options);
 		
@@ -64,8 +64,6 @@ trait SearchControllerTrait {
 		$query = $dataProvider->query;
 		$command = $query->createCommand();
 		
-		//print_r($query);
-		//exit;
 		
 		/**
 		 * Setup the query parts

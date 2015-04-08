@@ -111,7 +111,7 @@ class Module extends \yii\base\Module
 		switch($event->sender->getScenario())
 		{
 			case 'create':
-			$op = '_'.$event->sender->getScenario();
+			$op = '_create';
 			$method = 'put';
 			break;
 			
@@ -127,10 +127,11 @@ class Module extends \yii\base\Module
 		}
 		
 		$options = [
-			'url' => $event->sender->isWhat().'/'.$event->sender->getId().$op, 
+			'url' => implode('/', array_filter([$event->sender->isWhat(), $event->sender->getId(), $op])), 
 			json_encode($attributes), 
 			true
 		];
+		
 		return $indexer::api($method, $options);
 	}
 	
