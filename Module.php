@@ -123,6 +123,7 @@ class Module extends \yii\base\Module
 			default:
 			$op = '_update';
 			$method = 'post';
+			$attributes = ['doc' => $attributes];
 			break;
 		}
 		
