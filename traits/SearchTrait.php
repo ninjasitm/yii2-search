@@ -86,7 +86,7 @@ trait SearchTrait {
 			if(array_key_exists($attr, $this->columns()))
 			{
 				$column = \yii\helpers\ArrayHelper::getvalue($this->columns(), $attr);
-				switch($column->phpType)
+				switch($column->type)
 				{
 					case 'integer':
 					case 'boolean':
@@ -95,7 +95,14 @@ trait SearchTrait {
 					$this->addCondition($column->name, $value);
 					break;
 					
+					case 'timestamp':
+					case 'date':
+					case 'datetime':
+					//$this->addCondition($column->name, $value);
+					break;
+					
 					case 'string':
+					case 'text':
 					$this->addCondition($column->name, $value, $this->booleanSearch);
 					break;
 				}
@@ -220,6 +227,7 @@ trait SearchTrait {
 		switch(1)
 		{
 			case is_numeric($value):
+			case !$partialMatch:
 			case \nitm\helpers\Helper::boolval($value):
 			case is_array($value) && !$partialMatch:
 			
