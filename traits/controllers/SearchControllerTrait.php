@@ -58,6 +58,7 @@ trait SearchControllerTrait {
 		/**
 		 * Setup data parts
 		 */
+		
 		$dataProvider = $this->model->search($params);
 		//Parse the query and extract the parts
 		$parts = $this->parseQuery($this->model->text);
@@ -72,8 +73,8 @@ trait SearchControllerTrait {
 		//$query->highlight(true);
 		$query->query(isset($parts['query']) ? $parts['query'] : $command->queryParts['query']);
 		$query->orderBy($options['sort']);
-		$parts['filter'] = isset($parts['filter']) ? $parts['filter'] : [];
-		$query->where(array_merge((array)$query->where, $parts['filter']));
+		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
+		$query->where(array_merge((array)$query->where, (array)$parts['filter'], (array)$options['params']));
 		
 		if($this->forceType === true)
 			$query->type = $options['types'];
@@ -145,7 +146,7 @@ trait SearchControllerTrait {
 			$userSpecifiedTypes = $query['nested']['_type'];
 		elseif(\Yii::$app->request->get('_type'))
 			$userSpecifiedTypes = [\Yii::$app->request->get('_type')];
-		$types = $this->getTypes($query['parts'], isset($userSpecifiedTypes) ? $userSpecifiedTypes : false);
+		$types = $this->getTypes((!$this->type ? $query['parts'] : explode(',', $this->type)), isset($userSpecifiedTypes) ? $userSpecifiedTypes : false);
 		
 		//We don't want these in our query anymore
 		unset($query['nested']['_type'], $query['_index']);
