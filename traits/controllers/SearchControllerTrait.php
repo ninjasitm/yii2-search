@@ -63,18 +63,17 @@ trait SearchControllerTrait {
 		//Parse the query and extract the parts
 		$parts = $this->parseQuery($this->model->text);
 		$query = $dataProvider->query;
-		$command = $query->createCommand();
-		
+		$command = $query->createCommand();		
 		
 		/**
 		 * Setup the query parts
 		 */
 		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
-		//$query->highlight(true);
+		$query->highlight(true);
 		$query->query(isset($parts['query']) ? $parts['query'] : $command->queryParts['query']);
 		$query->orderBy($options['sort']);
 		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
-		$query->where(array_merge((array)$query->where, (array)$parts['filter'], (array)$options['params']));
+		$query->where(array_merge((array)$query->where, (array)$parts['filter'], ArrayHelper::getValue($options, 'where', [])));
 		
 		if($this->forceType === true)
 			$query->type = $options['types'];
@@ -82,6 +81,7 @@ trait SearchControllerTrait {
 			$query->type = (isset($parts['types']) ? $parts['types'] : $options['types']);
 
 		$models = $results = [];
+		
 		if(sizeof($command->queryParts) >= 1 || !empty($this->model->text))
 		{
 			try {
@@ -158,7 +158,7 @@ trait SearchControllerTrait {
 			$ret_val['filter'] = $query['filter'];
 			unset($query['filter']);
 		}
-		$ret_val['types'] = (sizeof($types) == 0 )? '_all' : implode(',', $types);
+		$ret_val['types'] = (sizeof($types) == 0 ) ? '_all' : implode(',', $types);
 		$ret_val['route'] = $this->model->index().'/'.$ret_val['types'].'/_search/';
 		$ret_val['query'] = $this->getTypeBoost($types, $mustMatch, $query);
 		return $ret_val;
@@ -203,15 +203,8 @@ trait SearchControllerTrait {
 			}
 		}
 		else 
-		{
-			$ret_val =  [
-				'updates', 'meetings', 'requests', 
-				'refunds', 'routing', 'ip-hosts', 
-				'carrier-contact', 'carrier-contact-level',
-				'prefixes', 'replies', 'link-pass'
-			];
-		}
-		//exit;
+			$ret_val =  array_keys(\Yii::$app->getModule('nitm-search')->settings[$this->engine]['boost']);
+			
 		return $ret_val;
 	}
 	

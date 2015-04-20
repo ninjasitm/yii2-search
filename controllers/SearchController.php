@@ -101,7 +101,7 @@ class SearchController extends DefaultController
 		]);
 		
 		$dataProvider->pagination->route = '/search/filter';
-		
+				
 		$view = isset($options['view']) ? $options['view'] : 'index';
 		
 		$ret_val['data'] = $this->renderAjax($view, [

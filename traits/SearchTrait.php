@@ -76,6 +76,7 @@ trait SearchTrait {
     {
 		$this->restart();
 		$params = $this->filterParams($params);
+		
         if (!($this->load($params, $this->primaryModel->formName()) && $this->validate(null, true))) {
 			$this->addQueryOptions();
             return $this->dataProvider;
@@ -89,6 +90,7 @@ trait SearchTrait {
 				switch($column->type)
 				{
 					case 'integer':
+					case 'long':
 					case 'boolean':
 					case 'double':
 					case 'array':
@@ -409,7 +411,20 @@ trait SearchTrait {
 		if(sizeof($this->attributes()) >= 1)
 			$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->attributes(), array_fill(0, sizeof($this->attributes()), '')) : $params;
 		if(sizeof($params) >= 1) $this->setProperties(array_keys($params), array_values($params));
-		$params = [$this->primaryModel->formName() => $params];
+		$params = [$this->primaryModel->formName() => array_filter($params, function ($value) {
+			switch(1)
+			{
+				case is_null($value):
+				case $value == '':
+				case empty($value) && $value !== false && $value != 0:
+				return false;
+				break;
+				
+				default:
+				return true;
+				break;
+			}
+		})];
 		return $params;
 	}
 	
