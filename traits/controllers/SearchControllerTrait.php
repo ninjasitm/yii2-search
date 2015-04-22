@@ -45,6 +45,7 @@ trait SearchControllerTrait {
 			]
 		], $options);
 		
+		
 		$this->type = $options['types'];
 		//$this->model->setIndexType($this->type);
 		
@@ -69,7 +70,7 @@ trait SearchControllerTrait {
 		 * Setup the query parts
 		 */
 		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
-		$query->highlight(true);
+		//$query->highlight(true);
 		$query->query(isset($parts['query']) ? $parts['query'] : $command->queryParts['query']);
 		$query->orderBy($options['sort']);
 		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
