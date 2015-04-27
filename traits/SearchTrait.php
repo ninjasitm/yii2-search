@@ -92,7 +92,11 @@ trait SearchTrait {
 					case 'integer':
 					case 'long':
 					case 'boolean':
+					case 'smallint':
+					case 'bigint':
 					case 'double':
+					case 'decimal':
+					case 'float':
 					case 'array':
 					$this->addCondition($column->name, $value);
 					break;
@@ -414,11 +418,12 @@ trait SearchTrait {
 		$params = [$this->primaryModel->formName() => array_filter($params, function ($value) {
 			switch(1)
 			{
-				case is_null($value):
+				/*case is_null($value):
 				case $value == '':
 				case empty($value) && $value !== false && $value != 0:
+				echo "Returning false for $key\n";
 				return false;
-				break;
+				break;*/
 				
 				default:
 				return true;
