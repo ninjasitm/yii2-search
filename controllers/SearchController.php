@@ -103,12 +103,11 @@ class SearchController extends DefaultController
 		$dataProvider->pagination->route = '/search/filter';
 				
 		$view = isset($options['view']) ? $options['view'] : 'index';
-		
 		$ret_val['data'] = $this->renderAjax($view, [
 			"dataProvider" => $dataProvider,
 			'searchModel' => $this->model,
 			'primaryModel' => $this->model->primaryModel,
-			'isWhat' => $type
+			'isWhat' => $type,
 		]);
 		if(!\Yii::$app->request->isAjax)
 		{
@@ -126,6 +125,12 @@ class SearchController extends DefaultController
 			);
 			$this->setResponseFormat('html');
 		}
+		$getParams = array_merge([
+			$type
+		], \Yii::$app->request->get());
+		foreach(['__format', '_type', 'getHtml', 'ajax', 'do'] as $prop)
+			unset($getParams[$prop]);
+		$ret_val['url'] = \Yii::$app->urlManager->createUrl($getParams);
 		$ret_val['message'] = !$dataProvider->getCount() ? $ret_val['message'] : "Found ".$dataProvider->getTotalCount()." results matching your search";
 		Response::viewOptions('args', [
 			"content" => $ret_val['data'],

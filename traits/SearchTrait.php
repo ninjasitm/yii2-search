@@ -19,11 +19,13 @@ trait SearchTrait {
 	 * Should wildcards be used for text searching?
 	 */
 	public $booleanSearch;
+	
 	/**
 	 * Should the or clause be used?
 	 */
 	public $inclusiveSearch;
 	public $exclusiveSearch;
+	public $forceExclusiveBooleanSearch;
 	public $mergeInclusive;
 	
 	public static $sanitizeType = true; 
@@ -240,11 +242,11 @@ trait SearchTrait {
             switch($this->inclusiveSearch && !$this->exclusiveSearch)
 			{
 				case true:
-				$this->conditions['or'][] = [$attribute => $value];
+				$this->conditions['or'][] = $attribute.'='.$value;
 				break;
 				
 				default:
-				$this->conditions['and'][] = [$attribute => $value];
+				$this->conditions['and'][] = $attribute.'='.$value;
 				break;
 			}
 			break;
@@ -255,9 +257,13 @@ trait SearchTrait {
 				case true:
 				$attribute = "LOWER(".$attribute.")";
 				$value = $this->expand($value);
-				switch($this->inclusiveSearch)
+				switch(true)
 				{
-					case true:
+					case ($this->inclusiveSearch && !$this->forceExclusiveBooleanSearch):
+					$this->conditions['or'][] = ['or like', $attribute, $value, false];
+					break;
+					
+					case $this->inclusiveSearch:
 					$this->conditions['or'][] = ['or like', $attribute, $value, false];
 					break;
 					
