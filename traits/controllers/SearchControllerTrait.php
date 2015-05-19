@@ -25,7 +25,7 @@ trait SearchControllerTrait {
 	 * @param array $options
 	 * @return array
 	 */
-	public function search($options=[])
+	public function search($options=[], $modelOptions=[])
 	{
 		$options = array_merge([
 			'types' => '_search',
@@ -44,6 +44,8 @@ trait SearchControllerTrait {
 				'id' => ['order' => 'desc', 'ignore_unmapped' => true]
 			]
 		], $options);
+		
+		$this->model->load($modelOptions);
 		
 		
 		$this->type = $options['types'];

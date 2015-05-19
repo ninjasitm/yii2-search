@@ -242,11 +242,11 @@ trait SearchTrait {
             switch($this->inclusiveSearch && !$this->exclusiveSearch)
 			{
 				case true:
-				$this->conditions['or'][] = $attribute.'='.$value;
+				$this->conditions['or'][] = $attribute.'="'.$value.'"';
 				break;
 				
 				default:
-				$this->conditions['and'][] = $attribute.'='.$value;
+				$this->conditions['and'][] = $attribute.'="'.$value.'"';
 				break;
 			}
 			break;
@@ -454,29 +454,7 @@ trait SearchTrait {
 		
 		if(!class_exists($class))
 			$class = static::className();
-		$model = new $class();
-		$relations = [];
-		foreach($attributes as $name=>$value)
-		{
-			if(is_array($value))
-			{
-				$relations[$name] = $value;
-				unset($attributes[$name]);
-			}
-		}
-		$model->setAttributes($attributes, false);
-		foreach($relations as $name=>$value)
-		{
-			if(is_array($value)) 
-				if($model->hasMethod('get'.$name)) {
-					$model->populateRelation($name, \Yii::createObject(array_merge([
-						'class' => $model->{'get'.$name}()->modelClass
-					], @is_array(current($value)) ? array_pop($value) : $value)));
-				}
-				
-		}
-		static::normalize($model, true);
-		return $model;
+		return new $class;
 	}
 	
 	/**

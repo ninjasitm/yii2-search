@@ -114,5 +114,25 @@ trait ElasticSearchTrait
 	{
 		return array_combine(array_keys((array)$this->columns()), array_keys((array)$this->columns()));
 	}
+	
+	/**
+	 * Custom record population for related records
+	 */
+	public static function populateRecord($record, $row)
+	{
+		parent::populateRecord($record, $row);
+		
+		$relations = [];
+		foreach($row['_source'] as $name=>$value)
+		{
+			if(is_array($value)) 
+				if($record->hasMethod('get'.$name)) {
+					$record->populateRelation($name, \Yii::createObject(array_merge([
+						'class' => $record->{'get'.$name}()->modelClass
+					], @is_array(current($value)) ? array_pop($value) : $value)));
+				}
+		}
+		static::normalize($record, true);
+	}
 }
 ?>
