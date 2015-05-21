@@ -111,7 +111,7 @@ class Module extends \yii\base\Module
 		switch($event->sender->getScenario())
 		{
 			case 'create':
-			$op = '_create';
+			$op = null;
 			$method = 'put';
 			break;
 			

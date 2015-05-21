@@ -1,5 +1,8 @@
 <?php
+
 namespace nitm\search\traits;
+
+use nitm\helpers\ArrayHelper;
 
 /**
  * Traits defined for expanding query scopes until yii2 resolves traits issue
@@ -172,6 +175,9 @@ trait SearchTrait {
         $query = $this->primaryModel->find($this);
         $this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
+			'pagination' => [
+				'pageSize' => ArrayHelper::getValue($this->queryOptions, 'limit', null)
+			]
         ]);
 		$this->conditions = [];
 		$this->setIndexType($oldType);
