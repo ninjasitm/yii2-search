@@ -15,6 +15,11 @@ use yii\elasticsearch\ActiveQuery;
  */
 class ActiveElasticQuery extends ActiveQuery 
 {
+	public function select($fields) {
+		$this->fields($fields);
+		return $this;
+	}
+	
     public function normalizeOrderBy($columns)
     {
         if (is_array($columns)) {
