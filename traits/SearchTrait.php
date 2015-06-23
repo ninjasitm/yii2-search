@@ -168,7 +168,7 @@ trait SearchTrait {
 					'indexType' => $this->type(),
 				];
 			}
-			if($this->enine == 'db')
+			if($this->engine == 'db')
 				$options['noDbInit'] = true;
 			$this->primaryModel = new $class($options);
 		}
@@ -196,13 +196,12 @@ trait SearchTrait {
 		if(!is_null($class) && class_exists($class))
 			$this->primaryModelClass = $class;
 		else {
-			if(!isset($this->primaryModelClass))
-			{
-				$class = $this->getModelClass($this->properClassName(static::formName()));
-				$this->primaryModelClass = class_exists($class) ? $class : static::className();
+			if(!isset($this->primaryModelClass)) {
+				$class = $this->getModelClass($this->properClassName($this->formName()));
+				$this->primaryModelClass = class_exists($class) ? $class : $this->className();
 			}
 			else
-				$this->primaryModelClass = static::className();
+				$this->primaryModelClass = $this->className();
 		}
 	}
 	

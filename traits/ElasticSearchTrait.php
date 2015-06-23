@@ -45,10 +45,7 @@ trait ElasticSearchTrait
 	
 	public function formName()
 	{
-		if(isset(static::$_localType))
-			return \nitm\traits\Data::properClassName(static::$_localType);
-		else
-			return parent::formName();
+		return array_pop(explode('/', get_called_class()));
 	}
 	
 	public static function dbName()
