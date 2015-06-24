@@ -247,11 +247,11 @@ trait SearchTrait {
             switch($this->inclusiveSearch && !$this->exclusiveSearch)
 			{
 				case true:
-				$this->conditions['or'][] = $attribute.'="'.$value.'"';
+				$this->conditions['or'][] = [$attribute => $value];
 				break;
 				
 				default:
-				$this->conditions['and'][] = $attribute.'="'.$value.'"';
+				$this->conditions['and'][] = [$attribute => $value];
 				break;
 			}
 			break;
@@ -382,6 +382,11 @@ trait SearchTrait {
 						$direction = isset($params['order']) ? $params['order'] : SORT_DESC;
 						$this->dataProvider->query->orderBy([$filterValue => $direction]);
 						$this->useEmptyParams = true;
+						unset($params['order']);
+						break;
+						
+						default:
+						$params[$filterName] = $filterValue;
 						break;
 					}
 				}

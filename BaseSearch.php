@@ -5,6 +5,7 @@ namespace nitm\search;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
+use yii\helpers\ArrayHelper;
 
 /**
  * BaseSearch represents the model behind the search form about `nitm\search\BaseSearch`.
@@ -72,5 +73,22 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 	public static function find($model=null, $options=null)
 	{
 		return static::findInternal(\yii\db\ActiveQuery::className(), $model, $options);
+	}
+	
+	public function getDataProvider($query, $parts, $options)
+	{
+		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
+		$query->orderBy(ArrayHelper::getValue($options, 'sort', [
+			'id' => SORT_DESC
+		]));
+		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
+		$query->where(array_merge((array)$query->where, (array)$parts['filter'], ArrayHelper::getValue($options, 'where', [])));
+		
+		//Setup data provider. Manually set the totalcount and models to enable proper pagination
+        $dataProvider = new \yii\data\ActiveDataProvider([
+			'query' => $query,
+		]);
+		
+		return [[], $dataProvider];
 	}
 }

@@ -133,5 +133,69 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		static::setIndexType($model->isWhat());
 		return $model;
 	}
+	
+	public function getDataProvider($query, $parts, $options)
+	{
+		$command = $query->createCommand();	
+		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
+		//$query->highlight(true);
+		$query->query(isset($parts['query']) ? $parts['query'] : ArrayHelper($command, 'queryParts.query', []));
+		$query->orderBy(ArrayHelper::getValue($options, 'sort', [
+			'_score' => ['order' => 'desc'],
+			'id' => ['order' => 'desc', 'ignore_unmapped' => true]
+		]));
+		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
+		$query->where(array_merge((array)$query->where, (array)$parts['filter'], ArrayHelper::getValue($options, 'where', [])));
+		
+		if($this->forceType === true)
+			$query->type = $options['types'];
+		else
+			$query->type = (isset($parts['types']) ? $parts['types'] : $options['types']);
+
+		$models = $results = [];
+		
+		//Setup data provider. Manually set the totalcount and models to enable proper pagination
+        $dataProvider = new \yii\data\ArrayDataProvider;
+		
+		if(sizeof($command->queryParts) >= 1 || !empty($this->model->text))
+		{
+			try {
+				$results = $query->search();
+				$success = true;
+			} catch (\Exception $e) {
+				$success = false;
+				if(defined('YII_DEBUG') && YII_DEBUG === true) {
+					throw $e;
+				}
+			}
+			if($success)
+			{
+				/**
+				 * The models are instantiated in Search::instantiate function
+				 */
+				$models = $results['hits']['hits'];
+				/*if(is_array($results))
+				foreach($results['hits']['hits'] as $attributes)
+				{
+					$properName = \nitm\models\Data::properClassName($attributes['_type']);
+					print_r($attributes);
+					exit;
+					$class = $this->getSearchModelClass($properName);
+					if(!class_exists($class))
+						$class = '\nitm\models\search\\'.$properName;
+					$model = new $class($attributes);
+					$this->model->setIndexType($attributes['_type']);
+					$model->setAttributes($attributes['_source'], false);
+					$models[] = $model;
+				}*/
+				$dataProvider->setTotalCount($results['hits']['total']);
+				//Must happen after setting the total count
+				$dataProvider->setModels($models);
+				$dataProvider->pagination->totalCount = $dataProvider->getTotalCount();
+			}
+		}
+		
+		return [$results, $dataProvider];
+	}
 }
 ?>

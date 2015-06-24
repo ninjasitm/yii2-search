@@ -39,10 +39,6 @@ trait SearchControllerTrait {
 				]
 			],
 			'limit' => \Yii::$app->request->get('limit') ? \Yii::$app->request->get('limit') : 10,
-			'sort' => [
-				'_score' => ['order' => 'desc'],
-				'id' => ['order' => 'desc', 'ignore_unmapped' => true]
-			]
 		], $options);
 		
 		$this->model->load($modelOptions);
@@ -65,69 +61,11 @@ trait SearchControllerTrait {
 		$dataProvider = $this->model->search($params);
 		//Parse the query and extract the parts
 		$parts = $this->parseQuery($this->model->text);
-		$query = $dataProvider->query;
-		$command = $query->createCommand();		
 		
 		/**
 		 * Setup the query parts
 		 */
-		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
-		//$query->highlight(true);
-		$query->query(isset($parts['query']) ? $parts['query'] : $command->queryParts['query']);
-		$query->orderBy($options['sort']);
-		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
-		$query->where(array_merge((array)$query->where, (array)$parts['filter'], ArrayHelper::getValue($options, 'where', [])));
-		
-		if($this->forceType === true)
-			$query->type = $options['types'];
-		else
-			$query->type = (isset($parts['types']) ? $parts['types'] : $options['types']);
-
-		$models = $results = [];
-		
-		if(sizeof($command->queryParts) >= 1 || !empty($this->model->text))
-		{
-			try {
-				$results = $query->search();
-				$success = true;
-			} catch (\Exception $e) {
-				$success = false;
-				if(defined('YII_DEBUG') && YII_DEBUG === true) {
-					throw $e;
-				}
-			}
-			if($success)
-			{
-				/**
-				 * The models are instantiated in Search::instantiate function
-				 */
-				$models = $results['hits']['hits'];
-				/*if(is_array($results))
-				foreach($results['hits']['hits'] as $attributes)
-				{
-					$properName = \nitm\models\Data::properClassName($attributes['_type']);
-					print_r($attributes);
-					exit;
-					$class = $this->getSearchModelClass($properName);
-					if(!class_exists($class))
-						$class = '\nitm\models\search\\'.$properName;
-					$model = new $class($attributes);
-					$this->model->setIndexType($attributes['_type']);
-					$model->setAttributes($attributes['_source'], false);
-					$models[] = $model;
-				}*/
-			}
-		}
-		else
-		{
-			$this->model->addError('info', "Empty string provided!!");
-		}
-		//Setup data provider. Manually set the totalcount and models to enable proper pagination
-        $dataProvider = new \yii\data\ArrayDataProvider;
-		$dataProvider->setTotalCount($results['hits']['total']);
-		//Must happen after setting the total count
-		$dataProvider->setModels($models);
-		$dataProvider->pagination->totalCount = $dataProvider->getTotalCount();
+		list($results, $dataProvider) = $this->model->getDataProvider($dataProvider->query, $parts, $options);
 		//$dataProvider = $this->model->search(\Yii::$app->request->get());
 		return [$results, $dataProvider];
 	}
