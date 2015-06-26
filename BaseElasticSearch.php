@@ -139,7 +139,7 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		$command = $query->createCommand();	
 		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
 		//$query->highlight(true);
-		$query->query(isset($parts['query']) ? $parts['query'] : ArrayHelper($command, 'queryParts.query', []));
+		$query->query(isset($parts['query']) ? $parts['query'] : ArrayHelper::getValue($command, 'queryParts.query', []));
 		$query->orderBy(ArrayHelper::getValue($options, 'sort', [
 			'_score' => ['order' => 'desc'],
 			'id' => ['order' => 'desc', 'ignore_unmapped' => true]
