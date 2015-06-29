@@ -255,7 +255,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			{
 				case 'update':
 				$options = [
-					'queryFilters' => [
+					'queryOptions' => [
 						'indexby' => 'primaryKey'
 					]
 				];
@@ -263,7 +263,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 				
 				case 'delete':
 				$options = [
-					'queryFilters' => [
+					'queryOptions' => [
 						'select' => 'primaryKey',
 					]
 				];
@@ -305,7 +305,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 	 * @param boolean $useClasses Use the namespaced calss to pull data?
 	 * @return bool
 	 */
-	public function prepare($operation='index', $queryFilters=[])
+	public function prepare($operation='index', $queryOptions=[])
 	{
 		$this->type = 'prepare';
 		$this->_operation = 'operation'.ucfirst($operation);
@@ -339,7 +339,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		if(is_array($this->$dataSource) && !count($this->$dataSource))
 			return false;
 		$prepare = 'prepare'.$prepare;
-		$this->$prepare($queryFilters);
+		$this->$prepare($queryOptions);
 		$this->type = $operation;
 	}
 	

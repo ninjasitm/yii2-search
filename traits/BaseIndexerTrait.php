@@ -520,10 +520,10 @@ trait BaseIndexerTrait
 				'args' => [
 					static::getDbModel(), 
 					function ($query, $self) use($options) {
-						$query->select(@$options['queryFilters']['select'])
+						$query->select(@$options['queryOptions']['select'])
 						 ->limit($self->limit, $self->offset);
-						if(isset($options['queryFilters']['where']))
-							call_user_func_array([$query, 'where'], $options['queryFilters']['where']);
+						if(isset($options['queryOptions']['where']))
+							call_user_func_array([$query, 'where'], $options['queryOptions']['where']);
 						$query->run();
 						$self->parseChunk($query->result(DB::R_ASS, true));
 						return $self->runOperation();

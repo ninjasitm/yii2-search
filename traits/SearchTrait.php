@@ -17,7 +17,6 @@ trait SearchTrait {
 	public $primaryModelClass;
 	public $useEmptyParams;
 	
-	public $queryOptions = [];
 	/**
 	 * Should wildcards be used for text searching?
 	 */
@@ -120,7 +119,6 @@ trait SearchTrait {
 			}
 		}
 		$this->addConditions();
-		$this->addQueryOptions();
         return $this->dataProvider;
     }
 	
@@ -132,9 +130,7 @@ trait SearchTrait {
 		$query = \Yii::createObject($className, [get_called_class()]);
 		if(is_object($model))
 		{
-			if(!empty($model->withThese))
-				$query->with($model->withThese);
-			foreach($model->queryFilters as $filter=>$value)
+			foreach($model->queryOptions as $filter=>$value)
 			{
 				switch(strtolower($filter))
 				{
@@ -143,13 +139,13 @@ trait SearchTrait {
 					case 'orderby':
 					if(is_string($value) && ($value == 'primaryKey'))
 					{
-						unset($model->queryFilters[$filter]);
+						unset($model->queryOptions[$filter]);
 						$query->$filter(static::primaryKey()[0]);
 					}
 					break;
 				}
 			}
-			static::applyFilters($query, $model->queryFilters);
+			static::applyFilters($query, $model->queryOptions);
 		}
 		return $query;
 	}
@@ -326,36 +322,6 @@ trait SearchTrait {
 				$this->{$name} = $values[$idx];
 			}
 			break;
-		}
-	}
-	
-	private function addQueryOptions()
-	{
-		foreach((array)$this->queryOptions as $type=>$queryOpts)
-		{
-			switch(strtolower($type))
-			{
-				case 'where':
-				case 'andwhere':
-				case 'orwhere':
-				case 'limit':
-				case 'with':
-				case 'orderby':
-				case 'indexby':
-				case 'groupby':
-				case 'addgroupby':
-				case 'join':
-				case 'leftjoin':
-				case 'rightjoin':
-				case 'innerjoin':
-				case 'having':
-				case 'andhaving':
-				case 'orhaving':
-				case 'union':
-				case 'select':
-				$this->dataProvider->query->$type($queryOpts);
-				break;
-			}
 		}
 	}
 	

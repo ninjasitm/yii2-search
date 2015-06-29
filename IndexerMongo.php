@@ -167,7 +167,7 @@ class IndexerMongo extends BaseMongo
 			{
 				case 'update':
 				$options = [
-					'queryFilters' => [
+					'queryOptions' => [
 						'indexby' => 'primaryKey'
 					]
 				];
@@ -175,7 +175,7 @@ class IndexerMongo extends BaseMongo
 				
 				case 'delete':
 				$options = [
-					'queryFilters' => [
+					'queryOptions' => [
 						'select' => 'primaryKey',
 					]
 				];
@@ -211,7 +211,7 @@ class IndexerMongo extends BaseMongo
 	 * @param boolean $useClasses Use the namespaced calss to pull data?
 	 * @return bool
 	 */
-	public function prepare($operation='index', $queryFilters=[])
+	public function prepare($operation='index', $queryOptions=[])
 	{
 		$this->type = 'prepare';
 		$this->_operation = 'operation'.ucfirst($operation);
@@ -240,7 +240,7 @@ class IndexerMongo extends BaseMongo
 		if(is_array($this->$dataSource) && empty($this->$dataSource))
 			return false;
 		$prepare = 'prepare'.$prepare;
-		$this->$prepare($queryFilters);
+		$this->$prepare($queryOptions);
 		$this->type = $operation;
 	}
 	
