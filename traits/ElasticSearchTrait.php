@@ -45,7 +45,7 @@ trait ElasticSearchTrait
 	
 	public function formName()
 	{
-		return array_pop(explode('/', get_called_class()));
+		return array_pop(explode('\\', get_called_class()));
 	}
 	
 	public static function dbName()
