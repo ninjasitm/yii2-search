@@ -14,6 +14,8 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 {	
 	use traits\SearchTrait;
 	
+	public $engine = 'db';
+	
 	public function init()
 	{
 		$this->setPrimaryModelClass(static::formName());

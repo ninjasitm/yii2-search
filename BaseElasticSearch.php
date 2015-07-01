@@ -12,6 +12,7 @@ use nitm\models\DB;
 class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements SearchInterface
 {
 	use traits\ElasticSearchTrait, traits\SearchTrait, \nitm\traits\Data, \nitm\traits\Query, \nitm\traits\Relations;
+	public $engine = 'elasticsearch';
 	
 	public function init()
 	{
@@ -129,6 +130,8 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 	
 	public static function instantiate($attributes)
 	{
+		if(!isset($attributes['_source']))
+			$attributes['_source'] = [];
 		$model = static::instantiateInternal($attributes['_source'], $attributes['_type']);
 		static::setIndexType($model->isWhat());
 		return $model;
@@ -141,8 +144,7 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		//$query->highlight(true);
 		$query->query(isset($parts['query']) ? $parts['query'] : ArrayHelper::getValue($command, 'queryParts.query', []));
 		$query->orderBy(ArrayHelper::getValue($options, 'sort', [
-			'_score' => ['order' => 'desc'],
-			'id' => ['order' => 'desc', 'ignore_unmapped' => true]
+			'id' => ['order' => 'desc'],
 		]));
 		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
 		$query->where(array_merge((array)$query->where, (array)$parts['filter'], ArrayHelper::getValue($options, 'where', [])));

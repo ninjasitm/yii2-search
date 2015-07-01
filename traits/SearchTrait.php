@@ -165,11 +165,16 @@ trait SearchTrait {
 				];
 			}
 			if($this->engine == 'db')
-				$options['noDbInit'] = true;
-			$this->primaryModel = new $class($options);
+				$this->primaryModel = new $class([
+					'noDbInit' => true
+				]);
+			else
+				$this->primaryModel = new static;
 		}
-        $query = $this->primaryModel->find($this);
-        $this->dataProvider = new \yii\data\ActiveDataProvider([
+		
+		$query = $this->primaryModel->find($this);
+        
+		$this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
 			'pagination' => [
 				'pageSize' => ArrayHelper::getValue($this->queryOptions, 'limit', null)

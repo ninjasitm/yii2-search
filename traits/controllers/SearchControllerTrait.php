@@ -57,8 +57,8 @@ trait SearchControllerTrait {
 		/**
 		 * Setup data parts
 		 */
-		
 		$dataProvider = $this->model->search($params);
+		
 		//Parse the query and extract the parts
 		$parts = $this->parseQuery($this->model->text);
 		

@@ -119,15 +119,54 @@ trait ElasticSearchTrait
 	{
 		parent::populateRecord($record, $row);
 		
+		if(!isset($row['_source']))
+			return;
+		
 		$relations = [];
 		foreach($row['_source'] as $name=>$value)
 		{
-			if(is_array($value)) 
-				if($record->hasMethod('get'.$name)) {
-					$record->populateRelation($name, \Yii::createObject(array_merge([
-						'class' => $record->{'get'.$name}()->modelClass
-					], @is_array(current($value)) ? array_pop($value) : $value)));
+			$originalName = $name;
+			switch(1)
+			{
+				case $name == 'type':
+				$name = ['typeof', 'type'];
+				break;
+				
+				case $name == 'id':
+				continue;
+				break;
+				
+				default:
+				$name = [$name];
+				break;
+			}
+			if(is_array($value) && $value != []) {
+				
+				$value = is_array(current($value)) ? $value : [$value];
+				
+				foreach((array)$name as $n) 
+				{
+					if($record->hasMethod('get'.$n)) {
+						$relation = $record->{'get'.$n}();
+						$value = array_map(function ($attributes)use($relation) {
+							return \Yii::createObject(array_merge([
+								'class' => $relation->modelClass
+							], $attributes));					
+						}, $value);
+						
+						if(!$relation->multiple)
+							$value = current($value);
+						if(count($value))
+							$record->populateRelation($originalName, $value);
+						
+						if($record->hasAttribute($originalName)) {
+							$record->setAttribute($originalName, null);
+							$record->setOldAttribute($originalName, null);
+							break;
+						}
+					}
 				}
+			}
 		}
 		static::normalize($record, true);
 	}

@@ -183,6 +183,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			break;
 			
 			case 'tinyint':
+			case 'int':
 			switch($info['dbType'])
 			{
 				case 'tinyint(1)':
@@ -200,7 +201,6 @@ class IndexerElasticsearch extends BaseElasticSearch
 			break;
 			
 			case 'bigint':
-			case 'int':
 			$ret_val['store'] = true;
 			$ret_val['include_in_all'] = true;
 			$ret_val['type'] = 'long';
@@ -226,6 +226,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			$ret_val['store'] = true;
 			$ret_val['index'] = 'analyzed';
 			$ret_val['boost'] = 2;
+			$ret_val['norms']['enabled'] = true;
 			$ret_val['include_in_all'] = true;
 			break;
 		}
