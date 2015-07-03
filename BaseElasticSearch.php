@@ -144,7 +144,7 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		//$query->highlight(true);
 		$query->query(isset($parts['query']) ? $parts['query'] : ArrayHelper::getValue($command, 'queryParts.query', []));
 		$query->orderBy(ArrayHelper::getValue($options, 'sort', [
-			'id' => ['order' => 'desc'],
+			'_id' => 'desc',
 		]));
 		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
 		$query->where(array_merge((array)$query->where, (array)$parts['filter'], ArrayHelper::getValue($options, 'where', [])));
@@ -198,6 +198,19 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		}
 		
 		return [$results, $dataProvider];
+	}
+	
+	/**
+	 * Custom record population for related records
+	 */
+	public static function populateRecord($record, $row)
+	{
+		if(!isset($row['_source']))
+			return;
+			
+		parent::populateRecord($record, $row);
+		
+		static::populateRelations($record, $row);
 	}
 }
 ?>

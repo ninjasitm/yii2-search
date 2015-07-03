@@ -29,7 +29,7 @@ class SearchController extends DefaultController
 		$class = !isset($this->searchClass) ? \nitm\search\BaseSearch::className() : $this->searchClass;
 		$this->model = new $class([
 			'scenario' => 'default',
-			'primaryModelClass' => $class::className(),
+			//'primaryModelClass' => $class::className(),
 			'useEmptyParams' => true,
 		]);
 		$class::$sanitizeType = false;

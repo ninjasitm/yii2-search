@@ -18,7 +18,7 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 	
 	public function init()
 	{
-		$this->setPrimaryModelClass(static::formName());
+		//$this->setPrimaryModelClass(static::formName());
 	}
 	
 	public function behaviors()
@@ -34,25 +34,25 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 	public static function tableName()
 	{
 		$class = get_called_class();
-		$model = new $class;
-		if($model->hasProperty('namespace') && !empty($class::$namespace))
-			$namespace = $class::$namespace;
-		else
-		{
-			$reflectedModel = new \ReflectionClass($class);
-			$namespace = explode('\\', $reflectedModel->getNamespaceName());
-			$namespace = implode('\\', ($namespace[sizeof($namespace)-1] == 'search' ? array_slice($namespace, 0, sizeof($namespace)-1) : $namespace));
+		if(!isset(static::$tableNames[$class])) {
+			$model = new $class;
+			if($model->hasProperty('namespace') && !empty($class::$namespace))
+				$namespace = $class::$namespace;
+			else
+			{
+				$reflectedModel = new \ReflectionClass($class);
+				$namespace = explode('\\', $reflectedModel->getNamespaceName());
+				$namespace = implode('\\', ($namespace[sizeof($namespace)-1] == 'search' ? array_slice($namespace, 0, sizeof($namespace)-1) : $namespace));
+			}
+			$modelClass = (new $class())->getModelClass(static::className());
+			if(class_exists($modelClass)) {
+				self::$tableNames[$class] = (new $modelClass)->tableName();
+			}
+			else {
+				self::$tableNames[$class] = '';
+			}
 		}
-		$modelClass = (new $class())->getModelClass(static::className());
-		if(class_exists($modelClass))
-		{
-			static::$tableName = (new $modelClass)->tableName();
-		}
-		else
-		{
-			static::$tableName = '';
-		}
-		return static::$tableName;
+		return self::$tableNames[$class];
 	}
 	
 	public static function type()
@@ -92,5 +92,16 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 		]);
 		
 		return [[], $dataProvider];
+	}
+	
+	/**
+	 * Custom record population for related records
+	 */
+	public static function populateRecord($record, $row)
+	{
+		if(isset($row['_source']))
+			$row = $row['_source'];
+		parent::populateRecord($record, $row);
+		static::populateRelations($record, $row);
 	}
 }

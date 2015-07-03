@@ -97,8 +97,8 @@ class IndexerElasticsearch extends BaseElasticSearch
 				}
 				$this->columns = $event->sender->attributes();
 				$attributes = array_keys($this->columns);
-				if(is_array($options) && isset($options['withThese']))
-					$attributes = array_merge($attributes, $options['withThese']);
+				if(is_array($options) && isset($options['queryOptions']['with']))
+					$attributes = array_merge($attributes, $options['queryOptions']['with']);
 					
 				/*
 				 * Update the mapping
@@ -125,7 +125,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		$mapping[$this->index()]['mappings'][$this->type()]['_all'] = ['enabled' => true];
 		foreach($attributes as $attribute)
 		{
-			switch(isset($options['withThese']) && in_array($attribute, (array)$options['withThese']))
+			switch(isset($options['queryOptions']['with']) && in_array($attribute, (array)$options['queryOptions']['with']))
 			{
 				case true:
 				$class = $this->namespace.$this->properClassName($this->type());
@@ -183,10 +183,11 @@ class IndexerElasticsearch extends BaseElasticSearch
 			break;
 			
 			case 'tinyint':
-			case 'int':
+			case 'boolean':
 			switch($info['dbType'])
 			{
 				case 'tinyint(1)':
+				case 'boolean':
 				$ret_val['type'] = 'boolean';
 				$ret_val['null_value'] = false;
 				break;
@@ -207,9 +208,14 @@ class IndexerElasticsearch extends BaseElasticSearch
 			break;
 			
 			case 'smallint':
+			case 'int':
 			$ret_val['type'] = 'integer';
 			$ret_val['store'] = true;
 			$ret_val['include_in_all'] = true;
+			$ret_val['null_value'] = 0;
+			$ret_val['ignore_malformed'] = true;
+			$ret_val['doc_values'] = true;
+			$ret_val['index'] = 'not_analyzed';
 			break;
 			
 			case 'resource':
@@ -456,7 +462,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 	protected function runOperation()
 	{
 		$result = call_user_func([$this, $this->_operation]);
-		$resultArray = json_decode($result, true);
+		$resultArray = @json_decode($result, true);
 		$this->log("\n\t\t\t"."Result: Took \e[1m".$resultArray['took']."ms\e[0m Errors: ".($resultArray['errors'] ? "\e[31myes" : "\e[32mno")."\e[0m");
 		$this->log("\n\t\t\t".($this->verbose >= 2 ? "Debug: ".var_export(@$result, true) : ''), 2);
 	}
@@ -468,7 +474,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		];
 		$now = strtotime('now');
 		$index_update = [];
-		if(($this->mode != 'river') && (sizeof($this->bulkSize('index')) >= 1))
+		if(($this->mode != 'river') && ($this->bulkSize('index') >= 1))
 		{
 			$create = [];
 			$this->log("\n\t\tIndexing :");
@@ -476,7 +482,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			{
 				$this->normalize($item);
 				$this->progress('index', null, null, null, true);
-				$create[] = json_encode(['index' => ['_type' => static::type(), '_id' => $item['_id']]]);
+				$create[] = json_encode(['index' => ['_type' => static::type(), '_id' => $item['id']]]);
 				$item['_md5'] = $this->fingerprint($item);
 				$create[] = json_encode($item);
 				$this->totals['current']++;
@@ -497,10 +503,10 @@ class IndexerElasticsearch extends BaseElasticSearch
 			}
 			$ret_val = $result;
 		}
+		
 		if(isset($put) && $put == true)
-		{
 			$this->updateIndexed();
-		}
+			
 		$this->bulk[$this->type] = [];
 		return $ret_val;
 	}
@@ -515,7 +521,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			 * First get all of the ids and fingerprints
 			 */
 			$this->jdbc['options']['ids'] = array_map(function ($value) {
-				return $value['_id'];
+				return $value['id'];
 			}, $this->bulk('update'));
 			$existing = $this->apiInternal('get', [
 				'url' => '_mget',
@@ -525,20 +531,20 @@ class IndexerElasticsearch extends BaseElasticSearch
 			{
 				$this->normalize($item);
 				$this->progress('update', null, null, null, true);
-				if(array_key_exists($item['_id'], $this->bulk('update')))
+				if(array_key_exists($item['id'], $this->bulk('update')))
 				{
-					if($self->bulk('update', $item['_id'])['_md5'] != $item['_md5'])
+					if($self->bulk('update', $item['id'])['_md5'] != $item['_md5'])
 					{
-						$update[] = ['update' => ['_id' => $item['_id']]];
-						unset($item['_id']);
-						$item['_md5'] = $this->fingerprint($this->bulk('update', $item['_id']));
+						$update[] = ['update' => ['_id' => $item['id']]];
+						unset($item['id']);
+						$item['_md5'] = $this->fingerprint($this->bulk('update', $item['id']));
 						$update[] = $item;
 						$sel->totals['current']++;
 					}
 				}
 				else
 				{
-					$delete[] = $item['_id'];
+					$delete[] = $item['id'];
 				}
 			};
 			$url = [$this->index(), $this->type(), '_bulk'];
@@ -581,11 +587,11 @@ class IndexerElasticsearch extends BaseElasticSearch
 				foreach($this->bulk('delete') as $idx=>$item)
 				{
 					$this->progress('delete', null, null, null, true);
-					if(isset($item['_id']) && !is_null($item['_id']))
+					if(isset($item['id']) && !is_null($item['id']))
 					{
 						$this->bulkSet('delete', $idx, [
 							'delete' => [
-								'_id' => $item['_id'],
+								'_id' => $item['id'],
 								'_type' => static::type(),
 								'_index' => static::index()
 							]

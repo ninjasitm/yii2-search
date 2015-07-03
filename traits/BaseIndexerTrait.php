@@ -333,7 +333,7 @@ trait BaseIndexerTrait
 		}
 		else
 		{
-			$this->bulkSet($this->type, []);
+			$this->bulkSet($this->type, null);
 			$this->log("\n\t\tNothing to ".$this->type." from: ".static::index()."->".static::type());	
 		}
 		return $ret_val;

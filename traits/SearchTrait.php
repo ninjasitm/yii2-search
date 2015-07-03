@@ -32,6 +32,7 @@ trait SearchTrait {
 	
 	public static $sanitizeType = true; 
 	public static $namespace = '\nitm\models\\';
+	public static $tableNames;
 	
 	protected $dataProvider;
 	protected $conditions = [];
@@ -70,9 +71,7 @@ trait SearchTrait {
     {
 		$ret_val = [];
 		foreach($this->attributes() as $attr)
-		{
 			$ret_val[$attr] = \Yii::t('app', $this->properName($attr));
-		}
 		return $ret_val;
 	}
 
@@ -198,7 +197,7 @@ trait SearchTrait {
 			$this->primaryModelClass = $class;
 		else {
 			if(!isset($this->primaryModelClass)) {
-				$class = $this->getModelClass($this->properClassName($this->formName()));
+				$class = $this->getModelClass($this->properClassName($this->type()));;
 				$this->primaryModelClass = class_exists($class) ? $class : $this->className();
 			}
 			else
@@ -335,7 +334,11 @@ trait SearchTrait {
 	 */
 	private function filterParams($params=[])
 	{
-		$params = isset($params[$this->primaryModel->formName()]) ? $params[$this->primaryModel->formName()] : (is_array($params) ? $params : []);
+		if(isset($params[$this->properName($this->type())]) && count(explode(',', $this->type())) == 1)
+			$params = $params[$this->properName($this->type())];
+		else
+			$params = isset($params[$this->primaryModel->formName()]) ? $params[$this->primaryModel->formName()] : (is_array($params) ? $params : []);
+		
 		foreach($params as $name=>$value)
 		{
 			switch($name)
@@ -456,7 +459,25 @@ trait SearchTrait {
 			switch(array_shift(explode('(', $info['dbType'])))
 			{
 				case 'tinyint':
-				$item[$f] = $info['dbType'] == 'tinyint(1)' ? (boolean)$v : $v;
+				$item[$f] = $info['dbType'] == 'tinyint(1)' ? (boolean)$v : (int)$v;
+				break;
+				
+				case 'int':
+				case 'integer':
+				case 'long':
+				$item[$f] = (int)$item[$f];
+				break;
+				
+				case 'float':
+				$item[$f] = (float)$item[$f];
+				break;
+				
+				case 'double':
+				$item[$f] = (double)$item[$f];
+				break;
+				
+				case 'real':
+				$item[$f] = (real)$item[$f];
 				break;
 				
 				case 'blob':
@@ -478,20 +499,10 @@ trait SearchTrait {
 				case 'text':
 				case 'varchar':
 				case 'string':
-				if(is_array($v)) {
+				if(is_array($v))
 					$item[$f] = static::normalize($v, $decode, $columns);
-				}
-				/*else {
-					$args = [$v, ENT_COMPAT|ENT_HTML5, ini_get("default_charset")];
-					if($decode)
-						$func = 'html_entity_decode';
-					else
-					{
-						$func = 'htmlentities';
-						$args[] = false;
-					}
-					$item[$f] = call_user_func_array($func, $args);
-				}*/
+				else
+					$item[$f] = (string)$item[$f];
 				break;
 			}
 		}
@@ -511,6 +522,57 @@ trait SearchTrait {
 			]);
 		}
 		return $defaultColumns;
+	}
+	
+	protected function populateRelations($record, $row) 
+	{
+		$relations = [];
+		foreach($row as $name=>$value)
+		{
+			$originalName = $name;
+			switch(1)
+			{
+				case $name == 'type':
+				$name = ['typeof', 'type'];
+				break;
+				
+				case $name == 'id':
+				continue;
+				break;
+				
+				default:
+				$name = [$name];
+				break;
+			}
+			if(is_array($value) && $value != []) {
+				
+				$value = is_array(current($value)) ? $value : [$value];
+				
+				foreach((array)$name as $n) 
+				{
+					if($record->hasMethod('get'.$n)) {
+						$relation = $record->{'get'.$n}();
+						$value = array_map(function ($attributes)use($relation) {
+							return \Yii::createObject(array_merge([
+								'class' => $relation->modelClass
+							], $attributes));					
+						}, $value);
+						
+						if(!$relation->multiple)
+							$value = current($value);
+						if(count($value))
+							$record->populateRelation($originalName, $value);
+						
+						if($record->hasAttribute($originalName)) {
+							$record->setAttribute($originalName, null);
+							$record->setOldAttribute($originalName, null);
+							break;
+						}
+					}
+				}
+			}
+		}
+		static::normalize($record, true);
 	}
 }
 ?>

@@ -40,7 +40,7 @@ class ActiveElasticQuery extends ActiveQuery
                 } else {
                     $result[$column] = [
 						'ignore_unmapped' => true,
-						'order' => SORT_ASC
+						'order' => 'desc'
 					];
                 }
             }

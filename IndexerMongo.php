@@ -83,8 +83,8 @@ class IndexerMongo extends BaseMongo
 				}
 				$this->columns = $event->sender->attributes();
 				$attributes = array_keys($this->columns);
-				if(is_array($options) && isset($options['withThese']))
-					$attributes = array_merge($attributes, $options['withThese']);
+				if(is_array($options) && isset($options['queryOptions']['with']))
+					$attributes = array_merge($attributes, $options['queryOptions']['with']);
 					
 				/*
 				 * Update the mapping
@@ -110,7 +110,7 @@ class IndexerMongo extends BaseMongo
 		$mapping = count($mapping) == 0 ? [] : $mapping;
 		foreach($attributes as $attribute)
 		{
-			switch(isset($options['withThese']) && in_array($attribute, (array)$options['withThese']))
+			switch(isset($options['queryOptions']['with']) && in_array($attribute, (array)$options['queryOptions']['with']))
 			{
 				case true:
 				$class = $this->namespace.$this->properClassName($event->sender->type());
@@ -326,7 +326,7 @@ class IndexerMongo extends BaseMongo
 		];
 		$now = strtotime('now');
 		$index_update = [];
-		if(($this->mode != 'river') && (sizeof($this->bulkSize('index')) >= 1))
+		if(($this->mode != 'river') && ($this->bulkSize('index') >= 1))
 		{
 			$create = [];
 			$this->log("\n\t\tIndexing :");

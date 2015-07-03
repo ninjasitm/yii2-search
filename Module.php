@@ -27,7 +27,6 @@ class Module extends \yii\base\Module
 	private $_supportedIndexers = [
 		'elasticsearch' => '\nitm\search\IndexerElasticsearch',
 		'mongo' => '\nitm\search\IndexerMongo',
-		
 		'db' => '\nitm\search\Indexer',
 	];
 	
@@ -69,16 +68,10 @@ class Module extends \yii\base\Module
 	
 	public function getIndex()
 	{
-		switch(1)
-		{
-			case isset($this->index):
+		if(isset($this->index))
 			$ret_val = $this->index;
-			break;
-			
-			default:
+		else
 			$ret_val = \nitm\models\DB::getDbName();
-			break;
-		}
 		return $ret_val;
 	}
 	

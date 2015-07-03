@@ -41,10 +41,14 @@ trait SearchControllerTrait {
 			'limit' => \Yii::$app->request->get('limit') ? \Yii::$app->request->get('limit') : 10,
 		], $options);
 		
+		
 		$this->model->load($modelOptions);
 		
 		
 		$this->type = $options['types'];
+		if(count(explode(',', $this->type)) == 1)
+			$this->model->setIs($this->type);
+			
 		//$this->model->setIndexType($this->type);
 		
 		//We can force types even if the user specified them in teh query string
@@ -66,6 +70,7 @@ trait SearchControllerTrait {
 		 * Setup the query parts
 		 */
 		list($results, $dataProvider) = $this->model->getDataProvider($dataProvider->query, $parts, $options);
+		
 		//$dataProvider = $this->model->search(\Yii::$app->request->get());
 		return [$results, $dataProvider];
 	}
