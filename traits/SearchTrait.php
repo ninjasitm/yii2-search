@@ -39,7 +39,7 @@ trait SearchTrait {
 	
 	public function scenarios()
 	{
-		return ['default' => $this->attributes()];
+		return ['default' => ($this->primaryModel->tableName() ? $this->attributes() : ['id'])];
 	}
 	
 	public function __set($name, $value)
@@ -385,6 +385,9 @@ trait SearchTrait {
 	{
 		$params = [];
 		$this->mergeInclusive = true;
+		if(!$this->primaryModel->tableName())
+			return $params;
+		
 		foreach($this->primaryModel->getTableSchema()->columns as $column)
 		{
 			switch($column->phpType)
@@ -400,10 +403,11 @@ trait SearchTrait {
 	
 	protected function getParams($params)
 	{
-		$params = array_intersect_key($params, array_flip($this->attributes()));
-		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(empty($params) && !$this->useEmptyParams)) : $this->exclusiveSearch;
-		if(sizeof($this->attributes()) >= 1)
-			$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->attributes(), array_fill(0, sizeof($this->attributes()), '')) : $params;
+		if($this->primaryModel->tableName()) {
+			$params = array_intersect_key($params, array_flip($this->attributes()));
+			if(sizeof($this->attributes()) >= 1)
+				$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->attributes(), array_fill(0, sizeof($this->attributes()), '')) : $params;
+		}
 		if(sizeof($params) >= 1) $this->setProperties(array_keys($params), array_values($params));
 		$params = [$this->primaryModel->formName() => array_filter($params, function ($value) {
 			switch(1)
@@ -420,6 +424,8 @@ trait SearchTrait {
 				break;
 			}
 		})];
+		
+		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(empty(current($params)) && !$this->useEmptyParams)) : $this->exclusiveSearch;
 		return $params;
 	}
 	
@@ -439,6 +445,44 @@ trait SearchTrait {
 		if(!class_exists($class))
 			$class = static::className();
 		return new $class;
+	}
+	
+	/**
+	 * Get a synonym value
+	 */
+	protected function getFilterSynonym($filter, $value)
+	{
+		$value = $this->translateValue($value);
+		$ret_val = [$filter, $value];
+		switch($filter)
+		{
+			case 'open':
+			$filter = 'closed';
+			$value = (int)!$value;
+			break;
+		}
+		return $ret_val;
+	}
+	
+	/**
+	 * Translate a value
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	protected function translateValue($value)
+	{
+		$ret_val = $value;
+		switch(1)
+		{
+			case $value == 'false':
+			$ret_val = 0;
+			break;
+			
+			case $value == 'true':
+			$ret_val = 1;
+			break; 
+		}
+		return $ret_val;
 	}
 	
 	/**
@@ -552,7 +596,7 @@ trait SearchTrait {
 				{
 					if($record->hasMethod('get'.$n)) {
 						$relation = $record->{'get'.$n}();
-						$value = array_map(function ($attributes)use($relation) {
+						$value = array_map(function ($attributes) use($relation) {
 							return \Yii::createObject(array_merge([
 								'class' => $relation->modelClass
 							], $attributes));					
@@ -560,8 +604,16 @@ trait SearchTrait {
 						
 						if(!$relation->multiple)
 							$value = current($value);
-						if(count($value))
+							
+						if(count($value)) {
+							if(is_array($value))
+								array_walk($value, function ($related) use($n, $value){
+									static::populateRelations($related, ArrayHelper::toArray($related));
+								});
+							else
+								static::populateRelations($value, ArrayHelper::toArray($value));
 							$record->populateRelation($originalName, $value);
+						}
 						
 						if($record->hasAttribute($originalName)) {
 							$record->setAttribute($originalName, null);

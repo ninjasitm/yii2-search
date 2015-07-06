@@ -66,7 +66,10 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 	}
 	
 	public function columns() {
-		return static::getTableSchema()->columns;
+		if(static::tableName())
+			return static::getTableSchema()->columns;
+		else 
+			return [];
 	}
 	
 	/**
@@ -103,5 +106,77 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 			$row = $row['_source'];
 		parent::populateRecord($record, $row);
 		static::populateRelations($record, $row);
+	}
+	
+	public function attributes()
+	{
+		if(static::tableName())
+			return parent::attributes();
+		else
+			return [];
+	}
+	
+	
+	/**
+	 * Parse the query and extract speciial named parameters
+	 * @param array $options
+	 * @return array
+	 */
+	public function parseQuery($string=null)
+	{
+		if(is_null($string))
+			return [];
+		$this->text = $string;
+		$ret_val = $this->filter(explode(' ', $string), ['_type']);
+		return $ret_val;
+	}
+	
+	/**
+	 * Fitler an array based on colon (:) separated parameters
+	 * @param array $array
+	 * @param array $filters
+	 * @return array
+	 */
+	protected function filter($array, $filters=null)
+	{
+		$ret_val = [];
+		$string = $array;
+		while(list($idx, $part) = each($array))
+		{
+			$parts = explode(':', $part);
+			switch(1)
+			{
+				case (sizeof($parts = explode(':', $part)) == 2) || ($filters === true):
+				$ret_val['filter'][$parts[0]] = explode(',', $parts[1]);
+				unset($string[$idx]);
+				break;
+				
+				//If this is an equal query: name=value then split it accordingly
+				case((sizeof($parts = explode('=', $part)) == 2)):
+				$ret_val['filter'][$parts[0]] = $parts[1];
+				unset($string[$idx]);
+				break;
+				
+				default:
+				$next = isset($array[$idx+1]) ? $array[$idx+1] : '';
+				$prev = (isset($array[$idx-1]) && strpos($array[$idx-1], ':') !== false) ? $array[$idx-1] : false;
+				$prevKey = $prev !== false ? array_shift(explode(':', $prev)) : false;
+				/** 
+				 * If this is a string and the next part in the $array is a filter 
+				 * then combine this with the previous string value
+				 */
+				if(($prevKey !== false) && (((strpos($next, ':') !== false) && sizeof($parts) == 1) || !$next) && ($prevKey && is_array($filters) && !in_array($prevKey, $filters)))
+				{
+					$isNested = strpos($prev, ':') !== false;
+					$ret_val['filter'][$prevKey][0] .= ' '.$parts[0];
+					unset($string[$idx]);
+				}
+				break;
+			}
+		}
+		
+		$ret_val['parts'] = $string;
+		return $ret_val;
+		
 	}
 }

@@ -444,13 +444,13 @@ trait BaseIndexerTrait
 	public static function prepareModel($model, $options)
 	{
 		$ret_val = $model->getAttributes();
-		if(isset($options['withThese']))
+		if(isset($options['queryOptions']['with']))
 		{
-			foreach((array) $options['withThese'] as $with)
+			foreach((array) $options['queryOptions']['with'] as $with)
 			{
 				$relation = 'get'.$with;
 				if($model->hasMethod($relation)) {
-					$query =  $model->$relation();
+					$query = $model->$relation();
 					$ret_val[$with] = $query->asArray()->all();
 					if(!$query->multiple)
 						$ret_val[$with] = array_shift($ret_val[$with]);
@@ -492,10 +492,9 @@ trait BaseIndexerTrait
 								->offset($self->offset)
 								->all();
 							//Doing this here to merge related records
-							foreach($results as $idx=>$related)
+							foreach($results as $idx=>$record)
 							{
-								$related = array_merge($related->getAttributes(), ArrayHelper::toArray($related->relatedRecords));
-								$results[$idx] = $related;
+								$results[$idx] = array_merge($record->toArray(), static::populateRelatedRecords($record));
 							}
 							$self->parseChunk($results);
 							return $self->runOperation();
@@ -504,6 +503,22 @@ trait BaseIndexerTrait
 				]);
 			}
 		}
+	}
+	
+	protected static function populateRelatedRecords($object)
+	{
+		$ret_val = [];
+		foreach($object->relatedRecords as $name=>$value)
+		{
+			if(is_array($value))
+				foreach($value as $v)
+					$ret_val[$name][] = array_merge(ArrayHelper::toArray($v), static::populateRelatedRecords($v));
+			else if(is_object($value) && $value->hasMethod('get'.$name))
+				$ret_val[$name] = array_merge($value->toArray(), static::populateRelatedRecords($value));
+			else
+				$ret_val[$name] = ArrayHelper::toArray($value);
+		}
+		return $ret_val;
 	}
 	
 	/**

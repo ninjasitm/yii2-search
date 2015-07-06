@@ -4,6 +4,8 @@ namespace nitm\search;
 
 class Module extends \yii\base\Module
 {	
+	use \nitm\traits\EventTraits;
+	
 	/**
 	 * @string the this id
 	 */
@@ -32,8 +34,10 @@ class Module extends \yii\base\Module
 	
 	private $_indexers = [];
 	
-	const EVENT_PREPARE = 'prepare';
-	const EVENT_PROCESS = 'process';
+	const EVENT_START = 'nitm.search.start.single';
+	const EVENT_PROCESS = 'nitm.search.process.single';
+	const EVENT_START_INDEX = 'nitm.search.start.index';
+	const EVENT_PROCESS_INDEX = 'nitm.search.process.index';
 
 	public function init()
 	{
@@ -43,7 +47,11 @@ class Module extends \yii\base\Module
 		 */
 		\Yii::setAlias('nitm/search', dirname(__DIR__));
 		
-		$this->on(self::EVENT_PROCESS, [$this, 'processRecord']);
+		//Setup the event handlers for two events: start and process
+		$this->attachToEvents([
+			self::EVENT_START => [$this, 'prepareRecord'],
+			self::EVENT_PROCESS =>  [$this, 'processRecord']
+		]);
 	}
 	
 	public function getIndexer($name=null)
@@ -89,7 +97,12 @@ class Module extends \yii\base\Module
 		return $attributes;
 	}
 	
-	protected function updateSearchEntry($event)
+	protected function prepareRecord($event)
+	{
+		return $event;
+	}
+	
+	public function processRecord($event)
 	{
 		if($this->disableIndexing)
 			return;
@@ -127,16 +140,5 @@ class Module extends \yii\base\Module
 		];
 		
 		return $indexer::api($method, $options);
-	}
-	
-	protected function handleSearchRecord(&$event)
-	{
-		return $event;
-	}
-	
-	public function processRecord($event)
-	{
-		$this->handleSearchRecord($event);
-		return $this->updateSearchEntry($event);
 	}
 }

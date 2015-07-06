@@ -28,7 +28,7 @@ class ActiveElasticQuery extends ActiveQuery
 				if(is_array($value))
 					$value['ignore_unmapped'] = true;
 				else
-					$value = ['order' => $value, 'ignore_unmapped' => true];
+					$value = ['order' => ($value == SORT_DESC ? 'desc' : 'asc'), 'ignore_unmapped' => true];
 				$result[$key] = $value;
 			};
         } else {

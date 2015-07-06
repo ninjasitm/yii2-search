@@ -66,60 +66,6 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 	{
 		return $this->id;
 	}
-
-    protected function addCondition($attribute, $value, $partialMatch=false)
-    {
-        if (($pos = strrpos($attribute, '.')) !== false) {
-            $modelAttribute = substr($attribute, $pos + 1);
-        } else {
-            $modelAttribute = $attribute;
-        }
-        if (is_string($value) && trim($value) === '') {
-            return;
-        }
-		
-		$value = (is_array($value) && count($value) == 1) ? current($value) : $value;
-		
-		switch(1)
-		{
-			case is_numeric($value):
-			case \nitm\helpers\Helper::boolval($value):
-			case is_array($value) && !$partialMatch:
-            switch($this->inclusiveSearch && !$this->exclusiveSearch)
-			{
-				case true:
-				$this->conditions['or'][] = [$attribute => $value];
-				break;
-				
-				default:
-				$this->conditions['and'][] = [$attribute => $value];
-				break;
-			}
-			break;
-			
-			default:
-			switch($partialMatch) 
-			{
-				case true:
-				switch($this->inclusiveSearch)
-				{
-					case true:
-					$this->conditions['or'][] = [$attribute, $value, false];
-					break;
-					
-					default:
-					$this->conditions['and'][] = [$attribute, $value, false];
-					break;
-				}
-				break;
-				
-				default:
-            	$this->conditions['and'][] = [$attribute => $value];
-				break;
-			}
-			break;
-		}
-	}
 	
 	protected function getTextParam($value)
 	{
@@ -132,6 +78,11 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 	{
 		if(!isset($attributes['_source']))
 			$attributes['_source'] = [];
+			
+		/*if($attributes['_source']['id'] == 691) {
+			print_r($attributes);
+			exit;
+		}*/
 		$model = static::instantiateInternal($attributes['_source'], $attributes['_type']);
 		static::setIndexType($model->isWhat());
 		return $model;
@@ -144,6 +95,7 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		//$query->highlight(true);
 		$query->query(isset($parts['query']) ? $parts['query'] : ArrayHelper::getValue($command, 'queryParts.query', []));
 		$query->orderBy(ArrayHelper::getValue($options, 'sort', [
+			'_score' => 'desc',
 			'_id' => 'desc',
 		]));
 		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
@@ -210,7 +162,7 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 			
 		parent::populateRecord($record, $row);
 		
-		static::populateRelations($record, $row);
+		static::populateRelations($record, $row['_source']);
 	}
 }
 ?>

@@ -128,6 +128,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			switch(isset($options['queryOptions']['with']) && in_array($attribute, (array)$options['queryOptions']['with']))
 			{
 				case true:
+				$attribute = current(explode('.', $attribute));
 				$class = $this->namespace.$this->properClassName($this->type());
 				$primaryModel = new $class;
 				$relationGetter = 'get'.$attribute;
