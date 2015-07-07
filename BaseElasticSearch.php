@@ -79,10 +79,6 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		if(!isset($attributes['_source']))
 			$attributes['_source'] = [];
 			
-		/*if($attributes['_source']['id'] == 691) {
-			print_r($attributes);
-			exit;
-		}*/
 		$model = static::instantiateInternal($attributes['_source'], $attributes['_type']);
 		static::setIndexType($model->isWhat());
 		return $model;
@@ -98,8 +94,15 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 			'_score' => 'desc',
 			'_id' => 'desc',
 		]));
+		
 		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
-		$query->where(array_merge((array)$query->where, (array)$parts['filter'], ArrayHelper::getValue($options, 'where', [])));
+		$where = ArrayHelper::getValue($options, 'where', false);
+		
+		if(count($parts['filter']))
+			$query->filter($parts['filter']);
+			
+		if(is_array($where))
+			$query->where($where);
 		
 		if($this->forceType === true)
 			$query->type = $options['types'];
@@ -127,29 +130,14 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 				/**
 				 * The models are instantiated in Search::instantiate function
 				 */
-				$models = $results['hits']['hits'];
-				/*if(is_array($results))
-				foreach($results['hits']['hits'] as $attributes)
-				{
-					$properName = \nitm\models\Data::properClassName($attributes['_type']);
-					print_r($attributes);
-					exit;
-					$class = $this->getSearchModelClass($properName);
-					if(!class_exists($class))
-						$class = '\nitm\models\search\\'.$properName;
-					$model = new $class($attributes);
-					$this->model->setIndexType($attributes['_type']);
-					$model->setAttributes($attributes['_source'], false);
-					$models[] = $model;
-				}*/
 				$dataProvider->setTotalCount($results['hits']['total']);
 				//Must happen after setting the total count
-				$dataProvider->setModels($models);
+				$dataProvider->setModels($results['hits']['hits']);
 				$dataProvider->pagination->totalCount = $dataProvider->getTotalCount();
 			}
 		}
-		
-		return [$results, $dataProvider];
+		$results = null;
+		return $dataProvider;
 	}
 	
 	/**

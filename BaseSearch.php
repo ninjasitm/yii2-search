@@ -94,7 +94,7 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 			'query' => $query,
 		]);
 		
-		return [[], $dataProvider];
+		return $dataProvider;
 	}
 	
 	/**

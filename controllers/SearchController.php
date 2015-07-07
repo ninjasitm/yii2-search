@@ -94,7 +94,7 @@ class SearchController extends DefaultController
 		
 		$this->model = new $className($searchModelOptions);
 		$this->model->setIndexType($type);
-		list($results, $dataProvider) = $this->search([
+		$dataProvider = $this->search([
 			'forceType' => true,
 			'types' => $type,
 			'isWhat' => $type
@@ -114,7 +114,7 @@ class SearchController extends DefaultController
 			$ret_val['data'] = Html::tag('div',
 				\yii\widgets\Breadcrumbs::widget(['links' => [
 					[
-						'label' => $this->model->primaryModel->properName($this->model->primaryModel->isWhat()), 
+						'label' => $this->model->primaryModel->properName(), 
 						'url' => $this->model->primaryModel->isWhat()
 					],
 					[

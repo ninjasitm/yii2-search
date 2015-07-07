@@ -353,7 +353,8 @@ trait SearchTrait {
 						break;
 						
 						case 'sort':
-						$direction = isset($params['order']) ? $params['order'] : SORT_DESC;
+						case 'order_by':
+						$direction = isset($params['order']) ? $params['order'] : 'desc';
 						$this->dataProvider->query->orderBy([$filterValue => $direction]);
 						$this->useEmptyParams = true;
 						unset($params['order']);

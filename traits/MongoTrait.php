@@ -79,7 +79,7 @@ trait MongoTrait
 		if(!static::type())
 			return [
 				new\yii\db\ColumnSchema([
-					'name' => '_id',
+					'name' => 'id',
 					'type' => 'int',
 					'phpType' => 'integer',
 					'dbType' => 'int'

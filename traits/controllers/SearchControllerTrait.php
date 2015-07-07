@@ -68,9 +68,8 @@ trait SearchControllerTrait {
 		/**
 		 * Setup the query parts
 		 */
-		list($results, $dataProvider) = $this->model->getDataProvider($dataProvider->query, $parts, $options);
-		//$dataProvider = $this->model->search(\Yii::$app->request->get());
-		return [$results, $dataProvider];
+		$dataProvider = $this->model->getDataProvider($dataProvider->query, $parts, $options);
+		return $dataProvider;
 	}
 }
 ?>

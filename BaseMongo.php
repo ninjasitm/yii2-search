@@ -11,7 +11,7 @@ use nitm\models\DB;
  
 class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 {
-	use traits\MongoTrait, traits\SearchTrait, \nitm\traits\Data, \nitm\traits\Query, \nitm\traits\Relations;
+	use traits\MongoTrait, traits\SearchTrait, \nitm\traits\Data, \nitm\traits\Query, \nitm\traits\Relations, \nitm\traits\Nitm;
 	
 	public function init()
 	{
@@ -54,7 +54,7 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 	{
 		return new \yii\db\TableSchema([
 			'schemaName' => static::index(),
-			'primaryKey' => '_id',
+			'primaryKey' => 'id',
 			'name' => static::type(),
 			'fullName' => static::index().'.'.static::type(),
 			'columns' => static::columns()
@@ -123,30 +123,15 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 			{
 				/**
 				 * The models are instantiated in Search::instantiate function
-				 */
-				$models = $results['hits']['hits'];
-				/*if(is_array($results))
-				foreach($results['hits']['hits'] as $attributes)
-				{
-					$properName = \nitm\models\Data::properClassName($attributes['_type']);
-					print_r($attributes);
-					exit;
-					$class = $this->getSearchModelClass($properName);
-					if(!class_exists($class))
-						$class = '\nitm\models\search\\'.$properName;
-					$model = new $class($attributes);
-					$this->model->setIndexType($attributes['_type']);
-					$model->setAttributes($attributes['_source'], false);
-					$models[] = $model;
 				}*/
 				$dataProvider->setTotalCount($results['hits']['total']);
 				//Must happen after setting the total count
-				$dataProvider->setModels($models);
+				$dataProvider->setModels($results['hits']['hits']);
 				$dataProvider->pagination->totalCount = $dataProvider->getTotalCount();
 			}
 		}
-		
-		return [$results, $dataProvider];
+		$results = null;
+		return $dataProvider;
 	}
 }
 ?>

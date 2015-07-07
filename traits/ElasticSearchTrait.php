@@ -213,6 +213,11 @@ trait ElasticSearchTrait
 		while(list($idx, $part) = each($array))
 		{
 			$parts = explode(':', $part);
+			$operator = $this->exclusiveSearch ? 'must' : 'should';
+			if(array_key_exists($parts[0], array_keys($this->columns())))
+				$depth = $this->columns()[$parts[0]]->type == 'nested' ? 'nested' : 'filters';
+			else
+				$depth = 'filters';
 			switch(1)
 			{
 				case (sizeof($parts = explode(':', $part)) == 2) || ($filtersWere === true):
@@ -223,7 +228,8 @@ trait ElasticSearchTrait
 					$parts[0] = '_type';
 					break;
 				}
-				$ret_val['nested'][$parts[0]] = explode(',', $parts[1]);
+				$values = explode(',', $parts[1]);
+				$ret_val[$depth][$parts[0]] = count($values) == 1 ? array_pop($values) : $values;
 				unset($string[$idx]);
 				break;
 				
@@ -243,9 +249,7 @@ trait ElasticSearchTrait
 				 */
 				if(($prevKey !== false) && (((strpos($next, ':') !== false) && sizeof($parts) == 1) || !$next) && ($prevKey && is_array($filters) && in_array($prevKey, $filters)))
 				{
-					$isNested = strpos($prev, ':') !== false && strpos($prev, ',') !== false;
-					$depth = $isNested ? 'nested' : 'filter';
-					if($isNested) {
+					if($depth == 'nested') {
 						switch($prevKey)
 						{
 							case '_type':
@@ -263,18 +267,30 @@ trait ElasticSearchTrait
 				break;
 			}
 		}
-		/*if(isset($ret_val['filters']))
-			$ret_val['filter'][($this->model->exclusiveSearch ? 'and' : 'or')] = array_map(function($value, $key) {
-				return [
-					'in' => [
-						$key => [$value]
-					]
-				];
-			}, $ret_val['filters'], array_keys($ret_val['filters']));*/
+		if(isset($ret_val['filters'])) 
+		{
+			foreach($ret_val['filters'] as $key=>$value)
+			{
+				if(is_array($value))
+					$ret_val['filter']['bool'][$operator][] = [
+						'terms' => [$key = $value]
+					];
+				else if(is_string($value) || is_numeric($value))
+					$ret_val['filter']['bool'][$operator][] = [
+						'term' => [$key => $value]
+					];
+					
+			}
+			/*foreach(['terms', 'term'] as $filterType)
+			{
+				if(isset($ret_val['filter'][$filterType])) {
+					$ret_val['filter'][$filterType]['execution'] = $operator;
+				}
+			}*/
+			unset($ret_val['filters']);
+		}
 		
 		$ret_val['parts'] = $string;
-		//print_r($ret_val);
-		//exit;
 		return $ret_val;
 		
 	}
