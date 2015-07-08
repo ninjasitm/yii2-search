@@ -121,7 +121,7 @@ trait SearchTrait {
 		if((sizeof($params) == 0) || !isset($params['sort']))
 			if(!$this->dataProvider->query->orderBy)
 				$this->dataProvider->query->orderBy([
-					$this->searchModel->primaryModel->primaryKey()[0] => SORT_DESC
+					$this->primaryModel->primaryKey()[0] => SORT_DESC
 				]);
         return $this->dataProvider;
     }
@@ -392,7 +392,7 @@ trait SearchTrait {
 				return $params;
 			}
 		};
-		$params = array_merge($filterParser($params), $filterParser($modelParams));
+		$params = array_merge($filterParser($params), (array)$filterParser($modelParams));
 		return $this->getParams($params, $this->useEmptyParams);
 	}
 	
