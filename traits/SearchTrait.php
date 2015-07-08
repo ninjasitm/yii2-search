@@ -118,6 +118,11 @@ trait SearchTrait {
 			}
 		}
 		$this->addConditions();
+		if((sizeof($params) == 0) || !isset($params['sort']))
+			if(!$this->dataProvider->query->orderBy)
+				$this->dataProvider->query->orderBy([
+					$this->searchModel->primaryModel->primaryKey()[0] => SORT_DESC
+				]);
         return $this->dataProvider;
     }
 	
@@ -334,51 +339,60 @@ trait SearchTrait {
 	 */
 	private function filterParams($params=[])
 	{
-		if(isset($params[$this->properName($this->type())]) && count(explode(',', $this->type())) == 1)
-			$params = $params[$this->properName($this->type())];
-		else
-			$params = isset($params[$this->primaryModel->formName()]) ? $params[$this->primaryModel->formName()] : (is_array($params) ? $params : []);
+		$modelParams = ArrayHelper::remove($params, $this->primaryModel->formName(), ArrayHelper::getValue($params, $this->properName($this->type()), []));
 		
-		foreach($params as $name=>$value)
-		{
-			switch($name)
+		$params = ['filter' => array_intersect_key($params, array_flip(['sort']))];
+		
+		$filterParser = function ($params) {
+			foreach($params as $name=>$value)
 			{
-				case 'filter':
-				foreach($value as $filterName=>$filterValue)
+				switch($name)
 				{
-					switch($filterName)
+					case 'filter':
+					foreach($value as $filterName=>$filterValue)
 					{
-						case 'exclusive':
-						$this->exclusiveSearch = (bool)$filterValue;
-						break;
-						
-						case 'sort':
-						case 'order_by':
-						$direction = isset($params['order']) ? $params['order'] : 'desc';
-						$this->dataProvider->query->orderBy([$filterValue => $direction]);
-						$this->useEmptyParams = true;
-						unset($params['order']);
-						break;
-						
-						default:
-						$params[$filterName] = $filterValue;
-						break;
+						switch($filterName)
+						{
+							case 'exclusive':
+							$this->exclusiveSearch = (bool)$filterValue;
+							break;
+							
+							case 'sort':
+							case 'order_by':
+							if(isset($params['order']))
+								$direction = $params['order'];
+							else {
+								$direction = $filterValue[0]  == '-' ? 'desc' : 'asc';
+								$filterValue = $filterValue[0] == '-' ? substr($filterValue, 1) : $filterValue;
+							}
+								
+							$this->dataProvider->query->orderBy([$filterValue => $direction]);
+							$this->useEmptyParams = true;
+							unset($params['order']);
+							break;
+							
+							default:
+							$params[$filterName] = $filterValue;
+							break;
+						}
 					}
+					unset($params['filter']);
+					break;
+					
+					case 'text':
+					case 'q':
+					if(!empty($value)) 
+					{
+						$this->text = $value;
+						$params = array_merge((array)$params, $this->getTextParam($value));
+					}
+					unset($params[$name]);
+					break;
 				}
-				unset($params['filter']);
-				break;
-				
-				case 'text':
-				case 'q':
-				if(!empty($value)) 
-				{
-					$this->text = $value;
-					$params = array_merge((array)$params, $this->getTextParam($value));
-				}
-				unset($params[$name]);
-				break;
+				return $params;
 			}
-		}
+		};
+		$params = array_merge($filterParser($params), $filterParser($modelParams));
 		return $this->getParams($params, $this->useEmptyParams);
 	}
 	
