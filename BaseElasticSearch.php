@@ -84,16 +84,25 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		return $model;
 	}
 	
-	public function getDataProvider($query, $parts, $options)
+	public function getDataProvider($params, $options=[])
 	{
+		/**
+		 * Setup data parts
+		 */
+		$dataProvider = $this->search($params);
+		$query = $dataProvider->query;
+		
+		//Parse the query and extract the parts
+		$parts = $this->parseQuery($this->text);
+		
 		$command = $query->createCommand();	
 		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
 		//$query->highlight(true);
 		$query->query(isset($parts['query']) ? $parts['query'] : ArrayHelper::getValue($command, 'queryParts.query', []));
-		$query->orderBy(ArrayHelper::getValue($options, 'sort', [
+		$query->orderBy(ArrayHelper::getValue($parts, 'sort', ArrayHelper::getValue($options, 'sort', [
 			'_score' => 'desc',
 			'_id' => 'desc',
-		]));
+		])));
 		
 		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
 		$where = ArrayHelper::getValue($options, 'where', false);
@@ -109,12 +118,12 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		else
 			$query->type = (isset($parts['types']) ? $parts['types'] : $options['types']);
 
-		$models = $results = [];
+		$results = [];
 		
 		//Setup data provider. Manually set the totalcount and models to enable proper pagination
         $dataProvider = new \yii\data\ArrayDataProvider;
 		
-		if(sizeof($command->queryParts) >= 1 || !empty($this->model->text))
+		if(count($command->queryParts) || $this->text)
 		{
 			try {
 				$results = $query->search();
@@ -132,12 +141,11 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 				 */
 				$dataProvider->setTotalCount($results['hits']['total']);
 				//Must happen after setting the total count
-				$dataProvider->setModels($results['hits']['hits']);
+				$dataProvider->setModels(ArrayHelper::remove($results['hits'], 'hits'));
 				$dataProvider->pagination->totalCount = $dataProvider->getTotalCount();
 			}
 		}
-		$results = null;
-		return $dataProvider;
+		return [$results, $dataProvider];
 	}
 	
 	/**

@@ -80,8 +80,18 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 		return static::findInternal(\yii\db\ActiveQuery::className(), $model, $options);
 	}
 	
-	public function getDataProvider($query, $parts, $options)
+	
+	public function getDataProvider($params, $options=[])
 	{
+		/**
+		 * Setup data parts
+		 */
+		$dataProvider = $this->search($params);
+		$query = $dataProvider->query;
+		
+		//Parse the query and extract the parts
+		$parts = $this->parseQuery($this->text);
+		
 		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
 		$query->orderBy(ArrayHelper::getValue($options, 'sort', [
 			'id' => SORT_DESC
@@ -94,7 +104,9 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 			'query' => $query,
 		]);
 		
-		return $dataProvider;
+		return [[
+			'total' => $dataProvider->getTotalCount()
+		], $dataProvider];
 	}
 	
 	/**

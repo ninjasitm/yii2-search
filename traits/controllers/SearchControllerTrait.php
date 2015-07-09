@@ -58,18 +58,10 @@ trait SearchControllerTrait {
 		$params['q'] = isset($params['q']) ? $params['q'] : $options['q'];
 		
 		/**
-		 * Setup data parts
-		 */
-		$dataProvider = $this->model->search($params);
-		
-		//Parse the query and extract the parts
-		$parts = $this->model->parseQuery($this->model->text);
-		
-		/**
 		 * Setup the query parts
 		 */
-		$dataProvider = $this->model->getDataProvider($dataProvider->query, $parts, $options);
-		return $dataProvider;
+		list($results, $dataProvider) = $this->model->getDataProvider($params, $options);
+		return [$results, $dataProvider];
 	}
 }
 ?>

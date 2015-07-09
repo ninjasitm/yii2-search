@@ -88,8 +88,17 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 		return $model;
 	}
 	
-	public function getDataProvider($query, $parts, $options)
+	public function getDataProvider($params, $options=[])
 	{
+		/**
+		 * Setup data parts
+		 */
+		$dataProvider = $this->search($params);
+		$query = $dataProvider->query;
+		
+		//Parse the query and extract the parts
+		$parts = $this->parseQuery($this->text);
+		
 		$command = $query->createCommand();	
 		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
 		//$query->highlight(true);
@@ -108,7 +117,7 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 		//Setup data provider. Manually set the totalcount and models to enable proper pagination
         $dataProvider = new \yii\data\ArrayDataProvider;
 		
-		if(sizeof($command->queryParts) >= 1 || !empty($this->model->text))
+		if(count($command->queryParts) || $this->text)
 		{
 			try {
 				$results = $query->search();
@@ -126,12 +135,11 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 				}*/
 				$dataProvider->setTotalCount($results['hits']['total']);
 				//Must happen after setting the total count
-				$dataProvider->setModels($results['hits']['hits']);
+				$dataProvider->setModels(ArrayHelper::remove($results['hits'], 'hits'));
 				$dataProvider->pagination->totalCount = $dataProvider->getTotalCount();
 			}
 		}
-		$results = null;
-		return $dataProvider;
+		return [$results, $dataProvider];
 	}
 }
 ?>

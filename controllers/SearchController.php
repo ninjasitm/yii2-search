@@ -94,7 +94,7 @@ class SearchController extends DefaultController
 		
 		$this->model = new $className($searchModelOptions);
 		$this->model->setIndexType($type);
-		$dataProvider = $this->search([
+		list($results, $dataProvider) = $this->search([
 			'forceType' => true,
 			'types' => $type,
 			'isWhat' => $type

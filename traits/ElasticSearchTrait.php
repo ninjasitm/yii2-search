@@ -147,6 +147,9 @@ trait ElasticSearchTrait
 		$ret_val['types'] = (sizeof($types) == 0 ) ? '_all' : implode(',', $types);
 		$ret_val['route'] = $this->index().'/'.$ret_val['types'].'/_search/';
 		$ret_val['query'] = $this->getTypeBoost($types, $mustMatch, $query);
+		foreach(['sort'] as $option)
+			if(isset($query[$option]))
+				$ret_val[$option] = $query[$option];
 		return $ret_val;
 	}
 	
@@ -220,22 +223,31 @@ trait ElasticSearchTrait
 				$depth = 'filters';
 			switch(1)
 			{
-				case (sizeof($parts = explode(':', $part)) == 2) || ($filtersWere === true):
+				case (sizeof($parts = explode(':', $part)) >= 2) || ($filtersWere === true):
+				$values = explode(',', $parts[1]);
 				switch($parts[0])
 				{
 					case '_type':
 					case 'type':
-					$parts[0] = '_type';
+					$ret_val[$depth][$parts[0]] = count($values) == 1 ? array_pop($values) : $values;
+					break;
+					
+					case 'sort':
+					$ret_val[$parts[0]][$parts[1]] = isset($parts[2]) ? $parts[2] : 'desc';
+					break;
+					
+					default:
+					$operator = 'should';
+					$parts[0] = array_pop(explode('.', $parts[0]));
+					$ret_val[$depth][$parts[0]] = count($values) == 1 ? array_pop($values) : $values;
 					break;
 				}
-				$values = explode(',', $parts[1]);
-				$ret_val[$depth][$parts[0]] = count($values) == 1 ? array_pop($values) : $values;
 				unset($string[$idx]);
 				break;
 				
 				//If this is an equal query: name=value then split it accordingly
 				case((sizeof($parts = explode('=', $part)) == 2)):
-				$ret_val['filter'][$parts[0]] = $parts[1];
+				$ret_val['filters'][$parts[0]] = $parts[1];
 				unset($string[$idx]);
 				break;
 				

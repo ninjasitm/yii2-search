@@ -341,10 +341,12 @@ trait SearchTrait {
 	{
 		$modelParams = ArrayHelper::remove($params, $this->primaryModel->formName(), ArrayHelper::getValue($params, $this->properName($this->type()), []));
 		
-		$params = ['filter' => array_intersect_key($params, array_flip(['sort']))];
+		$params = array_merge([
+			'filter' => array_intersect_key($params, array_flip(['sort']))
+		], (array)array_intersect_key($params, array_flip(['q', 'text'])));
 		
-		$filterParser = function ($params) {
-			foreach($params as $name=>$value)
+		$filterParser = function ($options) {
+			foreach($options as $name=>$value)
 			{
 				switch($name)
 				{
@@ -359,8 +361,8 @@ trait SearchTrait {
 							
 							case 'sort':
 							case 'order_by':
-							if(isset($params['order']))
-								$direction = $params['order'];
+							if(isset($options['order']))
+								$direction = $options['order'];
 							else {
 								$direction = $filterValue[0]  == '-' ? 'desc' : 'asc';
 								$filterValue = $filterValue[0] == '-' ? substr($filterValue, 1) : $filterValue;
@@ -368,29 +370,27 @@ trait SearchTrait {
 								
 							$this->dataProvider->query->orderBy([$filterValue => $direction]);
 							$this->useEmptyParams = true;
-							unset($params['order']);
+							unset($options['order']);
 							break;
 							
 							default:
-							$params[$filterName] = $filterValue;
+							$options[$filterName] = $filterValue;
 							break;
 						}
 					}
-					unset($params['filter']);
 					break;
 					
 					case 'text':
 					case 'q':
-					if(!empty($value)) 
-					{
+					if(!empty($value)) {
 						$this->text = $value;
-						$params = array_merge((array)$params, $this->getTextParam($value));
+						$options = array_merge((array)$options, $this->getTextParam($value));
 					}
-					unset($params[$name]);
+					unset($options[$name]);
 					break;
 				}
-				return $params;
 			}
+			return $options;
 		};
 		$params = array_merge($filterParser($params), (array)$filterParser($modelParams));
 		return $this->getParams($params, $this->useEmptyParams);
