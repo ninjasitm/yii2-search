@@ -95,6 +95,12 @@ trait MongoTrait
 					'dbType' => 'string'
 				]);
 			}
+			static::$_columns[static::type()]['message'] = new\yii\db\ColumnSchema([
+				'name' => 'message',
+				'type' => 'string',
+				'phpType' => 'string',
+				'dbType' => 'string'
+			]);
 		}
 		return \yii\helpers\ArrayHelper::getValue(static::$_columns, static::type(), []);
 	}
