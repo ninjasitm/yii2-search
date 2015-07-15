@@ -43,10 +43,7 @@ trait MongoTrait
 	
 	public function formName()
 	{
-		if(isset(static::$_localType))
-			return ucfirst(static::$_localType);
-		else
-			return parent::formName();
+		return array_pop(explode('\\', get_called_class()));
 	}
 	
 	public static function dbName()
