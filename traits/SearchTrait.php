@@ -611,10 +611,11 @@ trait SearchTrait {
 				{
 					if($record->hasMethod('get'.$n)) {
 						$relation = $record->{'get'.$n}();
-						$value = array_map(function ($attributes) use($relation) {
-							return \Yii::createObject(array_merge([
+						$value = array_map(function ($attributes) use($relation, $record) {
+							$object = \Yii::createObject(array_merge([
 								'class' => $relation->modelClass
-							], $attributes));					
+							], array_intersect_key($attributes, array_flip($record->attributes()))));
+							return $object;			
 						}, $value);
 						
 						if(!$relation->multiple)

@@ -138,7 +138,13 @@ class Module extends \yii\base\Module
 			json_encode($attributes), 
 			true
 		];
-		
-		return $indexer::api($method, $options);
+		try {
+			return $indexer::api($method, $options);
+		} catch (\yii\elasticsearch\Exception $e) {
+			if(defined('YII_ENV') && YII_ENV == 'debug')
+				throw $e;
+			else
+				return true;
+		}
 	}
 }
