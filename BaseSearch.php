@@ -55,12 +55,15 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 		return self::$tableNames[$class];
 	}
 	
-	public static function type()
+	public function type()
 	{
-		return static::isWhat();
+		if(isset($this))
+			return $this->isWhat();
+		else
+			return static::isWhat();
 	}
 	
-	public static function setIndexType()
+	public function setIndexType()
 	{
 		return true;
 	}

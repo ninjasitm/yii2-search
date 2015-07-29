@@ -31,8 +31,8 @@ trait SearchTrait {
 	public $mergeInclusive;
 	
 	public static $sanitizeType = true; 
-	public static $namespace = '\nitm\models\\';
 	public static $tableNames;
+	public static $namespace = '\nitm\models\\';
 	
 	protected $dataProvider;
 	protected $conditions = [];
@@ -159,7 +159,7 @@ trait SearchTrait {
 		$oldType = $this->type();
 		if(!$this->primaryModel)
 		{
-			$class = $this->getPrimaryModelClass();
+			$class = $this->getPrimaryModelClass(true);
 			if(class_exists($class)) 
 				$options = [];
 			else {
@@ -172,8 +172,11 @@ trait SearchTrait {
 				$this->primaryModel = new $class([
 					'noDbInit' => true
 				]);
-			else
-				$this->primaryModel = new static;
+			else {
+				$this->primaryModel = new static([
+					'is' => $this->type()
+				]);
+			}
 		}
 		
 		$query = $this->primaryModel->find($this);
@@ -189,20 +192,25 @@ trait SearchTrait {
 		return $this;
 	}
 	
-	public function getPrimaryModelClass()
+	public function getSearchModelClass($class)
 	{
-		if(!isset($this->primaryModelClass))
-			$this->setPrimaryModelClass();
+		return rtrim(static::$namespace, '\\').'\\search\\'.array_pop(explode('\\', $class));
+	}
+	
+	public function getPrimaryModelClass($force=false)
+	{
+		if(!isset($this->primaryModelClass) || $force)
+			$this->setPrimaryModelClass(null, $force);
 		return $this->primaryModelClass;
 	}
 	
-	public function setPrimaryModelClass($class=null)
+	public function setPrimaryModelClass($class=null, $force=fasle)
 	{
 		if(!is_null($class) && class_exists($class))
 			$this->primaryModelClass = $class;
 		else {
-			if(!isset($this->primaryModelClass)) {
-				$class = $this->getModelClass($this->properClassName($this->type()));;
+			if(!isset($this->primaryModelClass) || $force) {
+				$class = $this->getModelClass($this->properClassName($this->type()));
 				$this->primaryModelClass = class_exists($class) ? $class : $this->className();
 			}
 			else
@@ -248,7 +256,6 @@ trait SearchTrait {
 			case !$partialMatch:
 			case \nitm\helpers\Helper::boolval($value):
 			case is_array($value) && !$partialMatch:
-			
             switch($this->inclusiveSearch && !$this->exclusiveSearch)
 			{
 				case true:
@@ -341,9 +348,9 @@ trait SearchTrait {
 	{
 		$modelParams = ArrayHelper::remove($params, $this->primaryModel->formName(), ArrayHelper::getValue($params, $this->properName($this->type()), []));
 		
-		$params = array_merge([
-			'filter' => array_intersect_key($params, array_flip(['sort']))
-		], (array)array_intersect_key($params, array_flip(['q', 'text'])));
+		////$params = array_merge([
+		//	'filter' => array_intersect_key($params, array_flip(['sort']))
+		//], (array)array_intersect_key($params, array_flip(['q', 'text'])));
 		
 		$filterParser = function ($options) {
 			foreach($options as $name=>$value)
@@ -356,7 +363,8 @@ trait SearchTrait {
 						switch($filterName)
 						{
 							case 'exclusive':
-							$this->exclusiveSearch = (bool)$filterValue;
+							case 'inclusive':
+							$this->{$filterName.'Search'} = (bool)$filterValue;
 							break;
 							
 							case 'sort':
@@ -614,7 +622,7 @@ trait SearchTrait {
 						$value = array_map(function ($attributes) use($relation, $record) {
 							$object = \Yii::createObject(array_merge([
 								'class' => $relation->modelClass
-							], array_intersect_key($attributes, array_flip($record->attributes()))));
+							], array_intersect_key($attributes, array_flip((new $relation->modelClass)->attributes()))));
 							return $object;			
 						}, $value);
 						

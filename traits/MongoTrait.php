@@ -30,15 +30,18 @@ trait MongoTrait
 		return static::$tableName;
 	}*/
 	
-	public static function setIndex($index)
+	public function setIndex($index)
 	{
 		static::$_database = $index;
 	}
 	
-	public static function setIndexType($type, $table=null)
+	public function setIndexType($type, $table=null)
 	{
 		static::$_localType = $type;
 		static::$_table = is_null($table) ? $type : $table;
+		if(isset($this)) {
+			$this->getPrimaryModelClass(true);
+		}
 	}
 	
 	public function formName()

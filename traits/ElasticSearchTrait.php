@@ -32,20 +32,26 @@ trait ElasticSearchTrait
 		return static::$tableName;
 	}*/
 	
-	public static function setIndex($index)
+	public function setIndex($index)
 	{
 		static::$_database = $index;
 	}
 	
-	public static function setIndexType($type, $table=null)
+	public function setIndexType($type, $table=null)
 	{
 		static::$_localType = $type;
 		static::$_table = is_null($table) ? $type : $table;
+		if(isset($this)) {
+			$this->getPrimaryModelClass(true);
+		}
 	}
 	
 	public function formName()
 	{
-		return array_pop(explode('\\', get_called_class()));
+		if(isset($this))
+			return $this->properFormName();
+		else
+			return static::properFormName();
 	}
 	
 	public static function dbName()

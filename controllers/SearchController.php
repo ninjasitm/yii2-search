@@ -109,6 +109,7 @@ class SearchController extends DefaultController
 			'primaryModel' => $this->model->primaryModel,
 			'isWhat' => $type,
 		]);
+		
 		if(!\Yii::$app->request->isAjax)
 		{
 			$ret_val['data'] = Html::tag('div',

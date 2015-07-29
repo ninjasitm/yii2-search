@@ -15,11 +15,6 @@ trait SearchControllerTrait {
 	protected $nestedPrefix = 'nested:';
 	protected $forceType;
 	
-	public function getSearchModelClass($class)
-	{
-		return rtrim($this->namespace, '\\').'\\search\\'.array_pop(explode('\\', $class));
-	}
-	
 	/**
 	 * Execute an Elastic search using the _search API instead of the ActiveRecord
 	 * @param array $options
@@ -40,7 +35,6 @@ trait SearchControllerTrait {
 			],
 			'limit' => \Yii::$app->request->get('limit') ? \Yii::$app->request->get('limit') : 10,
 		], $options);
-		
 		
 		$this->model->load($modelOptions);
 		
