@@ -213,8 +213,6 @@ trait SearchTrait {
 				$class = $this->getModelClass($this->properClassName($this->type()));
 				$this->primaryModelClass = class_exists($class) ? $class : $this->className();
 			}
-			else
-				$this->primaryModelClass = $this->className();
 		}
 	}
 	
@@ -252,6 +250,11 @@ trait SearchTrait {
 		
 		switch(1)
 		{
+			case is_array($value) && is_string(current($value)) && in_array(strtolower(current($value)), ['and', 'or']):
+			print_r($value);
+			exit;
+			break;
+			
 			case is_numeric($value):
 			case !$partialMatch:
 			case \nitm\helpers\Helper::boolval($value):
@@ -467,7 +470,7 @@ trait SearchTrait {
 		
 		if(!class_exists($class))
 			$class = static::className();
-		return new $class;
+		return new $class(['is' => $type]);
 	}
 	
 	/**

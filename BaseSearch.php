@@ -58,9 +58,9 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 	public function type()
 	{
 		if(isset($this))
-			return $this->isWhat();
+			return $this->isWhat(null, true);
 		else
-			return static::isWhat();
+			return static::isWhat(null, true);
 	}
 	
 	public function setIndexType()

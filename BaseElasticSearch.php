@@ -11,7 +11,13 @@ use nitm\models\DB;
  
 class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements SearchInterface
 {
-	use traits\ElasticSearchTrait, traits\SearchTrait, \nitm\traits\Data, \nitm\traits\Query, \nitm\traits\Relations;
+	use traits\ElasticSearchTrait, 
+		traits\SearchTrait, 
+		\nitm\traits\Data, 
+		\nitm\traits\Query, 
+		\nitm\traits\Relations,
+		\nitm\traits\Alerts;
+		
 	public $engine = 'elasticsearch';
 	
 	public function init()

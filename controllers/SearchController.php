@@ -36,13 +36,6 @@ class SearchController extends DefaultController
 		$this->engine = \Yii::$app->getModule('nitm-search')->engine;
 		parent::init();
 	}
-	
-    /*public function behaviors()
-    {
-		$behaviors = [
-		];
-		return array_merge_recursive(parent::behaviors(), $behaviors);
-    }*/
 
     /**
      * Lists all Search models.
@@ -50,6 +43,7 @@ class SearchController extends DefaultController
      */
     public function actionIndex($options=[])
     {
+		$this->model->queryOptions['limit'] = 20;
 		list($results, $dataProvider) = $this->search();
         $ret_val = [
 			'success' => true,
@@ -84,13 +78,6 @@ class SearchController extends DefaultController
 		], $searchOptions);
 		
 		$className = $this->getSearchClass($options);
-		/*if(!\Yii::$app->request->isAjax)
-		{
-			return $this->actionIndex($className, [
-				'construct' => $searchModelOptions,
-				'stats' => []
-			]);
-		}*/
 		
 		$this->model = new $className($searchModelOptions);
 		$this->model->setIndexType($type);
@@ -101,8 +88,11 @@ class SearchController extends DefaultController
 		]);
 		
 		$dataProvider->pagination->route = '/search/filter';
-				
+		
 		$view = isset($options['view']) ? $options['view'] : 'index';
+		
+		//Change the context ID here to match the filtered content
+		$this->id = $type;
 		$ret_val['data'] = $this->renderAjax($view, [
 			"dataProvider" => $dataProvider,
 			'searchModel' => $this->model,
@@ -112,30 +102,34 @@ class SearchController extends DefaultController
 		
 		if(!\Yii::$app->request->isAjax)
 		{
-			$ret_val['data'] = Html::tag('div',
-				\yii\widgets\Breadcrumbs::widget(['links' => [
+			$ret_val['data'] = Html::tag('div', \yii\widgets\Breadcrumbs::widget([
+				'links' => [
 					[
 						'label' => $this->model->primaryModel->properName(), 
 						'url' => $this->model->primaryModel->isWhat()
-					],
+					], 
 					[
 						'label' => 'Filter',
 					]
-				]]).
-				$ret_val['data'], ['class' => 'col-md-12 col-lg-12']
-			);
+				]
+			])
+			.$ret_val['data'], [
+				'class' => 'col-md-12 col-lg-12'
+			]);
 			$this->setResponseFormat('html');
 		}
-		$getParams = array_merge([
-			$type
-		], \Yii::$app->request->get());
+		$getParams = array_merge([$type], \Yii::$app->request->get());
+		
 		foreach(['__format', '_type', 'getHtml', 'ajax', 'do'] as $prop)
 			unset($getParams[$prop]);
+			
 		$ret_val['url'] = \Yii::$app->urlManager->createUrl($getParams);
 		$ret_val['message'] = !$dataProvider->getCount() ? $ret_val['message'] : "Found ".$dataProvider->getTotalCount()." results matching your search";
+		
 		Response::viewOptions('args', [
 			"content" => $ret_val['data'],
 		]);
+		
 		return $this->renderResponse($ret_val, Response::viewOptions(), \Yii::$app->request->isAjax);
 	}
 	
