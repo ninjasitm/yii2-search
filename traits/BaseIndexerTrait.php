@@ -300,7 +300,6 @@ trait BaseIndexerTrait
 	{
 		foreach($this->_stack as $table=>$options)
 		{
-			//echo "\n\tPulling from stack: ".$options['type']." $table\n";
 			if(isset($options['namespace']))
 				$this->namespace = $options['namespace'];
 			$this->prepareMetainfo((isset($options['type']) ? $options['type'] : $table), $table);
@@ -354,7 +353,7 @@ trait BaseIndexerTrait
 		if(($findAll === false && !$this->reIndex) && ($this->type != 'delete'))
 			$query->where(['not', 'indexed=1']);
 		$this->log("\n\tPerforming: ".$this->type." on ".static::index()."->".static::type()." Items: ".$this->tableRows());
-		
+		 
 		//Do something before $this->type
 		$event = strtoupper('before_search_'.$this->type);
 		$this->trigger(constant('\nitm\search\BaseIndexer::'.$event));
@@ -480,7 +479,7 @@ trait BaseIndexerTrait
 				$localOptions = array_merge((array)$attributes, $localOptions);
 				$model = new $class($localOptions);
 				$this->stack($model->tableName(), [
-					'type' => $model->isWhat(),
+					'type' => $model->isWhat(null, true),
 					'namespace' => $namespace,
 					'worker' => [$this, 'parse'],
 					'args' => [
