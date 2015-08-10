@@ -119,8 +119,9 @@ class BaseSearch extends \nitm\models\Data implements SearchInterface
 	{
 		if(isset($row['_source']))
 			$row = $row['_source'];
-		parent::populateRecord($record, $row);
-		static::populateRelations($record, $row);
+		extract(static::extractAttributesAndRelations($row));
+		parent::populateRecord($record, $attributes);
+		static::populateRelations($record, $relations);
 	}
 	
 	public function attributes()

@@ -162,9 +162,9 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		if(!isset($row['_source']))
 			return;
 			
-		parent::populateRecord($record, $row);
-		
-		static::populateRelations($record, $row['_source']);
+		extract(static::extractAttributesAndRelations($row['_source']));
+		parent::populateRecord($record, $attributes);
+		static::populateRelations($record, $relations);
 	}
 }
 ?>

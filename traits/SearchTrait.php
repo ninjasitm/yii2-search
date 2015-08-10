@@ -653,5 +653,24 @@ trait SearchTrait {
 		}
 		static::normalize($record, true);
 	}
+	
+	protected function extractAttributesAndRelations($from)
+	{
+		$ret_val = [
+			'attributes' => $from,
+			'relations' => $from
+		];
+		foreach($from as $attribute=>$value)
+		{
+			if(is_array($value)) {
+				$ret_val['relations'][$attribute] = $value;
+				unset($ret_val['attributes'][$attribute]);
+			} else {
+				$ret_val['attributes'][$attribute] = $value;
+				unset($ret_val['relations'][$attribute]);
+			}
+		}
+		return $ret_val;
+	}
 }
 ?>
