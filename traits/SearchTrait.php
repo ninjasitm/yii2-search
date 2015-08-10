@@ -474,8 +474,12 @@ trait SearchTrait {
 			$properName = \nitm\models\Data::properClassName($type);
 			
 			foreach(\Yii::$app->getModule('nitm-search')->getNamespaces(static::$namespace) as $namespace)
-			{	
-				$class = rtrim($namespace, '\\').'\\search\\'.$properName;
+			{
+				$class = [rtrim($namespace, '\\')];
+				if(end(array_filter(explode('\\', $namespace))) !== 'search')
+					$class[] = 'search';
+				$class[] = $properName;
+				$class = implode('\\', $class);
 				if(class_exists($class)) {
 					$found = true;
 					break;
