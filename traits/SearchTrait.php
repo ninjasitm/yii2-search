@@ -461,13 +461,29 @@ trait SearchTrait {
 	protected static function instantiateInternal($attributes, $type=null)
 	{
 		$type = isset($attributes['_type']) ? $attributes['_type'] : $type;
-		if(!is_null($type))
-			$properName = \nitm\models\Data::properClassName($type);
-		else 
-			$properName = static::formName();
-			
-		$class = rtrim(static::$namespace, '\\').'\\search\\'.$properName;
+		$type = is_null($type) ? static::isWhat() : $type;
+		$found = $class = false;
 		
+		foreach([
+			null, 'singularize', 'pluralize'
+		] as $inflector) {
+			
+			if(!is_null($inflector))
+				$type = \yii\helpers\Inflector::$inflector($type);
+			
+			$properName = \nitm\models\Data::properClassName($type);
+			
+			foreach(\Yii::$app->getModule('nitm-search')->getNamespaces(static::$namespace) as $namespace)
+			{	
+				$class = rtrim($namespace, '\\').'\\search\\'.$properName;
+				if(class_exists($class)) {
+					$found = true;
+					break;
+				}
+			}
+			if($found)
+				break;
+		}
 		if(!class_exists($class))
 			$class = static::className();
 		return new $class(['is' => $type]);

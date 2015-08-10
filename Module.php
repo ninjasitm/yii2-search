@@ -19,6 +19,8 @@ class Module extends \yii\base\Module
 	
 	public $classes = [];
 	
+	public $namespaces;
+	
 	/**
 	 * The name of the index to use
 	 */
@@ -52,6 +54,15 @@ class Module extends \yii\base\Module
 			self::EVENT_START => [$this, 'prepareRecord'],
 			self::EVENT_PROCESS =>  [$this, 'processRecord']
 		]);
+		
+		$this->namespaces = array_merge($this->defaultNamespaces(), (array)$this->namespaces);
+	}
+	
+	public function getNamespaces($namespace=[])
+	{
+		if(!empty($namespace))
+			$this->namespaces = array_merge($this->namespaces, (array) $namespace);
+		return $this->namespaces;
 	}
 	
 	public function getIndexer($name=null)
@@ -146,5 +157,13 @@ class Module extends \yii\base\Module
 			else
 				return true;
 		}
+	}
+	
+	protected function defaultNamespaces()
+	{
+		return [
+			'\\nitm\\widgets\\models',
+			'\\nitm\\models'
+		];
 	}
 }
