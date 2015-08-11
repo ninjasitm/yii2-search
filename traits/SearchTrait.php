@@ -39,7 +39,32 @@ trait SearchTrait {
 	
 	public function scenarios()
 	{
-		return ['default' => ($this->primaryModel->tableName() ? $this->attributes() : ['id'])];
+		return ['default' => ($this->getPrimaryModel()->tableName() ? $this->attributes() : ['id'])];
+	}
+	
+	protected function getPrimaryModel()
+	{
+		if(!isset($this->primaryModel)){
+			$class = $this->getPrimaryModelClass(true);
+			if(class_exists($class)) 
+				$options = [];
+			else {
+				$class = "\\nitm\search\\".ucFirst($this->engine)."Search";
+				$options = [
+					'indexType' => $this->type(),
+				];
+			}
+			if($this->engine == 'db')
+				$this->primaryModel = new $class([
+					'noDbInit' => true
+				]);
+			else {
+				$this->primaryModel = new static([
+					'is' => $this->type()
+				]);
+			}
+		}
+		return $this->primaryModel;
 	}
 	
 	public function __set($name, $value)
@@ -157,27 +182,7 @@ trait SearchTrait {
 	public function restart()
 	{
 		$oldType = $this->type();
-		if(!$this->primaryModel)
-		{
-			$class = $this->getPrimaryModelClass(true);
-			if(class_exists($class)) 
-				$options = [];
-			else {
-				$class = "\\nitm\search\\".ucFirst($this->engine)."Search";
-				$options = [
-					'indexType' => $this->type(),
-				];
-			}
-			if($this->engine == 'db')
-				$this->primaryModel = new $class([
-					'noDbInit' => true
-				]);
-			else {
-				$this->primaryModel = new static([
-					'is' => $this->type()
-				]);
-			}
-		}
+		$this->getPrimaryModel();
 		
 		$query = $this->primaryModel->find($this);
         
