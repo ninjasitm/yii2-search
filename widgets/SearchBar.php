@@ -21,7 +21,7 @@ class SearchBar extends \yii\base\Widget
 	public $content;
 	
 	/*
-	 * The size of the widget [large, mediaum, small, normal]
+	 * The size of the widget [large, medium, small, normal]
 	 */
 	public $size = 'large';
 	

@@ -15,7 +15,9 @@ use kartik\widgets\ActiveForm;
 use kartik\widgets\ActiveField;
 
 trait BaseWidgetTrait
-{	
+{
+	public $typeList;
+	
 	public $options = [
 		'id' => 'search'
 	];
@@ -43,14 +45,22 @@ trait BaseWidgetTrait
 	
 	protected function getDefaultHeader()
 	{
-		return Html::tag('form', '<div class="form-group" style="display:inline">
-			<div style="display:table" class="input-group">
-			  <input onFocus="this.value = this.value;" type="text" name="q" class="form-control" id="search-field" placeholder="Click here to start searching!!">
-			  <span class="input-group-btn" style="width:1%">
-				<button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
-			  </span>
-			</div><!-- /input-group -->
-		</div><!-- /form-group -->', $this->formOptions);
+		$searchBar = Html::tag('div', 
+			$this->getPrepend()
+			.Html::textInput('q', '', [
+				'class' => 'form-control',
+				'id' => 'search-field',
+				'placeholder' => 'Click here to start searching!',
+				'onfocus' => 'this.value = this.value'
+			])
+			.$this->getAppend(), [
+			"style" => "display:table",
+			"class" => "input-group"
+		]);
+		return Html::tag('form', Html::tag('div', $searchBar, [
+			"class" => "form-group",
+			"style" => "display:inline"
+		]), $this->formOptions);
 	}
 	
 	protected function getDefaultContent()
@@ -61,6 +71,45 @@ trait BaseWidgetTrait
 				'class' => 'col-md-12 col-sm-12 col-lg-12 text-center'
 			]),
 		$this->contentOptions);
+	}
+	
+	/**
+	 * Get the contend to be appended to the search bar
+	 */
+	protected function getAppend()
+	{
+		return Html::tag('span', 
+			Html::submitButton(Html::tag('i', '', [
+				'class' => 'fa fa-search'
+			]), [
+				"class" => "btn btn-default"
+			]), [
+			'class' => 'input-group-btn', 
+			'style' => 'width: 1%'
+		]);
+	}
+	
+	/**
+	 * Get the content to be prepended to the search bar
+	 */
+	protected function getPrepend()
+	{
+		$ret_val = '';
+		switch(1)
+		{
+			case isset($this->typeList) && !empty($this->typeList):	
+			$ret_val = Html::tag('span', 
+				Html::dropdownList('type', 
+					\Yii::$app->request->get('type'), 
+					$this->typeList, [
+						"class" => "form-control"
+				]), [
+				'class' => 'input-group-btn', 
+				'style' => 'width: 1%'
+			]);
+			break;
+		}
+		return $ret_val;
 	}
 }
 ?>
