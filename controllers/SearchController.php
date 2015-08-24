@@ -170,7 +170,7 @@ class SearchController extends DefaultController
 			else
 				$className = $options['className'];
 		}
-		if(!$className)
+		if(!class_exists($className))
 			$className = \nitm\helpers\ArrayHelper::getValue($options, 'className', '\nitm\models\search\BaseSearch');
 		return $className;
 	}
