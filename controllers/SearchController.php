@@ -77,9 +77,12 @@ class SearchController extends DefaultController
 			'booleanSearch' => true,
 		], $searchOptions);
 		
-		$className = $this->getSearchClass($options);
+		$className = $this->getSearchClass(array_merge([
+			'type' => $type,
+		], $options));
 		
 		$this->model = new $className($searchModelOptions);
+		
 		$this->model->setIndexType($type);
 		
 		list($results, $dataProvider) = $this->search([
@@ -94,6 +97,7 @@ class SearchController extends DefaultController
 		
 		//Change the context ID here to match the filtered content
 		$this->id = $type;
+		
 		$ret_val['data'] = $this->renderAjax($view, [
 			"dataProvider" => $dataProvider,
 			'searchModel' => $this->model,
@@ -136,23 +140,38 @@ class SearchController extends DefaultController
 	
 	protected function getSearchClass($options)
 	{
-		if(!isset($options['className']))
-		{
-			$class = (isset($options['namespace']) ? $options['namespace'] : '\nitm\models\search\\').$this->model->formName();
-			switch(class_exists($class))
+		if(isset($options['type'])) {
+			$properType = $this->model->properFormName($options['type']);
+			foreach(\Yii::$app->getModule('nitm-search')->getNamespaces([$this->model->namespace]) as $namespace)
 			{
-				case true:
-				$className = $class::className();
-				break;
-				
-				default:
-				$class = (isset($options['namespace']) ? rtrim($options['namespace'], '\\')."\BaseSearch" : '\nitm\models\search\BaseSearch');
-				$className = $class::className();
-				break;
+				if(strrpos($namespace, 'search') === false)
+					$className = rtrim($namespace,'\\').'\\search\\'.$properType;
+				else
+					$className = rtrim($namespace,'\\').'\\'.$properType;
+				if(class_exists($className))
+					break;
 			}
+		} else {
+			if(!isset($options['className']))
+			{
+				$class = (isset($options['namespace']) ? $options['namespace'] : '\nitm\models\search\\').$this->model->formName();
+				switch(class_exists($class))
+				{
+					case true:
+					$className = $class::className();
+					break;
+					
+					default:
+					$class = (isset($options['namespace']) ? rtrim($options['namespace'], '\\')."\BaseSearch" : '\nitm\models\search\BaseSearch');
+					$className = $class::className();
+					break;
+				}
+			}
+			else
+				$className = $options['className'];
 		}
-		else
-			$className = $options['className'];
+		if(!$className)
+			$className = \nitm\helpers\ArrayHelper::getValue($options, 'className', '\nitm\models\search\BaseSearch');
 		return $className;
 	}
 }
