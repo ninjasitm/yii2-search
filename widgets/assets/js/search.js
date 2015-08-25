@@ -22,6 +22,27 @@ function Search () {
 		'initMetaActions'
 	];
 	
+	this.initSearchFilter = function (containerId) {
+		var container = $nitm.getObj(this.getContainer(containerId));
+		$nitm.getObj(container).find("form[role~='"+this.forms.roles.ajaxSearch+"']").map(function() {
+			var _form = this;
+			$(this).off('submit');
+			var submitFunction = function (e) {
+				e.preventDefault();
+				$(_form).data('yiiActiveForm').validated = true;
+				var request = self.operation(_form, function(result, form, xmlHttp) {
+					var replaceId = $(form).data('id');
+					$nitm.notify(result.message, $nitm.classes.info, form);
+					$nitm.getObj(replaceId).replaceWith(result.data);
+					$nitm.module('tools').initDefaults('#'+replaceId);
+					history.pushState({}, result.message, (!result.url ? xmlHttp.url : result.url));
+				});
+			}
+			$(this).find(':input').on('change', function (e) {submitFunction(e)});
+			$(this).on('submit', function (e) {submitFunction(e)});
+		});
+	}
+	
 	this.initSearch = function (id, type) {
 		var self = this;
 		var $container = $(id);
