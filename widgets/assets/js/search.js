@@ -18,8 +18,12 @@ function Search () {
 	this.searchField = '#search-field';
 	this.resultContainer = '#search-results';
 	this.resultWrapper = '#search-results-container';
+	this.forms = {
+		roles: {
+			ajaxSearch: "filter",
+		}
+	};
 	this.defaultInit = [
-		'initMetaActions'
 	];
 	
 	this.initSearchFilter = function (containerId) {
@@ -132,5 +136,7 @@ function Search () {
 }
 
 $nitm.onModuleLoad('entity', function (module) {
-	module.initModule(new Search());
+	var s = new Search();
+	module.initModule(s);
+	s.initSearchFilter();
 });

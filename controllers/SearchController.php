@@ -105,8 +105,7 @@ class SearchController extends DefaultController
 			'isWhat' => $type,
 		]);
 		
-		if(!\Yii::$app->request->isAjax)
-		{
+		if(!\Yii::$app->request->isAjax) {
 			$ret_val['data'] = Html::tag('div', \yii\widgets\Breadcrumbs::widget([
 				'links' => [
 					[
@@ -123,6 +122,10 @@ class SearchController extends DefaultController
 			]);
 			$this->setResponseFormat('html');
 		}
+		//Add support for Pjax requests here. If somethign was sent basedon Pjax always return HTML
+		if(\Yii::$app->getRequest()->get('_pjax') != null)
+			$this->setResponseFormat('html');
+			
 		$getParams = array_merge([$type], \Yii::$app->request->get());
 		
 		foreach(['__format', '_type', 'getHtml', 'ajax', 'do'] as $prop)
