@@ -12,6 +12,14 @@ trait SearchTrait {
 	public $text;
 	public $filter = [];
 	public $expand = 'all';
+	/**
+	 * The default parameters for the dataProvider
+	 * [
+	 *		'sort' => ...
+	 *		'params' => ...
+	 * ]
+	 */
+	public $defaults = [];
 	
 	public $primaryModel;
 	public $primaryModelClass;
@@ -192,6 +200,24 @@ trait SearchTrait {
 				'pageSize' => ArrayHelper::getValue($this->queryOptions, 'limit', null)
 			]
         ]);
+		
+		foreach($this->defaults as $name=>$value)
+		{
+			switch(strtolower($name))
+			{
+				case 'sort':
+				case 'orderby':
+				if(!\yii::$app->getRequest()->get($this->dataProvider->getSort()->sortParam))
+					$this->dataProvider->query->orderBy($value);
+				break;
+				
+				case 'params':
+				case 'where':
+				$this->dataProvider->query->where($value);
+				break;
+			}
+		}
+			
 		$this->conditions = [];
 		$this->setIndexType($oldType);
 		return $this;
@@ -233,6 +259,10 @@ trait SearchTrait {
 	
 	protected function addConditions()
 	{
+		///If conditions were set by user then reset the where values
+		if(count($this->conditions))
+			$this->dataProvider->query->where = [];
+			
 		foreach($this->conditions as $type=>$condition)
 		{
 			$where = ($this->exclusiveSearch) ? 'andWhere' : $type.'Where';
