@@ -13,6 +13,7 @@ use yii\helpers\Html;
 use yii\base\Widget;
 use kartik\widgets\ActiveForm;
 use kartik\widgets\ActiveField;
+use kartik\widgets\Select2;
 
 class SearchBar extends \yii\base\Widget
 {	

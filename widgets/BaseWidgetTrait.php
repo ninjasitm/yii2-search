@@ -13,6 +13,7 @@ use yii\helpers\Html;
 use yii\base\Widget;
 use kartik\widgets\ActiveForm;
 use kartik\widgets\ActiveField;
+use kartik\widgets\Select2;
 
 trait BaseWidgetTrait
 {
@@ -99,13 +100,16 @@ trait BaseWidgetTrait
 		{
 			case isset($this->typeList) && !empty($this->typeList):	
 			$ret_val = Html::tag('span', 
-				Html::dropdownList('type', 
-					\Yii::$app->request->get('type'), 
-					$this->typeList, [
-						"class" => "form-control"
+				Select2::widget([
+					'name' => 'type', 
+					'value' => \Yii::$app->request->get('type'), 
+					'data' => $this->typeList,
+					'options' => [
+						'placeholder' => 'Search for...',
+					]
 				]), [
 				'class' => 'input-group-btn', 
-				'style' => 'width: 1%'
+				'style' => 'max-width: 75px'
 			]);
 			break;
 		}
