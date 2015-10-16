@@ -141,5 +141,10 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 		}
 		return [$results, $dataProvider];
 	}
+	
+	public function getSort()
+	{
+		return [];
+	}
 }
 ?>

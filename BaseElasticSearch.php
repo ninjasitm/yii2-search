@@ -175,5 +175,10 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		parent::populateRecord($record, $attributes);
 		static::populateRelations($record, $relations);
 	}
+	
+	public function getSort()
+	{
+		return [];
+	}
 }
 ?>

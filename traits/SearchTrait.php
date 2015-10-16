@@ -3,6 +3,7 @@
 namespace nitm\search\traits;
 
 use nitm\helpers\ArrayHelper;
+use nitm\helpers\QueryFilter;
 
 /**
  * Traits defined for expanding query scopes until yii2 resolves traits issue
@@ -110,7 +111,8 @@ trait SearchTrait {
 
     public function search($params=[])
     {
-		$this->restart();
+		$originalParams = $params;
+		$this->restart($params);
 		$params = $this->filterParams($params);
 		
         if (!($this->load($params, $this->primaryModel->formName()) && $this->validate(null, true))) {
@@ -150,14 +152,45 @@ trait SearchTrait {
 				}
 			}
 		}
-		$this->addConditions();
-		if((sizeof($params) == 0) || !isset($params['sort']))
-			if(!$this->dataProvider->query->orderBy)
-				$this->dataProvider->query->orderBy([
-					$this->primaryModel->primaryKey()[0] => SORT_DESC
-				]);
+				
+		$this->setQueryParams($originalParams);
+		//print_r($this->dataProvider->query->createCommand()->getRawSql());
+		//print_r($this->dataProvider->query->join);
+		//exit;
+		
         return $this->dataProvider;
     }
+	
+	protected function setQueryParams($params)
+	{
+		$this->addConditions();
+		
+		/**
+		 * Set the sort values if necessary
+		 */
+		if(!isset($params['sort'])) {
+			if($this->dataProvider->query->orderBy == null)
+				$this->dataProvider->sort->params = [
+					$this->primaryModel->primaryKey()[0]
+				];
+		} else
+			$this->dataProvider->query->orderBy($this->dataProvider->sort->getOrders(true));
+		
+		/**
+		 * Add related tables to from selection for relations and ordering by relations
+		 */
+		QueryFilter::addWithTables($this->dataProvider->query, $this->primaryModel, $this->dataProvider->sort->attributes);
+		
+		/**
+		 * Quote the field names
+		 * ONly do this for traditional DBMS
+		 */
+		 if($this instanceof \nitm\search\BaseSearch) {
+		 	QueryFilter::aliasSelectFields($this->dataProvider->query, $this->primaryModel);
+		 	QueryFilter::aliasOrderByFields($this->dataProvider->query, $this->primaryModel);
+		 	QueryFilter::addWithTables($this->dataProvider->query, $this->primaryModel);
+		 }
+	}
 	
 	/**
 	 * Overriding default find function
@@ -174,8 +207,7 @@ trait SearchTrait {
 					case 'select':
 					case 'indexby':
 					case 'orderby':
-					if(is_string($value) && ($value == 'primaryKey'))
-					{
+					if(is_string($value) && ($value == 'primaryKey')){
 						unset($model->queryOptions[$filter]);
 						$query->$filter(static::primaryKey()[0]);
 					}
@@ -187,7 +219,7 @@ trait SearchTrait {
 		return $query;
 	}
 	
-	public function restart()
+	public function restart($options=[])
 	{
 		$oldType = $this->type();
 		$this->getPrimaryModel();
@@ -196,23 +228,33 @@ trait SearchTrait {
         
 		$this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
+			'sort' => [
+				'enableMultiSort' => true,
+				'params' => $options,
+			],
 			'pagination' => [
 				'pageSize' => ArrayHelper::getValue($this->queryOptions, 'limit', null)
 			]
         ]);
+		
+		$this->dataProvider->sort->attributes = array_merge($this->dataProvider->sort->attributes, $this->primaryModel->getSort());
 		
 		foreach($this->defaults as $name=>$value)
 		{
 			switch(strtolower($name))
 			{
 				case 'sort':
+				$this->dataProvider->sort->defaultOrder = $value;
+				break;
+				
 				case 'orderby':
-				if(!\yii::$app->getRequest()->get($this->dataProvider->getSort()->sortParam))
+				if(!isset($options['sort']))
 					$this->dataProvider->query->orderBy($value);
 				break;
 				
 				case 'params':
 				case 'where':
+				QueryFilter::aliasWhereFields($value, $this);
 				$this->dataProvider->query->where($value);
 				break;
 			}
@@ -277,7 +319,9 @@ trait SearchTrait {
             $modelAttribute = substr($attribute, $pos + 1);
 		else
             $modelAttribute = $attribute;
-			
+		
+		$modelAttribute = $this->tableName().'.'.$modelAttribute;
+		
         if (is_string($value) && trim($value) === '')
             return;
 		
@@ -297,11 +341,11 @@ trait SearchTrait {
             switch($this->inclusiveSearch && !$this->exclusiveSearch)
 			{
 				case true:
-				$this->conditions['or'][] = [$attribute => $value];
+				$this->conditions['or'][] = [$modelAttribute => $value];
 				break;
 				
 				default:
-				$this->conditions['and'][] = [$attribute => $value];
+				$this->conditions['and'][] = [$modelAttribute => $value];
 				break;
 			}
 			break;
@@ -310,26 +354,26 @@ trait SearchTrait {
 			switch($partialMatch) 
 			{
 				case true:
-				$attribute = "LOWER(".$attribute.")";
+				$modelAttribute = "LOWER(".$modelAttribute.")";
 				$value = $this->expand($value);
 				switch(true)
 				{
 					case ($this->inclusiveSearch && !$this->forceExclusiveBooleanSearch):
-					$this->conditions['or'][] = ['or like', $attribute, $value, false];
+					$this->conditions['or'][] = ['or like', $modelAttribute, $value, false];
 					break;
 					
 					case $this->inclusiveSearch:
-					$this->conditions['or'][] = ['or like', $attribute, $value, false];
+					$this->conditions['or'][] = ['or like', $modelAttribute, $value, false];
 					break;
 					
 					default:
-					$this->conditions['and'][] = ['and like', $attribute, $value, false];
+					$this->conditions['and'][] = ['and like', $modelAttribute, $value, false];
 					break;
 				}
 				break;
 				
 				default:
-            	$this->conditions['and'][] = [$attribute => $value];
+            	$this->conditions['and'][] = [$modelAttribute => $value];
 				break;
 			}
 			break;
@@ -675,8 +719,7 @@ trait SearchTrait {
 				
 				foreach((array)$name as $n) 
 				{
-					if($record->hasMethod('get'.$n)) {
-						$relation = $record->{'get'.$n}();
+					if(($relation = $record->hasRelation($n)) != null) {
 						$value = array_map(function ($attributes) use($relation, $record) {
 							$object = \Yii::createObject(array_merge([
 								'class' => $relation->modelClass
