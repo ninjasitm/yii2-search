@@ -170,9 +170,11 @@ trait SearchTrait {
 		 */
 		if(!isset($params['sort'])) {
 			if($this->dataProvider->query->orderBy == null)
-				$this->dataProvider->sort->params = [
-					$this->primaryModel->primaryKey()[0]
-				];
+				$pk = ArrayHelper::getValue($this->primaryModel->primaryKey(), '0', null);
+				if($pk)
+					$this->dataProvider->sort->params = [
+						$pk
+					];
 		} else
 			$this->dataProvider->query->orderBy($this->dataProvider->sort->getOrders(true));
 		
