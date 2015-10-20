@@ -155,7 +155,7 @@ trait SearchTrait {
 				
 		$this->setQueryParams($originalParams);
 		//print_r($this->dataProvider->query->createCommand()->getRawSql());
-		//print_r($this->dataProvider->query->join);
+		//print_r($this->dataProvider->sort);
 		//exit;
 		
         return $this->dataProvider;
@@ -169,19 +169,15 @@ trait SearchTrait {
 		 * Set the sort values if necessary
 		 */
 		if(!isset($params['sort'])) {
-			if($this->dataProvider->query->orderBy == null)
+			if($this->dataProvider->query->orderBy == null) {
 				$pk = ArrayHelper::getValue($this->primaryModel->primaryKey(), '0', null);
 				if($pk)
 					$this->dataProvider->sort->params = [
 						$pk
 					];
+			}
 		} else
 			$this->dataProvider->query->orderBy($this->dataProvider->sort->getOrders(true));
-		
-		/**
-		 * Add related tables to from selection for relations and ordering by relations
-		 */
-		QueryFilter::addWithTables($this->dataProvider->query, $this->primaryModel, $this->dataProvider->sort->attributes);
 		
 		/**
 		 * Quote the field names
@@ -189,8 +185,8 @@ trait SearchTrait {
 		 */
 		 if($this instanceof \nitm\search\BaseSearch) {
 		 	QueryFilter::aliasSelectFields($this->dataProvider->query, $this->primaryModel);
-		 	QueryFilter::aliasOrderByFields($this->dataProvider->query, $this->primaryModel);
-		 	QueryFilter::addWithTables($this->dataProvider->query, $this->primaryModel);
+		 	$orders = QueryFilter::aliasOrderByFields($this->dataProvider->query, $this->primaryModel);
+			QueryFilter::setDataProviderOrders($this->dataProvider, $orders);
 		 }
 	}
 	
@@ -227,6 +223,14 @@ trait SearchTrait {
 		$this->getPrimaryModel();
 		
 		$query = $this->primaryModel->find($this);
+		
+		if(isset($options['queryOptions']) && is_array($options['queryOptions']))
+		{
+			foreach($options['queryOptions'] as $method=>$params)
+			{
+				$query->$method($params);
+			}
+		}
         
 		$this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
