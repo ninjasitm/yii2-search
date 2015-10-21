@@ -108,114 +108,6 @@ trait SearchTrait {
 			$ret_val[$attr] = \Yii::t('app', $this->properName($attr));
 		return $ret_val;
 	}
-
-    public function search($params=[])
-    {
-		$originalParams = $params;
-		$this->restart($params);
-		$params = $this->filterParams($params);
-		
-        if (!($this->load($params, $this->primaryModel->formName()) && $this->validate(null, true))) {
-			$this->addQueryOptions();
-            return $this->dataProvider;
-        }
-		
-		foreach($params[$this->primaryModel->formName()] as $attr=>$value)
-		{
-			if(array_key_exists($attr, $this->columns()))
-			{
-				$column = \yii\helpers\ArrayHelper::getvalue($this->columns(), $attr);
-				switch($column->type)
-				{
-					case 'integer':
-					case 'long':
-					case 'boolean':
-					case 'smallint':
-					case 'bigint':
-					case 'double':
-					case 'decimal':
-					case 'float':
-					case 'array':
-					$this->addCondition($column->name, $value);
-					break;
-					
-					case 'timestamp':
-					case 'date':
-					case 'datetime':
-					//$this->addCondition($column->name, $value);
-					break;
-					
-					case 'string':
-					case 'text':
-					$this->addCondition($column->name, $value, $this->booleanSearch);
-					break;
-				}
-			}
-		}
-				
-		$this->setQueryParams($originalParams);
-		//print_r($this->dataProvider->query->createCommand()->getRawSql());
-		//print_r($this->dataProvider->sort);
-		//exit;
-		
-        return $this->dataProvider;
-    }
-	
-	protected function setQueryParams($params)
-	{
-		$this->addConditions();
-		
-		/**
-		 * Set the sort values if necessary
-		 */
-		if(!isset($params['sort'])) {
-			if($this->dataProvider->query->orderBy == null) {
-				$pk = ArrayHelper::getValue($this->primaryModel->primaryKey(), '0', null);
-				if($pk)
-					$this->dataProvider->sort->params = [
-						$pk
-					];
-			}
-		} else
-			$this->dataProvider->query->orderBy($this->dataProvider->sort->getOrders(true));
-		
-		/**
-		 * Quote the field names
-		 * ONly do this for traditional DBMS
-		 */
-		 if($this instanceof \nitm\search\BaseSearch) {
-		 	QueryFilter::aliasSelectFields($this->dataProvider->query, $this->primaryModel);
-		 	$orders = QueryFilter::aliasOrderByFields($this->dataProvider->query, $this->primaryModel);
-			QueryFilter::setDataProviderOrders($this->dataProvider, $orders);
-		 }
-	}
-	
-	/**
-	 * Overriding default find function
-	 */
-	protected static function findInternal($className, $model=null, $options=null)
-	{
-		$query = \Yii::createObject($className, [get_called_class()]);
-		if(is_object($model))
-		{
-			foreach($model->queryOptions as $filter=>$value)
-			{
-				switch(strtolower($filter))
-				{
-					case 'select':
-					case 'indexby':
-					case 'orderby':
-					if(is_string($value) && ($value == 'primaryKey')){
-						unset($model->queryOptions[$filter]);
-						$query->$filter(static::primaryKey()[0]);
-					}
-					break;
-				}
-			}
-			static::applyFilters($query, $model->queryOptions);
-		}
-		return $query;
-	}
 	
 	public function restart($options=[])
 	{
@@ -231,6 +123,11 @@ trait SearchTrait {
 				$query->$method($params);
 			}
 		}
+		
+		$sortFromModel = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter.order_by', null);
+		$directionFromModel = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter.order', null); 
+		if(!is_null($sortFromModel))
+			$options['sort'] = ($directionFromModel == 'desc' ? '-' : '').$sortFromModel;
         
 		$this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
@@ -269,6 +166,118 @@ trait SearchTrait {
 		$this->conditions = [];
 		$this->setIndexType($oldType);
 		return $this;
+	}
+
+    public function search($params=[])
+    {
+		$this->restart($params);
+		$originalParams = $this->filterParams($params);
+		$params = $this->getParams($originalParams, $this->useEmptyParams);;
+		
+        if (!($this->load($params, $this->primaryModel->formName()) && $this->validate(null, true))) {
+			$this->addQueryOptions();
+            return $this->dataProvider;
+        }
+		
+		foreach($params[$this->primaryModel->formName()] as $attr=>$value)
+		{
+			if(array_key_exists($attr, $this->columns()))
+			{
+				$column = \yii\helpers\ArrayHelper::getvalue($this->columns(), $attr);
+				switch($column->type)
+				{
+					case 'integer':
+					case 'long':
+					case 'boolean':
+					case 'smallint':
+					case 'bigint':
+					case 'double':
+					case 'decimal':
+					case 'float':
+					case 'array':
+					$this->addCondition($column->name, $value);
+					break;
+					
+					case 'timestamp':
+					case 'date':
+					case 'datetime':
+					//$this->addCondition($column->name, $value);
+					break;
+					
+					case 'string':
+					case 'text':
+					$this->addCondition($column->name, $value, $this->booleanSearch);
+					break;
+				}
+			}
+		}
+
+		$this->setQueryParams($originalParams);
+		//print_r($this->dataProvider->query->createCommand()->getRawSql());
+		//print_r($this->dataProvider->query->orderBy);
+		//print_r($this->dataProvider->sort);
+		//exit;
+		
+        return $this->dataProvider;
+    }
+	
+	protected function setQueryParams($params)
+	{
+		$this->addConditions();
+		
+		$orders = $this->dataProvider->sort->getOrders(true);
+		
+		/**
+		 * Set the sort values if necessary
+		 */
+		if(!isset($params['sort']) && !isset($params['filter']['order_by'])) {
+			if($this->dataProvider->query->orderBy == null) {
+				$pk = ArrayHelper::getValue($this->primaryModel->primaryKey(), '0', null);
+				if($pk)
+					$this->dataProvider->sort->params = [
+						$pk
+					];
+			}
+				
+		} else
+			$this->dataProvider->query->orderBy($orders);
+		
+		/**
+		 * Quote the field names
+		 * ONly do this for traditional DBMS
+		 */
+		 if($this instanceof \nitm\search\BaseSearch) {
+		 	QueryFilter::aliasSelectFields($this->dataProvider->query, $this->primaryModel);
+		 	$orders = QueryFilter::aliasOrderByFields($this->dataProvider->query, $this->primaryModel);
+			QueryFilter::setDataProviderOrders($this->dataProvider, $orders);
+		 }
+	}
+	
+	/**
+	 * Overriding default find function
+	 */
+	protected static function findInternal($className, $model=null, $options=null)
+	{
+		$query = \Yii::createObject($className, [get_called_class()]);
+		if(is_object($model))
+		{
+			foreach($model->queryOptions as $filter=>$value)
+			{
+				switch(strtolower($filter))
+				{
+					case 'select':
+					case 'indexby':
+					case 'orderby':
+					if(is_string($value) && ($value == 'primaryKey')){
+						unset($model->queryOptions[$filter]);
+						$query->$filter(static::primaryKey()[0]);
+					}
+					break;
+				}
+			}
+			static::applyFilters($query, $model->queryOptions);
+		}
+		return $query;
 	}
 	
 	public function getSearchModelClass($class)
@@ -489,7 +498,7 @@ trait SearchTrait {
 			return $options;
 		};
 		$params = array_merge($filterParser($params), (array)$filterParser($modelParams));
-		return $this->getParams($params, $this->useEmptyParams);
+		return $params;
 	}
 	
 	protected function getTextParam($value)
