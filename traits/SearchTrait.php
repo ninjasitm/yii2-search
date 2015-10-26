@@ -9,7 +9,7 @@ use nitm\helpers\QueryFilter;
  * Traits defined for expanding query scopes until yii2 resolves traits issue
  */
 trait SearchTrait {
-	
+
 	public $text;
 	public $filter = [];
 	public $expand = 'all';
@@ -21,16 +21,16 @@ trait SearchTrait {
 	 * ]
 	 */
 	public $defaults = [];
-	
+
 	public $primaryModel;
 	public $primaryModelClass;
 	public $useEmptyParams;
-	
+
 	/**
 	 * Should wildcards be used for text searching?
 	 */
 	public $booleanSearch;
-	
+
 	/**
 	 * Should the or clause be used?
 	 */
@@ -38,24 +38,24 @@ trait SearchTrait {
 	public $exclusiveSearch;
 	public $forceExclusiveBooleanSearch;
 	public $mergeInclusive;
-	
-	public static $sanitizeType = true; 
+
+	public static $sanitizeType = true;
 	public static $tableNames;
 	public static $namespace = '\nitm\models\\';
-	
+
 	protected $dataProvider;
 	protected $conditions = [];
-	
+
 	public function scenarios()
 	{
 		return ['default' => ($this->getPrimaryModel()->tableName() ? $this->attributes() : ['id'])];
 	}
-	
+
 	protected function getPrimaryModel()
 	{
 		if(!isset($this->primaryModel)){
 			$class = $this->getPrimaryModelClass(true);
-			if(class_exists($class)) 
+			if(class_exists($class))
 				$options = [];
 			else {
 				$class = "\\nitm\search\\".ucFirst($this->engine)."Search";
@@ -75,7 +75,7 @@ trait SearchTrait {
 		}
 		return $this->primaryModel;
 	}
-	
+
 	public function __set($name, $value)
 	{
 		try {
@@ -84,7 +84,7 @@ trait SearchTrait {
 			$this->{$name} = $value;
 		}
 	}
-	
+
 	public function __get($name)
 	{
 		try {
@@ -108,14 +108,14 @@ trait SearchTrait {
 			$ret_val[$attr] = \Yii::t('app', $this->properName($attr));
 		return $ret_val;
 	}
-	
+
 	public function restart($options=[])
 	{
 		$oldType = $this->type();
 		$this->getPrimaryModel();
-		
+
 		$query = $this->primaryModel->find($this);
-		
+
 		if(isset($options['queryOptions']) && is_array($options['queryOptions']))
 		{
 			foreach($options['queryOptions'] as $method=>$params)
@@ -123,12 +123,12 @@ trait SearchTrait {
 				$query->$method($params);
 			}
 		}
-		
+
 		$sortFromModel = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter.order_by', null);
-		$directionFromModel = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter.order', null); 
+		$directionFromModel = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter.order', null);
 		if(!is_null($sortFromModel))
 			$options['sort'] = ($directionFromModel == 'desc' ? '-' : '').$sortFromModel;
-        
+
 		$this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
 			'sort' => [
@@ -139,9 +139,9 @@ trait SearchTrait {
 				'pageSize' => ArrayHelper::getValue($this->queryOptions, 'limit', null)
 			]
         ]);
-		
+
 		$this->dataProvider->sort->attributes = array_merge($this->dataProvider->sort->attributes, $this->primaryModel->getSort());
-		
+
 		foreach($this->defaults as $name=>$value)
 		{
 			switch(strtolower($name))
@@ -149,12 +149,12 @@ trait SearchTrait {
 				case 'sort':
 				$this->dataProvider->sort->defaultOrder = $value;
 				break;
-				
+
 				case 'orderby':
 				if(!isset($options['sort']))
 					$this->dataProvider->query->orderBy($value);
 				break;
-				
+
 				case 'params':
 				case 'where':
 				QueryFilter::aliasWhereFields($value, $this);
@@ -162,7 +162,7 @@ trait SearchTrait {
 				break;
 			}
 		}
-			
+
 		$this->conditions = [];
 		$this->setIndexType($oldType);
 		return $this;
@@ -173,12 +173,12 @@ trait SearchTrait {
 		$this->restart($params);
 		$originalParams = $this->filterParams($params);
 		$params = $this->getParams($originalParams, $this->useEmptyParams);;
-		
+
         if (!($this->load($params, $this->primaryModel->formName()) && $this->validate(null, true))) {
 			$this->addQueryOptions();
             return $this->dataProvider;
         }
-		
+
 		foreach($params[$this->primaryModel->formName()] as $attr=>$value)
 		{
 			if(array_key_exists($attr, $this->columns()))
@@ -197,13 +197,13 @@ trait SearchTrait {
 					case 'array':
 					$this->addCondition($column->name, $value);
 					break;
-					
+
 					case 'timestamp':
 					case 'date':
 					case 'datetime':
 					//$this->addCondition($column->name, $value);
 					break;
-					
+
 					case 'string':
 					case 'text':
 					$this->addCondition($column->name, $value, $this->booleanSearch);
@@ -217,16 +217,16 @@ trait SearchTrait {
 		//print_r($this->dataProvider->query->orderBy);
 		//print_r($this->dataProvider->sort);
 		//exit;
-		
+
         return $this->dataProvider;
     }
-	
+
 	protected function setQueryParams($params)
 	{
 		$this->addConditions();
-		
+
 		$orders = $this->dataProvider->sort->getOrders(true);
-		
+
 		/**
 		 * Set the sort values if necessary
 		 */
@@ -238,10 +238,10 @@ trait SearchTrait {
 						$pk
 					];
 			}
-				
+
 		} else
 			$this->dataProvider->query->orderBy($orders);
-		
+
 		/**
 		 * Quote the field names
 		 * ONly do this for traditional DBMS
@@ -252,7 +252,7 @@ trait SearchTrait {
 			QueryFilter::setDataProviderOrders($this->dataProvider, $orders);
 		 }
 	}
-	
+
 	/**
 	 * Overriding default find function
 	 */
@@ -279,19 +279,19 @@ trait SearchTrait {
 		}
 		return $query;
 	}
-	
+
 	public function getSearchModelClass($class)
 	{
 		return rtrim(static::$namespace, '\\').'\\search\\'.array_pop(explode('\\', $class));
 	}
-	
+
 	public function getPrimaryModelClass($force=false)
 	{
 		if(!isset($this->primaryModelClass) || $force)
 			$this->setPrimaryModelClass(null, $force);
 		return $this->primaryModelClass;
 	}
-	
+
 	public function setPrimaryModelClass($class=null, $force=fasle)
 	{
 		if(!is_null($class) && class_exists($class))
@@ -303,23 +303,23 @@ trait SearchTrait {
 			}
 		}
 	}
-	
+
 	public function getModelClass($class)
 	{
 		return rtrim(static::$namespace, '\\').'\\'.array_pop(explode('\\', $class));
 	}
-	
+
 	public static function useSearchClass($callingClass)
 	{
 		return strpos(strtolower($callingClass), 'models\search') !== false;
 	}
-	
+
 	protected function addConditions()
 	{
 		///If conditions were set by user then reset the where values
 		if(count($this->conditions))
 			$this->dataProvider->query->where = [];
-			
+
 		foreach($this->conditions as $type=>$condition)
 		{
 			$where = ($this->exclusiveSearch) ? 'andWhere' : $type.'Where';
@@ -334,21 +334,21 @@ trait SearchTrait {
             $modelAttribute = substr($attribute, $pos + 1);
 		else
             $modelAttribute = $attribute;
-		
+
 		$modelAttribute = $this->tableName().'.'.$modelAttribute;
-		
+
         if (is_string($value) && trim($value) === '')
             return;
-		
+
 		$value = (is_array($value) && count($value) == 1) ? current($value) : $value;
-		
+
 		switch(1)
 		{
 			case is_array($value) && is_string(current($value)) && in_array(strtolower(current($value)), ['and', 'or']):
 			print_r($value);
 			exit;
 			break;
-			
+
 			case is_numeric($value):
 			case !$partialMatch:
 			case \nitm\helpers\Helper::boolval($value):
@@ -358,15 +358,15 @@ trait SearchTrait {
 				case true:
 				$this->conditions['or'][] = [$modelAttribute => $value];
 				break;
-				
+
 				default:
 				$this->conditions['and'][] = [$modelAttribute => $value];
 				break;
 			}
 			break;
-			
+
 			default:
-			switch($partialMatch) 
+			switch($partialMatch)
 			{
 				case true:
 				$modelAttribute = "LOWER(".$modelAttribute.")";
@@ -376,17 +376,17 @@ trait SearchTrait {
 					case ($this->inclusiveSearch && !$this->forceExclusiveBooleanSearch):
 					$this->conditions['or'][] = ['or like', $modelAttribute, $value, false];
 					break;
-					
+
 					case $this->inclusiveSearch:
 					$this->conditions['or'][] = ['or like', $modelAttribute, $value, false];
 					break;
-					
+
 					default:
 					$this->conditions['and'][] = ['and like', $modelAttribute, $value, false];
 					break;
 				}
 				break;
-				
+
 				default:
             	$this->conditions['and'][] = [$modelAttribute => $value];
 				break;
@@ -394,7 +394,7 @@ trait SearchTrait {
 			break;
 		}
 	}
-	
+
 	protected function expand($values)
 	{
 		$values = (array)$values;
@@ -405,15 +405,15 @@ trait SearchTrait {
 				case 'right':
 				$value = $value."%";
 				break;
-				
+
 				case 'left':
 				$value = "%".$value;
 				break;
-				
+
 				case 'none':
 				$value = $value;
 				break;
-				
+
 				default:
 				$value = "%".$value."%";
 				break;
@@ -422,7 +422,7 @@ trait SearchTrait {
 		}
 		return sizeof($values) == 1 ? array_pop($values) : $values;
 	}
-	
+
 	private function setProperties($names=[], $values=[])
 	{
 		$names = is_array($names) ? $names : [$names];
@@ -437,18 +437,18 @@ trait SearchTrait {
 			break;
 		}
 	}
-	
+
 	/**
 	 * Filter the parameters and remove some options
 	 */
 	private function filterParams($params=[])
 	{
 		$modelParams = ArrayHelper::remove($params, $this->primaryModel->formName(), ArrayHelper::getValue($params, $this->properName($this->type()), []));
-		
+
 		////$params = array_merge([
 		//	'filter' => array_intersect_key($params, array_flip(['sort']))
 		//], (array)array_intersect_key($params, array_flip(['q', 'text'])));
-		
+
 		$filterParser = function ($options) {
 			foreach($options as $name=>$value)
 			{
@@ -463,7 +463,7 @@ trait SearchTrait {
 							case 'inclusive':
 							$this->{$filterName.'Search'} = (bool)$filterValue;
 							break;
-							
+
 							case 'sort':
 							case 'order_by':
 							if(isset($options['order']))
@@ -472,19 +472,19 @@ trait SearchTrait {
 								$direction = $filterValue[0]  == '-' ? 'desc' : 'asc';
 								$filterValue = $filterValue[0] == '-' ? substr($filterValue, 1) : $filterValue;
 							}
-								
+
 							$this->dataProvider->query->orderBy([$filterValue => $direction]);
 							$this->useEmptyParams = true;
 							unset($options['order']);
 							break;
-							
+
 							default:
 							$options[$filterName] = $filterValue;
 							break;
 						}
 					}
 					break;
-					
+
 					case 'text':
 					case 'q':
 					if(!empty($value)) {
@@ -500,14 +500,14 @@ trait SearchTrait {
 		$params = array_merge($filterParser($params), (array)$filterParser($modelParams));
 		return $params;
 	}
-	
+
 	protected function getTextParam($value)
 	{
 		$params = [];
 		$this->mergeInclusive = true;
 		if(!$this->primaryModel->tableName())
 			return $params;
-		
+
 		foreach($this->primaryModel->getTableSchema()->columns as $column)
 		{
 			switch($column->phpType)
@@ -520,7 +520,7 @@ trait SearchTrait {
 		}
 		return $params;
 	}
-	
+
 	protected function getParams($params)
 	{
 		if($this->primaryModel->tableName()) {
@@ -538,17 +538,17 @@ trait SearchTrait {
 				echo "Returning false for $key\n";
 				return false;
 				break;*/
-				
+
 				default:
 				return true;
 				break;
 			}
 		})];
-		
+
 		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(empty(current($params)) && !$this->useEmptyParams)) : $this->exclusiveSearch;
 		return $params;
 	}
-	
+
 	/**
 	 * This function properly maps the object to the correct class
 	 */
@@ -557,16 +557,16 @@ trait SearchTrait {
 		$type = isset($attributes['_type']) ? $attributes['_type'] : $type;
 		$type = is_null($type) ? static::isWhat() : $type;
 		$found = $class = false;
-		
+
 		foreach([
 			null, 'singularize', 'pluralize'
 		] as $inflector) {
-			
+
 			if(!is_null($inflector))
 				$type = \yii\helpers\Inflector::$inflector($type);
-			
+
 			$properName = \nitm\models\Data::properClassName($type);
-			
+
 			foreach(\Yii::$app->getModule('nitm-search')->getNamespaces(static::$namespace) as $namespace)
 			{
 				$class = [rtrim($namespace, '\\')];
@@ -586,7 +586,7 @@ trait SearchTrait {
 			$class = static::className();
 		return new $class(['is' => $type]);
 	}
-	
+
 	/**
 	 * Get a synonym value
 	 */
@@ -603,7 +603,7 @@ trait SearchTrait {
 		}
 		return $ret_val;
 	}
-	
+
 	/**
 	 * Translate a value
 	 * @param mixed $value
@@ -617,14 +617,14 @@ trait SearchTrait {
 			case $value == 'false':
 			$ret_val = 0;
 			break;
-			
+
 			case $value == 'true':
 			$ret_val = 1;
-			break; 
+			break;
 		}
 		return $ret_val;
 	}
-	
+
 	/**
 	 * Convert some common properties
 	 * @param array $item
@@ -634,7 +634,7 @@ trait SearchTrait {
 	public static function normalize(&$item, $decode=false, $columns=null)
 	{
 		$columns = is_array($columns) ? $columns : static::columns();
-		
+
 		foreach((array)$item as $f=>$v)
 		{
 			if(!isset($columns[$f]))
@@ -645,32 +645,32 @@ trait SearchTrait {
 				case 'tinyint':
 				$item[$f] = $info['dbType'] == 'tinyint(1)' ? (boolean)$v : (int)$v;
 				break;
-				
+
 				case 'int':
 				case 'integer':
 				case 'long':
 				$item[$f] = (int)$item[$f];
 				break;
-				
+
 				case 'float':
 				$item[$f] = (float)$item[$f];
 				break;
-				
+
 				case 'double':
 				$item[$f] = (double)$item[$f];
 				break;
-				
+
 				case 'real':
 				$item[$f] = (real)$item[$f];
 				break;
-				
+
 				case 'blob':
 				case 'longblob':
 				case 'mediumblob':
 				unset($item[$f]);
 				continue;
 				break;
-				
+
 				case 'timestamp':
 				/**
 				 * This is most likely a timestamp behavior.
@@ -679,7 +679,7 @@ trait SearchTrait {
 				if(is_object($v))
 					$item[$f] = time();
 				break;
-				
+
 				case 'text':
 				case 'varchar':
 				case 'string':
@@ -692,23 +692,23 @@ trait SearchTrait {
 		}
 		return $item;
 	}
-	
-	protected function defaultColumns() 
+
+	protected function defaultColumns()
 	{
 		$defaultColumns = ['_id' => 'int', '_type' => 'string', '_index' => 'string'];
-		foreach($defaultColumns as $name=>$type) 
+		foreach($defaultColumns as $name=>$type)
 		{
 			$defaultColumns[$name] = new \yii\db\ColumnSchema([
-				'name' => $type, 
-				'type' => $type, 
-				'phpType' => $type, 
+				'name' => $type,
+				'type' => $type,
+				'phpType' => $type,
 				'dbType' => $type
 			]);
 		}
 		return $defaultColumns;
 	}
-	
-	protected function populateRelations($record, $row) 
+
+	protected function populateRelations($record, $row)
 	{
 		$relations = [];
 		foreach($row as $name=>$value)
@@ -719,32 +719,32 @@ trait SearchTrait {
 				case $name == 'type':
 				$name = ['typeof', 'type'];
 				break;
-				
+
 				case $name == 'id':
 				continue;
 				break;
-				
+
 				default:
 				$name = [$name];
 				break;
 			}
 			if(is_array($value) && $value != []) {
-				
+
 				$value = is_array(current($value)) ? $value : [$value];
-				
-				foreach((array)$name as $n) 
+
+				foreach((array)$name as $n)
 				{
 					if(($relation = $record->hasRelation($n)) != null) {
 						$value = array_map(function ($attributes) use($relation, $record) {
 							$object = \Yii::createObject(array_merge([
 								'class' => $relation->modelClass
 							], array_intersect_key($attributes, array_flip((new $relation->modelClass)->attributes()))));
-							return $object;			
+							return $object;
 						}, $value);
-						
+
 						if(!$relation->multiple)
 							$value = current($value);
-							
+
 						if(count($value)) {
 							if(is_array($value))
 								array_walk($value, function ($related) use($n, $value){
@@ -754,7 +754,7 @@ trait SearchTrait {
 								static::populateRelations($value, ArrayHelper::toArray($value));
 							$record->populateRelation($originalName, $value);
 						}
-						
+
 						if($record->hasAttribute($originalName)) {
 							$record->setAttribute($originalName, null);
 							$record->setOldAttribute($originalName, null);
@@ -766,7 +766,7 @@ trait SearchTrait {
 		}
 		static::normalize($record, true);
 	}
-	
+
 	protected function extractAttributesAndRelations($from)
 	{
 		$ret_val = [
