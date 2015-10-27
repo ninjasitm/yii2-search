@@ -126,6 +126,7 @@ trait SearchTrait {
 
 		$sortFromModel = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter.order_by', null);
 		$directionFromModel = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter.order', null);
+		$getParams = empty(ArrayHelper::getValue($options, $this->primaryModel->formName(), null));
 		if(!is_null($sortFromModel))
 			$options['sort'] = ($directionFromModel == 'desc' ? '-' : '').$sortFromModel;
 
@@ -157,8 +158,10 @@ trait SearchTrait {
 
 				case 'params':
 				case 'where':
-				QueryFilter::aliasWhereFields($value, $this);
-				$this->dataProvider->query->where($value);
+				if($getParams) {
+					QueryFilter::aliasWhereFields($value, $this);
+					$this->dataProvider->query->where($value);
+				}
 				break;
 			}
 		}
@@ -215,7 +218,7 @@ trait SearchTrait {
 		$this->setQueryParams($originalParams);
 		//print_r($this->dataProvider->query->createCommand()->getRawSql());
 		//print_r($this->dataProvider->query->orderBy);
-		//print_r($this->dataProvider->sort);
+		//print_r($this->dataProvider->query);
 		//exit;
 
         return $this->dataProvider;
