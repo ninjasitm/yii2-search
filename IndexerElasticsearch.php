@@ -7,24 +7,24 @@ use nitm\models\DB;
 /**
  * IndexerElastisearch class
  * Can be extended later but by default
- * will include base methods for adding 
+ * will include base methods for adding
  * data to a search database and automatic
  * indexing of that information
- * 
+ *
  * There will also be the ability to
  * add search information
  * There will be the ability to update keywords
  * and such
 */
-	
+
 class IndexerElasticsearch extends BaseElasticSearch
 {
 	use traits\BaseIndexerTrait;
-	
+
 	public $deleteIndexes;
-	
+
 	/**
-	 * Schedule for the river 
+	 * Schedule for the river
 	 * Example:  = "05 00 * * * ?" runs every 5 minutes
 	 */
 	public $schedule;
@@ -46,14 +46,14 @@ class IndexerElasticsearch extends BaseElasticSearch
 	 * ]
 	 */
 	public $jdbc;
-	
+
 	public $nestedMapping = [];
-	
+
 	protected $columns = [];
-	
+
 	const MODE_FEEDER = 'feeder';
 	const MODE_RIVER = 'river';
-	
+
 	public function init()
 	{
 		parent::init();
@@ -61,7 +61,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		$this->url = !isset($this->url) ? \Yii::$app->elasticsearch->nodes[$this->node] : $this->url;
 		$this->initEvents();
 	}
-	
+
 	public function behaviors()
 	{
 		$behaviors = [
@@ -71,7 +71,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		];
 		return array_merge(parent::behaviors(), $behaviors);
 	}
-	
+
 	protected function initEvents()
 	{
 		/**
@@ -87,10 +87,10 @@ class IndexerElasticsearch extends BaseElasticSearch
 					case 'classes':
 					$options = $allInfo[$this->namespace][$this->properClassName($event->sender->type())];
 					break;
-					
+
 					case 'tables':
 					break;
-					
+
 					default:
 					return;
 					break;
@@ -99,7 +99,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 				$attributes = array_keys($this->columns);
 				if(is_array($options) && isset($options['queryOptions']['with']))
 					$attributes = array_merge($attributes, $options['queryOptions']['with']);
-					
+
 				/*
 				 * Update the mapping
 				 */
@@ -115,7 +115,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			$event->handled = true;
 		});
 	}
-	
+
 	/**
 	 * Update the mapping for an elsasticsearch index
 	 */
@@ -135,7 +135,19 @@ class IndexerElasticsearch extends BaseElasticSearch
 				$relatedQuery = $primaryModel->$relationGetter();
 				$linkModelClass = $relatedQuery->modelClass;
 				$relatedColumns = $linkModelClass::getTableSchema()->columns;
-				$relatedAttributes = is_array($relatedQuery->select) ? $relatedQuery->select : array_keys($relatedColumns);
+				$hasWildcardFields = false;
+				$relatedAttributes = array_keys($relatedColumns);
+				if(is_array($relatedQuery->select))
+				{
+					foreach($relatedQuery->select as $field)
+					{
+						if(strpos($field, '*') !== false || $field instanceof \yii\db\Expression) {
+							$hasWildcardFields = true;
+							break;
+						}
+					}
+					$relatedAttributes = $hasWildcardFields ? array_keys($relatedColumns) : $relatedAttributes;
+				}
 				@$mapping[$this->index()]['mappings'][$this->type()]['properties'][$attribute] = [
 					'type' => 'nested',
 					'include_in_all' => true,
@@ -146,7 +158,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 					@$mapping[$this->index()]['mappings'][$this->type()]['properties'][$attribute]['properties'][$relatedProperty] = $this->getFieldAttributes($attribute, $relatedColumns[$relatedProperty], true);
 				}
 				break;
-				
+
 				default:
 				@$mapping[$this->index()]['mappings'][$this->type()]['properties'][$attribute] = $this->getFieldAttributes($attribute, $this->columns[$attribute]);
 				break;
@@ -154,14 +166,14 @@ class IndexerElasticsearch extends BaseElasticSearch
 		}
 		$put = [
 			'url' => '_mapping?ignore_conflicts=true',
-			json_encode($mapping[$this->index()]['mappings']), 
+			json_encode($mapping[$this->index()]['mappings']),
 			true
 		];
 		if($this->reIndex)
 			$this->apiInternal('delete', ['url' => '_mapping']);
 		$this->apiInternal('put', $put);
 	}
-	
+
 	protected function getFieldAttributes($field, $info, $all = false)
 	{
 		$info = \yii\helpers\ArrayHelper::toArray($info);
@@ -182,7 +194,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			$ret_val['ignore_malformed'] = true;
 			$ret_val['include_in_all'] = true;
 			break;
-			
+
 			case 'tinyint':
 			case 'boolean':
 			switch($info['dbType'])
@@ -192,7 +204,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 				$ret_val['type'] = 'boolean';
 				$ret_val['null_value'] = false;
 				break;
-				
+
 				default:
 				$ret_val['type'] = 'integer';
 				$ret_val['null_value'] = 0;
@@ -201,13 +213,13 @@ class IndexerElasticsearch extends BaseElasticSearch
 			$ret_val['store'] = true;
 			$ret_val['include_in_all'] = true;
 			break;
-			
+
 			case 'bigint':
 			$ret_val['store'] = true;
 			$ret_val['include_in_all'] = true;
 			$ret_val['type'] = 'long';
 			break;
-			
+
 			case 'smallint':
 			case 'int':
 			$ret_val['type'] = 'integer';
@@ -218,7 +230,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			$ret_val['doc_values'] = true;
 			$ret_val['index'] = 'not_analyzed';
 			break;
-			
+
 			case 'resource':
 			case 'binary':
 			case 'blob':
@@ -226,7 +238,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			$ret_val['store'] = 'no';
 			$ret_val['index'] = 'no';
 			break;
-			
+
 			case 'text':
 			case 'varchar':
 			$ret_val['type'] = 'string';
@@ -241,7 +253,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		$ret_val = is_null($userMapping) ? $ret_val : array_merge($ret_val, $userMapping);
 		return $ret_val;
 	}
-	
+
 	/**
 	 * Get the mapping from the ElasticSearch server
 	 * @return array
@@ -250,7 +262,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 	{
 		return static::api('get', ['url' => '_mapping', null, false]);
 	}
-	
+
 	public function operation($operation, $options=[])
 	{
 		$operation = strtolower($operation);
@@ -268,7 +280,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 					]
 				];
 				break;
-				
+
 				case 'delete':
 				$options = [
 					'queryOptions' => [
@@ -276,7 +288,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 					]
 				];
 				break;
-				
+
 				default:
 				$options = [];
 				break;
@@ -285,7 +297,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			$this->run();
 			$this->finish();
 			break;
-			
+
 			case 'stats':
 			$options['url'] = '_search';
 			$oldJdbcOptions = $this->jdbc['options'];
@@ -300,13 +312,13 @@ class IndexerElasticsearch extends BaseElasticSearch
 			$this->jdbc['options'] = $oldJdbcOptions;
 			return $ret_val;
 			break;
-			
+
 			default:
 			echo "\n\tUnknown operation: $operation. Exiting...";
 			break;
 		}
 	}
-	
+
 	/**
 	 * Prepare data to be indexed/checked
 	 * @param int $mode
@@ -326,14 +338,14 @@ class IndexerElasticsearch extends BaseElasticSearch
 				$prepare = 'FromClasses';
 				$dataSource = '_classes';
 				break;
-				
+
 				default:
 				$prepare = 'FromTables';
 				$dataSource = '_tables';
 				break;
 			}
 			break;
-			
+
 			default:
 			if(!isset($this->jdbc))
 			{
@@ -350,7 +362,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		$this->$prepare($queryOptions);
 		$this->type = $operation;
 	}
-	
+
 	protected static function getJdbcOptions()
 	{
 		return [
@@ -358,10 +370,10 @@ class IndexerElasticsearch extends BaseElasticSearch
 			'url' => 'mysql:'.static::getDbModel()->host,
 			'username' => static::getDbModel()->username,
 			'password' => static::getDbModel()->getPassword()
-			
+
 		];
 	}
-	
+
 	/**
 	 * Use SQL to push using a PUT command
 	 */
@@ -376,7 +388,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			$this->stack($table, [
 				'worker' => [$this, 'parse'],
 				'args' => [
-					$model, 
+					$model,
 					function ($query, $self) {
 						$query->select()
 							->limit($self->limit, $self->offset)
@@ -388,13 +400,13 @@ class IndexerElasticsearch extends BaseElasticSearch
 				]
 			]);
 		}
-		
+
 		if($success == true)
 		{
 			$this->updateIndexed();
 		}
 	}
-	
+
 	/**
 	 * Use SQL to push using a PUT command
 	 * @param string $sql SQL
@@ -419,7 +431,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		else
 			$this->log(json_encode($options, JSON_PRETTY_PRINT));
 	}
-	
+
 	/**
 	 * Perform an operation
 	 * @param string $operation
@@ -434,7 +446,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		$this->log("\n\t\t".var_export($options, true), 5);
 		return static::api($operation, $options);
 	}
-	
+
 	public static function api($operation, $options)
 	{
 		//print_r(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3));
@@ -444,7 +456,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			case true:
 			return true;
 			break;
-			
+
 			default:
 			$url = isset($options['index']) ? [$options['index']] : [static::index()];
 			$url[] = isset($options['type']) ? $options['type'] : static::type();
@@ -459,7 +471,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			break;
 		}
 	}
-	
+
 	protected function runOperation()
 	{
 		$result = call_user_func([$this, $this->_operation]);
@@ -467,7 +479,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		$this->log("\n\t\t\t"."Result: Took \e[1m".$resultArray['took']."ms\e[0m Errors: ".($resultArray['errors'] ? "\e[31myes" : "\e[32mno")."\e[0m");
 		$this->log("\n\t\t\t".($this->verbose >= 2 ? "Debug: ".var_export(@$result, true) : ''), 2);
 	}
-	
+
 	public final function operationIndex()
 	{
 		$ret_val = [
@@ -490,8 +502,8 @@ class IndexerElasticsearch extends BaseElasticSearch
 			};
 			$create[] = "{}";
 			$options = [
-				'url' => '_bulk', 
-				implode("\n", $create), 
+				'url' => '_bulk',
+				implode("\n", $create),
 				true
 			];
 			if(sizeof($create) >= 1 && ($result = $this->apiInternal('post', $options)))
@@ -504,14 +516,14 @@ class IndexerElasticsearch extends BaseElasticSearch
 			}
 			$ret_val = $result;
 		}
-		
+
 		if(isset($put) && $put == true)
 			$this->updateIndexed();
-			
+
 		$this->bulk[$this->type] = [];
 		return $ret_val;
 	}
-	
+
 	public function operationUpdate()
 	{
 		if(($this->mode != 'river') && ($this->bulkSize('update') >= 1))
@@ -528,7 +540,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 				'url' => '_mget',
 			]);
 			$this->log("\n\t\tUpdating :");
-			foreach((array)$existing as $item=>$idx) 
+			foreach((array)$existing as $item=>$idx)
 			{
 				$this->normalize($item);
 				$this->progress('update', null, null, null, true);
@@ -571,12 +583,12 @@ class IndexerElasticsearch extends BaseElasticSearch
 			}
 		}
 	}
-	
+
 	public function operationDeleteIndex()
 	{
-		
+
 	}
-	
+
 	public function operationDelete()
 	{
 		$ret_val = false;
@@ -601,7 +613,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 					}
 				}
 				$options = [
-					'url' => '_bulk', 
+					'url' => '_bulk',
 					implode("\n", array_map('json_encode', $this->bulk('delete'))),
 				];
 				if($result = $this->apiInternal('post', $options))
@@ -618,7 +630,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 				$ret_val = '{"took":"1ms","Errors":false}';
 			}
 		}
-		
+
 	}
 }
 ?>

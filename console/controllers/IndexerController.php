@@ -7,37 +7,37 @@ use nitm\models\DB;
 class IndexerController extends \yii\console\Controller
 {
 	public $defaultAction = 'index';
-	
+
 	/**
 	 * The mode for the indexer
 	 */
 	public $mode = 'feeder';
-	
+
 	/**
 	 * The indexer to use
 	 */
 	public $indexer;
-	
+
 	/**
 	 * The index to work on
 	 */
 	public $index;
-	
+
 	/**
 	 * Should we re-isert all items?
 	 */
 	public $reIndex;
-	
+
 	/**
 	 * The data type
 	 */
 	public $dataType;
-	
+
 	/**
 	 * The data source. Either a string or
 	 */
 	public $dataSource;
-	
+
 	/**
 	 * Verbosity
 	 * 0 - No output
@@ -45,17 +45,17 @@ class IndexerController extends \yii\console\Controller
 	 * 2 = Summary output + Item outpout
 	 */
 	public $verbose;
-	
+
 	/**
 	 * Only do a dry run and don't actually index
 	 */
 	public $mock;
-	
+
 	protected $model;
 	protected $dbModel;
-	
+
 	private $_config;
-	
+
 	public function initParameters()
 	{
 		$this->getIndexer();
@@ -70,8 +70,8 @@ class IndexerController extends \yii\console\Controller
 			'mock' => isset($this->mock) ? true : false
 		], $this->_config));
 	}
-	
-    public function actionIndex(array $types=null) 
+
+    public function actionIndex(array $types=null)
 	{
 		$this->initParameters();
 		extract($this->getValidTypes($types));
@@ -79,7 +79,7 @@ class IndexerController extends \yii\console\Controller
 		$this->model->operation('index');
 		return 0;
 	}
-	
+
 	public function actionUpdate(array $types=null)
 	{
 		$this->initParameters();
@@ -88,8 +88,8 @@ class IndexerController extends \yii\console\Controller
 		$this->model->operation('update');
 		return 0;
 	}
-	
-    public function actionDeleteIndex(array $types=null) 
+
+    public function actionDeleteIndex(array $types=null)
 	{
 		$this->initParameters();
 		$this->model->log("\n\tDeleting from index: ".$this->index."\n");
@@ -116,7 +116,7 @@ class IndexerController extends \yii\console\Controller
 		}
 		return 0;
 	}
-	
+
 	public function options($actionId)
 	{
 		return [
@@ -130,7 +130,7 @@ class IndexerController extends \yii\console\Controller
 			'reIndex'
 		];
 	}
-	
+
 	/**
 	 * Determine where the config information comes form
 	 * @return array $config;
@@ -139,7 +139,7 @@ class IndexerController extends \yii\console\Controller
 	{
 		if(file_exists($configFile = \Yii::getAlias($this->dataSource)))
 			$config = require($configFile);
-		else 
+		else
 		{
 			echo "Not using a config file\nDatasource is ".$this->dataSource."\n";
 			if(!isset($this->dataType))
@@ -147,14 +147,14 @@ class IndexerController extends \yii\console\Controller
 			else if(!isset($this->dataSource))
 				die("No dataSource set!\n");
 		}
-			
+
 		if(!isset($config))
 			$config = [
 				'_'.$this->dataType => explode(',', $this->dataSource)
 			];
 		return $config;
 	}
-	
+
 	/**
 	 * Determine where the indexer to user
 	 * @return string $idexer Class;
@@ -166,19 +166,19 @@ class IndexerController extends \yii\console\Controller
 			case 'elasticsearch':
 			$this->indexer = '\nitm\search\IndexerElasticsearch';
 			break;
-			
+
 			default:
 			$this->indexer = '\nitm\search\Indexer';
 			break;
 		}
 		return $this->indexer;
 	}
-	
+
 	protected function getStats($type)
 	{
 		return (array) $this->model->operation('stats', ['index' => $this->model->index(), 'type' => $type]);
 	}
-	
+
 	protected function getValidTypes($types=null)
 	{
 		switch(1)
@@ -186,11 +186,11 @@ class IndexerController extends \yii\console\Controller
 			case isset($this->_config['classes']):
 			$resolvedTypes = $this->_config['classes'];
 			break;
-			
+
 			case isset($this->_config['tables']):
 			$resolvedTypes = $this->_config['tables'];
 			break;
-			
+
 			default:
 			$resolvedTypes = $types;
 			break;
@@ -230,7 +230,7 @@ class IndexerController extends \yii\console\Controller
 								$toUnset[$class] = true;
 							}
 						}
-						
+
 					}
 				}
 			}
@@ -241,7 +241,7 @@ class IndexerController extends \yii\console\Controller
 					case 'tables':
 					unset($this->_config[$modelDataSource][array_search($type, $this->_config[$modelDataSource])]);
 					break;
-					
+
 					case 'classes':
 					foreach($this->_config['classes'] as $ns=>$classes)
 					{
@@ -255,7 +255,7 @@ class IndexerController extends \yii\console\Controller
 				}
 			}
 			break;
-			
+
 			default:
 			$all = true;
 			/**

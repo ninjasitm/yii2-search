@@ -8,7 +8,7 @@ use nitm\models\DB;
 /*
  * Class containing commong functions used by solr indexer and searcher class
  */
- 
+
 trait BaseIndexerTrait
 {
 	public $mock;
@@ -22,14 +22,14 @@ trait BaseIndexerTrait
 	public $limit = 500;
 	public $model;
 	public $info = [];
-	
+
 	protected $type;
 	protected $idKey;
-	
+
 	protected $bulk = ["update" => [], "delete" => [], "index" => []];
 	protected static $dbModel;
 	protected $currentUser;
-	
+
 	protected $_logText = '';
 	protected $_info = ["info" => [], "table" => []];
 	protected $_tables = [];
@@ -38,15 +38,15 @@ trait BaseIndexerTrait
 	protected $_attributes =[];
 	protected $_indexUpdate = [];
 	protected $_operation = 'index';
-	
+
 	private $_stack = [];
-	
+
 	public function set_Tables($tables=[])
 	{
 		$this->_source = 'tables';
 		$this->_tables = $tables;
 	}
-	
+
 	/**
 	 * Set the classes being used for this operation
 	 * @param array $classes
@@ -61,34 +61,34 @@ trait BaseIndexerTrait
 		$this->_source = 'classes';
 		$this->_classes = $classes;
 	}
-	
+
 	public function getClasses()
 	{
 		return $this->_classes;
 	}
-	
+
 	protected static function getDbModel()
 	{
 		if(!isset(static::$dbModel))
 			static::$dbModel = new DB;
 		return static::$dbModel;
 	}
-	
+
 	public function getTables()
 	{
 		return $this->_tables;
 	}
-	
+
 	public function getSource()
 	{
 		return $this->_source;
 	}
-	
+
 	public function attributes()
 	{
 		return is_object($this->model) ? $this->model->attributes() : $this->_attributes;
 	}
-	
+
     /**
 	 * Get the duration of the seach query
      */
@@ -96,19 +96,19 @@ trait BaseIndexerTrait
     {
 		return $this->stats['end'] - $this->stats['start'];
     }
-	
+
 	public function reset()
 	{
 		$this->bulk = [];
 		$this->_indexUpdate = [];
 		$this->totals = ["index" => 0, "update" => 0, "delete" => 0, 'total' => 0, 'current' => 0];
 	}
-	
+
 	public function start()
 	{
 		$this->stats['start'] = microtime(1);
 	}
-	
+
 	/**
 		Wrapper function for legacy support
 	*/
@@ -118,12 +118,12 @@ trait BaseIndexerTrait
 		$this->progress['op']['end'] = microtime(true);
 		$this->stats['end'] = microtime(true);
 	}
-	
-	public function operation() 
+
+	public function operation()
 	{
 		throw new \yii\bas\Exception("operation() should be implemented in a clas extending from this one");
 	}
-	
+
 	/**
 	 * Function to return the progress for a particular activity
 	 * @param string $for The unique index to measure progress with
@@ -141,7 +141,7 @@ trait BaseIndexerTrait
 		$this->stats['progress'][$for]["chunk"] = (!isset($this->stats['progress'][$for]["chunk"]) || $this->stats['progress'][$for]["chunk"] > $this->stats['progress'][$for]["chunks"]) ? 1 : $this->stats['progress'][$for]["chunk"];
 		$this->stats['progress'][$for]["total"] = is_null($total) ? $this->stats['progress'][$for]["total"] : $total;
 		$this->stats['progress'][$for]["sub_chunk"] = (!isset($this->stats['progress'][$for]["sub_chunk"])) ? (1/$this->stats['progress'][$for]["chunks"]) : $this->stats['progress'][$for]["sub_chunk"];
-		
+
 		//$this->log("Subchunk == ".$this->stats['progress'][$for]["sub_chunk"]."\n");
 		switch($this->stats['progress'][$for]["total"] == 0)
 		{
@@ -160,7 +160,7 @@ trait BaseIndexerTrait
 					break;
 				}
 				break;
-			
+
 				case $this->stats['progress'][$for]['sub_chunk_count'] == $this->stats['progress'][$for]["count"]:
 				$this->stats['progress'][$for]["sub_chunk"] += (1/$this->stats['progress'][$for]["chunks"]);
 				switch($print)
@@ -181,22 +181,22 @@ trait BaseIndexerTrait
 		}
 		return $ret_val;
 	}
-	
+
 	protected function progressStart($type, $total=null)
 	{
 		$this->stats['progress'][$type]['count'] = 0;
 		if(!is_null($total))
 			$this->stats['progress'][$type]['total'] = $total;
 	}
-	
+
 	protected function progressTotal($type, $total)
 	{
 	}
-	
+
 	/**
 		Protected functions
 	*/
-	
+
 	/**
 	 * Set the indexed field to 1
 	 */
@@ -210,11 +210,11 @@ trait BaseIndexerTrait
 			}
 			static::getDbModel()->update('indexed', 1)
 				->where(null, array_values($this->_indexUpdate), array_keys($this->_indexUpdate), null, 'OR')
-				->run();	
+				->run();
 		}
 		$this->_indexUpdate = [];
 	}
-	
+
 	/**
 	 * Perform logging of data is necessary
 	 * @param string $bulkIndex The index to pull summary informaiton from
@@ -235,19 +235,19 @@ trait BaseIndexerTrait
 			}
 		}
 	}
-	
+
 	public function log($text, $levelRequired=1)
 	{
 		$this->_logText .= $text;
 		if((int)$this->verbose >= $levelRequired)
 			echo $text;
 	}
-	
+
 	protected function printDebug($value)
 	{
 		echo $this->_logtext;
 	}
-	
+
 	/**
 	 * Add a field to the table
 	 * @param array $field
@@ -257,7 +257,7 @@ trait BaseIndexerTrait
 		$field = ['Field' => 'indexed', 'Type' => 'tinyint(1)', 'Null' => 'NO'];
 		return (new DB)->addFieldTo($field, static::index(), static::type());
 	}
-	
+
 	/**
 	 * Check to see if a field exists in the current set of fields
 	 * @param string $field The field to be checked
@@ -279,12 +279,12 @@ trait BaseIndexerTrait
 		}
 		return $ret_val;
 	}
-	
+
 	public static function fingerprint($item)
 	{
 		return md5(json_encode((array)$item));
 	}
-	
+
 	protected function prepareMetainfo($type, $table)
 	{
 		$this->setIndexType($type, $table);
@@ -295,7 +295,7 @@ trait BaseIndexerTrait
 		$this->idKey = static::getDbModel()->primaryKey();
 		$this->idKey = is_array($this->idKey) ? array_pop($this->idKey) : $this->idKey;
 	}
-	
+
 	public function run()
 	{
 		foreach($this->_stack as $table=>$options)
@@ -307,16 +307,16 @@ trait BaseIndexerTrait
 			unset($this->_stack[$table]);
 		}
 	}
-	
+
 	/**
 	 * Go through Data and sort entries by those that need to be updated, created and deleted
 	 * @param array $data
 	 */
-	protected function parseChunk($data=[]) 
+	protected function parseChunk($data=[])
 	{
 		$ret_val = false;
 		if(is_array($data) && sizeof($data)>=1)
-		{	
+		{
 			$this->totals['chunk'] = sizeof($data);
 			$this->log(" [".$this->totals['chunk']."]: ");
 			$this->progressStart('prepare', sizeof($data));
@@ -333,11 +333,11 @@ trait BaseIndexerTrait
 		else
 		{
 			$this->bulkSet($this->type, null);
-			$this->log("\n\t\tNothing to ".$this->type." from: ".static::index()."->".static::type());	
+			$this->log("\n\t\tNothing to ".$this->type." from: ".static::index()."->".static::type());
 		}
 		return $ret_val;
 	}
-	
+
 	/**
 	 * Parse the data in chunks to make it a bit more efficient
 	 * @param object $query
@@ -353,14 +353,14 @@ trait BaseIndexerTrait
 		if(($findAll === false && !$this->reIndex) && ($this->type != 'delete'))
 			$query->where(['not', 'indexed=1']);
 		$this->log("\n\tPerforming: ".$this->type." on ".static::index()."->".static::type()." Items: ".$this->tableRows());
-		 
+
 		//Do something before $this->type
 		$event = strtoupper('before_search_'.$this->type);
 		$this->trigger(constant('\nitm\search\BaseIndexer::'.$event));
-		
+
 		$this->totals[$this->type] = $this->tableRows();
 		$this->totals['current'] = $this->totals['chunk'] = $this->offset = 0;
-		
+
 		for($i=0; $i<($this->tableRows()/$this->limit);$i++)
 		{
 			$this->totals['current'] = 0;
@@ -371,11 +371,11 @@ trait BaseIndexerTrait
 				case $this->tableRows() <= $this->limit:
 				$count =  $this->tableRows();
 				break;
-				
+
 				case ($this->tableRows() - ($this->offset)) > $this->limit:
 				$count = $this->limit;
 				break;
-				
+
 				default:
 				$count = $this->tableRows() - ($this->offset);
 				break;
@@ -383,15 +383,15 @@ trait BaseIndexerTrait
 			$this->progressStart($this->type, $count);
 			$callback($query, $this);
 		}
-		
+
 		//Do something after indexing
 		$event = strtoupper('after_search_'.$this->type);
 		$this->trigger(constant('\nitm\search\BaseIndexer::'.$event));
-		
+
 		$this->totals['total'] += $this->totals['current'];
 		$this->log("\n\tResult: ".$this->totals['current']." out of ".$this->totals[$this->type]." entries\n");
 	}
-	
+
 	protected function bulk($index=null, $id=null)
 	{
 		if($index == static::type())
@@ -401,7 +401,7 @@ trait BaseIndexerTrait
 		else if(isset($this->bulk[static::type()][$index][$id]))
 			return $this->bulk[static::type()][$index][$id];
 	}
-	
+
 	protected function bulkSize($index)
 	{
 		$ret_val = 0;
@@ -409,7 +409,7 @@ trait BaseIndexerTrait
 			$ret_val = sizeof($this->bulk[static::type()][$index]);
 		return $ret_val;
 	}
-	
+
 	protected function bulkSet($index, $id, $value=null)
 	{
 		if(is_null($value))
@@ -417,7 +417,7 @@ trait BaseIndexerTrait
 		else
 			$this->bulk[static::type()][$index][$id] = $value;
 	}
-	
+
 	protected function tableInfo($key=null)
 	{
 		if(is_null($key))
@@ -425,13 +425,13 @@ trait BaseIndexerTrait
 		else
 			return $this->_info['tableInfo'][static::tableName()][$key];
 	}
-	
+
 	protected function tableRows($key=null)
 	{
 		static::getDbModel()->execute("SELECT COUNT(*) FROM ".static::getDbModel()->tableName());
 		return static::getDbModel()->result()[0];
 	}
-	
+
 	/**
 	 * Add operations to be completed
 	 */
@@ -439,7 +439,7 @@ trait BaseIndexerTrait
 	{
 		$this->_stack[$id] = $options;
 	}
-	
+
 	public static function prepareModel($model, $options)
 	{
 		$ret_val = $model->getAttributes();
@@ -458,7 +458,7 @@ trait BaseIndexerTrait
 		}
 		return static::normalize($ret_val, false, $model->getTableSchema()->columns);
 	}
-	
+
 	/**
 	 * Use model classes to gather data
 	 */
@@ -483,7 +483,7 @@ trait BaseIndexerTrait
 					'namespace' => $namespace,
 					'worker' => [$this, 'parse'],
 					'args' => [
-						$class::find($model), 
+						$class::find($model),
 						function ($query, $self) {
 							$self->log("\n\t\t".$query->limit($self->limit)
 								->offset($self->offset)->createCommand()->getSql(), 3);
@@ -503,7 +503,7 @@ trait BaseIndexerTrait
 			}
 		}
 	}
-	
+
 	protected static function populateRelatedRecords($object)
 	{
 		$ret_val = [];
@@ -519,7 +519,7 @@ trait BaseIndexerTrait
 		}
 		return $ret_val;
 	}
-	
+
 	/**
 	 * Use tables to prepare the data
 	 */
@@ -532,7 +532,7 @@ trait BaseIndexerTrait
 			$this->stack($table, [
 				'worker' => [$this, 'parse'],
 				'args' => [
-					static::getDbModel(), 
+					static::getDbModel(),
 					function ($query, $self) use($options) {
 						$query->select(@$options['queryOptions']['select'])
 						 ->limit($self->limit, $self->offset);
