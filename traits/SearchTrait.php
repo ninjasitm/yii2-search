@@ -124,17 +124,18 @@ trait SearchTrait {
 			}
 		}
 
-		$sortFromModel = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter.order_by', null);
-		$directionFromModel = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter.order', null);
+		$this->filter = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter', []);
+		$sortFromModel = ArrayHelper::getValue($this->filter, 'sort', ArrayHelper::getValue($this->filter, 'order_by', null));
+		$directionFromModel = ArrayHelper::getValue($this->filter, 'order', null);
 		$getParams = empty(ArrayHelper::getValue($options, $this->primaryModel->formName(), null));
 		if(!is_null($sortFromModel))
-			$options['sort'] = ($directionFromModel == 'desc' ? '-' : '').$sortFromModel;
+			$options['sort'] = ($directionFromModel == 'desc' ? '-' : '').ltrim($sortFromModel, '-');
 
 		$this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
 			'sort' => [
 				'enableMultiSort' => true,
-				'params' => $options,
+				'params' => array_merge(ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter', []), $options),
 			],
 			'pagination' => [
 				'pageSize' => ArrayHelper::getValue($this->queryOptions, 'limit', null)
@@ -217,8 +218,9 @@ trait SearchTrait {
 
 		$this->setQueryParams($originalParams);
 		//print_r($this->dataProvider->query->createCommand()->getRawSql());
+		//print_r($originalParams);
 		//print_r($this->dataProvider->query->orderBy);
-		//print_r($this->dataProvider->query);
+		//print_r($this->dataProvider->sort->attributes);
 		//exit;
 
         return $this->dataProvider;
@@ -228,12 +230,10 @@ trait SearchTrait {
 	{
 		$this->addConditions();
 
-		$orders = $this->dataProvider->sort->getOrders(true);
-
 		/**
 		 * Set the sort values if necessary
 		 */
-		if(!isset($params['sort']) && !isset($params['filter']['order_by'])) {
+		if(!isset($params['sort']) && !isset($params['filter']['order_by']) && !isset($params['filter']['sort'])) {
 			if($this->dataProvider->query->orderBy == null) {
 				$pk = ArrayHelper::getValue($this->primaryModel->primaryKey(), '0', null);
 				if($pk)
@@ -242,8 +242,10 @@ trait SearchTrait {
 					];
 			}
 
-		} else
+		} else {
+			$orders = $this->dataProvider->sort->getOrders(true);
 			$this->dataProvider->query->orderBy($orders);
+		}
 
 		/**
 		 * Quote the field names
@@ -478,6 +480,7 @@ trait SearchTrait {
 
 							$this->dataProvider->query->orderBy([$filterValue => $direction]);
 							$this->useEmptyParams = true;
+							$this->filter['sort'] = $filterValue;
 							unset($options['order']);
 							break;
 
