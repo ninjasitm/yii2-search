@@ -684,6 +684,7 @@ trait SearchTrait {
 				 */
 				if(is_object($v))
 					$item[$f] = time();
+				$item[$f] = @date('Y-m-d H:i:s', @strtotime($item[$f]));
 				break;
 
 				case 'text':

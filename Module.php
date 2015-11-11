@@ -49,12 +49,6 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 		 */
 		\Yii::setAlias('nitm/search', dirname(__DIR__));
 
-		//Setup the event handlers for two events: start and process
-		$this->attachToEvents([
-			self::EVENT_START => [$this, 'prepareRecord'],
-			self::EVENT_PROCESS =>  [$this, 'processRecord']
-		]);
-
 		$this->namespaces = array_merge($this->defaultNamespaces(), (array)$this->namespaces);
 	}
 
@@ -73,6 +67,12 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 		 * Setup urls
 		 */
         $app->getUrlManager()->addRules($this->getUrls(), false);
+
+		//Setup the event handlers for two events: start and process
+		$this->attachToEvents([
+			self::EVENT_START => [$this, 'prepareRecord'],
+			self::EVENT_PROCESS =>  [$this, 'processRecord']
+		]);
 	}
 
 	public function getNamespaces($namespace=[])
