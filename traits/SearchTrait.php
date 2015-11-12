@@ -683,8 +683,10 @@ trait SearchTrait {
 				 * Convert it to a time value here
 				 */
 				if(is_object($v))
-					$item[$f] = time();
-				$item[$f] = @date('Y-m-d H:i:s', @strtotime($item[$f]));
+					$item[$f] = strtotime('now');
+				else
+					$item[$f] = strtotime($item[$f]);
+				$item[$f] = date('Y-m-d H:i:s', $item[$f]);
 				break;
 
 				case 'text':
