@@ -176,7 +176,7 @@ trait SearchTrait {
     {
 		$this->restart($params);
 		$originalParams = $this->filterParams($params);
-		$params = $this->getParams($originalParams, $this->useEmptyParams);;
+		$params = $this->getParams($originalParams, $this->useEmptyParams);
 
         if (!($this->load($params, $this->primaryModel->formName()) && $this->validate(null, true))) {
 			$this->addQueryOptions();
@@ -535,21 +535,13 @@ trait SearchTrait {
 				$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->attributes(), array_fill(0, sizeof($this->attributes()), '')) : $params;
 		}
 		if(sizeof($params) >= 1) $this->setProperties(array_keys($params), array_values($params));
-		$params = [$this->primaryModel->formName() => array_filter($params, function ($value) {
-			switch(1)
-			{
-				/*case is_null($value):
-				case $value == '':
-				case empty($value) && $value !== false && $value != 0:
-				echo "Returning false for $key\n";
-				return false;
-				break;*/
 
-				default:
-				return true;
-				break;
+		foreach($params as $attribute=>$value)
+		{
+			if(in_array($attribute, $this->attributes())) {
+				$params[$this->primaryModel->formName()][$attribute] = $value;
 			}
-		})];
+		}
 
 		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(empty(current($params)) && !$this->useEmptyParams)) : $this->exclusiveSearch;
 		return $params;
