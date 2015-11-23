@@ -179,7 +179,7 @@ trait SearchTrait {
 		$params = $this->getParams($originalParams, $this->useEmptyParams);
 
         if (!($this->load($params, $this->primaryModel->formName()) && $this->validate(null, true))) {
-			$this->addQueryOptions();
+			$this->setQueryParams();
             return $this->dataProvider;
         }
 
@@ -226,7 +226,7 @@ trait SearchTrait {
         return $this->dataProvider;
     }
 
-	protected function setQueryParams($params)
+	protected function setQueryParams($params=[])
 	{
 		$this->addConditions();
 
