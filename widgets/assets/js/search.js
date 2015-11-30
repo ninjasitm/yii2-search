@@ -2,11 +2,11 @@
 
 function Search () {
 	NitmEntity.call(this, arguments);
-	
+
 	var self = this;
 	this.id = 'search';
 	this.selfInit = true;
-	this.modal;
+	this.modal = null;
 	this.isActive = false;
 	this.modalOptions = {
 		'show': false
@@ -24,8 +24,10 @@ function Search () {
 		}
 	};
 	this.defaultInit = [
+		'initMetaActions',
+		'initForms',
 	];
-	
+
 	this.initSearchFilter = function (containerId) {
 		var container = $nitm.getObj(this.getContainer(containerId));
 		$nitm.getObj(container).find("form[role~='"+this.forms.roles.ajaxSearch+"']").map(function() {
@@ -37,16 +39,19 @@ function Search () {
 				var request = self.operation(_form, function(result, form, xmlHttp) {
 					var replaceId = $(form).data('id');
 					$nitm.notify(result.message, $nitm.classes.info, form);
-					$nitm.getObj(replaceId).replaceWith(result.data);
-					$nitm.module('tools').initDefaults('#'+replaceId);
+					$nitm.module('tools').evalScripts(result.data, function (responseText) {
+						$nitm.getObj(replaceId).replaceWith(responseText);
+						self.initDefaults(replaceId);
+					});
+					//$nitm.module('tools').initDefaults('#'+replaceId);
 					history.pushState({}, result.message, (!result.url ? xmlHttp.url : result.url));
 				});
-			}
-			$(this).find(':input').on('change', function (e) {submitFunction(e)});
-			$(this).on('submit', function (e) {submitFunction(e)});
+			};
+			$(this).find(':input').on('change', function (e) {submitFunction(e);});
+			$(this).on('submit', function (e) {submitFunction(e);});
 		});
-	}
-	
+	};
+
 	this.initSearch = function (id, type) {
 		var self = this;
 		var $container = $(id);
@@ -60,19 +65,19 @@ function Search () {
 				$resultWrapper.slideDown();
 			});
 		});
-		
+
 		switch(type)
 		{
 			case 'modal':
 			this.initSearchModal($container, $form);
 			break;
-			
+
 			case 'bar':
 			this.initSearchBar($container, $form);
 			break;
 		}
-	}
-	
+	};
+
 	this.initSearchBar = function($container, $form) {
 		var self = this;
 		$container.find(this.resultWrapper).map(function (index, wrapper) {
@@ -85,8 +90,8 @@ function Search () {
 				$wrapper.slideDown();
 			});
 		});
-	}
-	
+	};
+
 	this.initSearchModal = function ($container, $form) {
 		$.map(self.events, function (event) {
 			$(document).on(event, function (e) {
@@ -100,16 +105,16 @@ function Search () {
 					case e.ctrlKey || e.shiftkey || e.altKey || e.metaKey:
 					case Array(
 						'Esc', 'Escape', 'Backspace', 'Delete',
-						'F1', 'F2', 'F3', 'F4', 
-						'F5', 'F6', 'F7', 'F8', 
+						'F1', 'F2', 'F3', 'F4',
+						'F5', 'F6', 'F7', 'F8',
 						'F7', 'F10', 'F11', 'F12'
 					).indexOf(e.key) != -1:
 					case !/\w/.test(char):
 					return;
 					break;
 				}
-				
-				if($container.modal() == undefined)
+
+				if($container.modal() === undefined)
 				{
 					$form.find(self.searchField).focus().val(e.key);
 					$container.on('hidden.bs.modal', function (e) {
@@ -132,10 +137,11 @@ function Search () {
 				}
 			});
 		});
-	}
+	};
 }
 
 $nitm.onModuleLoad('entity', function (module) {
+	console.log("initing search");
 	var s = new Search();
 	module.initModule(s);
 	s.initSearchFilter();

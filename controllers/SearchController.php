@@ -15,7 +15,7 @@ use \yii\helpers\Html;
 class SearchController extends DefaultController
 {
 	use \nitm\search\traits\controllers\SearchControllerTrait;
-	
+
 	public $legend = [
 		'normal' => 'Normal',
 		'info' => 'Important',
@@ -23,7 +23,7 @@ class SearchController extends DefaultController
 		'disabled' => 'Hidden'
 	];
 	public $searchClass;
-	
+
 	public function init()
 	{
 		$class = !isset($this->searchClass) ? \nitm\search\BaseSearch::className() : $this->searchClass;
@@ -35,6 +35,13 @@ class SearchController extends DefaultController
 		$class::$sanitizeType = false;
 		$this->engine = \Yii::$app->getModule('nitm-search')->engine;
 		parent::init();
+	}
+
+	public function assets()
+	{
+		return array_merge(parent::assets(), [
+			\nitm\search\widgets\assets\SearchAsset::className()
+		]);
 	}
 
     /**
@@ -62,11 +69,11 @@ class SearchController extends DefaultController
 		Response::viewOptions('args.content', $ret_val['data']);
 		return $this->renderResponse($ret_val, Response::viewOptions(), \Yii::$app->request->isAjax);
     }
-	
+
 	public function actionFilter($type, $options=[], $searchOptions=[])
 	{
 		$ret_val = [
-			"success" => false, 
+			"success" => false,
 			'action' => 'filter',
 			"format" => $this->getResponseFormat(),
 			'message' => "No data found for this filter"
@@ -76,42 +83,42 @@ class SearchController extends DefaultController
 			'inclusiveSearch' => true,
 			'booleanSearch' => true,
 		], $searchOptions);
-		
+
 		$className = $this->getSearchClass(array_merge([
 			'type' => $type,
 		], $options));
-		
+
 		$this->model = new $className($searchModelOptions);
-		
+
 		$this->model->setIndexType($type);
-		
+
 		list($results, $dataProvider) = $this->search([
 			'forceType' => true,
 			'types' => $type,
 			'isWhat' => $type
 		]);
-		
+
 		$dataProvider->pagination->route = '/search/filter';
-		
+
 		$view = isset($options['view']) ? $options['view'] : 'index';
-		
+
 		//Change the context ID here to match the filtered content
 		$this->id = $type;
-		
+
 		$ret_val['data'] = $this->renderAjax($view, [
 			"dataProvider" => $dataProvider,
 			'searchModel' => $this->model,
 			'primaryModel' => $this->model->primaryModel,
 			'isWhat' => $type,
 		]);
-		
+
 		if(!\Yii::$app->request->isAjax) {
 			$ret_val['data'] = Html::tag('div', \yii\widgets\Breadcrumbs::widget([
 				'links' => [
 					[
-						'label' => $this->model->primaryModel->properName(), 
+						'label' => $this->model->primaryModel->properName(),
 						'url' => $this->model->primaryModel->isWhat()
-					], 
+					],
 					[
 						'label' => 'Filter',
 					]
@@ -121,26 +128,30 @@ class SearchController extends DefaultController
 				'class' => 'col-md-12 col-lg-12'
 			]);
 			$this->setResponseFormat('html');
+		} else {
+			$this->getView()->registerJs(new \yii\web\JsExpression('$nitm.onModuleLoad("search", function (module) {
+				module.init()'));
 		}
+
 		//Add support for Pjax requests here. If somethign was sent basedon Pjax always return HTML
 		if(\Yii::$app->getRequest()->get('_pjax') != null)
 			$this->setResponseFormat('html');
-			
+
 		$getParams = array_merge([$type], \Yii::$app->request->get());
-		
+
 		foreach(['__format', '_type', 'getHtml', 'ajax', 'do'] as $prop)
 			unset($getParams[$prop]);
-			
+
 		$ret_val['url'] = \Yii::$app->urlManager->createUrl($getParams);
 		$ret_val['message'] = !$dataProvider->getCount() ? $ret_val['message'] : "Found ".$dataProvider->getTotalCount()." results matching your search";
-		
+
 		Response::viewOptions('args', [
 			"content" => $ret_val['data'],
 		]);
-		
+
 		return $this->renderResponse($ret_val, Response::viewOptions(), \Yii::$app->request->isAjax);
 	}
-	
+
 	protected function getSearchClass($options)
 	{
 		if(isset($options['type'])) {
@@ -163,7 +174,7 @@ class SearchController extends DefaultController
 					case true:
 					$className = $class::className();
 					break;
-					
+
 					default:
 					$class = (isset($options['namespace']) ? rtrim($options['namespace'], '\\')."\BaseSearch" : '\nitm\models\search\BaseSearch');
 					$className = $class::className();
