@@ -1,48 +1,45 @@
 // JavaScript Document
 
-function Search () {
-	NitmEntity.call(this, arguments);
+class Search extends NitmEntity
+{
+	constructor() {
+		super('search');
+		this.thisInit = true;
+		this.modal = null;
+		this.isActive = false;
+		this.modalOptions = {
+			'show': false
+		};
+		this.events = [
+			'keypress'
+		];
+		this.modalId = '#search-modal';
+		this.searchField = '#search-field';
+		this.resultContainer = '#search-results';
+		this.resultWrapper = '#search-results-container';
+		this.forms = {
+			roles: {
+				ajaxSearch: "filter",
+			}
+		};
+		this.defaultInit = [
+			'initSearchFilter',
+			'initMetaActions',
+			'initForms',
+		];
+	}
 
-	var self = this;
-	this.id = 'search';
-	this.selfInit = true;
-	this.modal = null;
-	this.isActive = false;
-	this.modalOptions = {
-		'show': false
-	};
-	this.events = [
-		'keypress'
-	];
-	this.modalId = '#search-modal';
-	this.searchField = '#search-field';
-	this.resultContainer = '#search-results';
-	this.resultWrapper = '#search-results-container';
-	this.forms = {
-		roles: {
-			ajaxSearch: "filter",
-		}
-	};
-	this.defaultInit = [
-		'initMetaActions',
-		'initForms',
-	];
-
-	this.initSearchFilter = function (containerId) {
-		var container = $nitm.getObj(this.getContainer(containerId));
-		$nitm.getObj(container).find("form[role~='"+this.forms.roles.ajaxSearch+"']").map(function() {
-			var _form = this;
+	initSearchFilter (containerId) {
+		var $container = $nitm.getObj(this.getContainer(containerId));
+		$container.find("form[role~='"+this.forms.roles.ajaxSearch+"']").map(function() {
 			$(this).off('submit');
 			var submitFunction = function (e) {
 				e.preventDefault();
-				$(_form).data('yiiActiveForm').validated = true;
-				var request = self.operation(_form, function(result, form, xmlHttp) {
+				$(event.currentTarget).data('yiiActiveForm').validated = true;
+				var request = this.operation(event.currentTarget, function(result, form, xmlHttp) {
 					var replaceId = $(form).data('id');
-					$nitm.notify(result.message, $nitm.classes.info, form);
-					$nitm.module('tools').evalScripts(result.data, function (responseText) {
-						$nitm.getObj(replaceId).replaceWith(responseText);
-						self.initDefaults(replaceId);
-					});
+					$nitm.trigger('nitm:notify', [result.message, 'info', form]);
+					$nitm.getObj(replaceId).replaceWith(responseText);
 					//$nitm.module('tools').initDefaults('#'+replaceId);
 					history.pushState({}, result.message, (!result.url ? xmlHttp.url : result.url));
 				});
@@ -52,16 +49,15 @@ function Search () {
 		});
 	};
 
-	this.initSearch = function (id, type) {
-		var self = this;
+	initSearch (id, type) {
 		var $container = $(id);
 		var $form = $container.find('form');
 		$form.on('submit', function (event) {
 			event.preventDefault();
-			self.operation(this, function (result, form) {
-				var $resultWrapper = $container.find(self.resultWrapper);
+			this.operation(this, function (result, form) {
+				var $resultWrapper = $container.find(this.resultWrapper);
 				$resultWrapper.html(result.data);
-				$form.find(self.searchField).val(result.query);
+				$form.find(this.searchField).val(result.query);
 				$resultWrapper.slideDown();
 			});
 		});
@@ -78,24 +74,23 @@ function Search () {
 		}
 	};
 
-	this.initSearchBar = function($container, $form) {
-		var self = this;
-		$container.find(this.resultWrapper).map(function (index, wrapper) {
+	initSearchBar($container, $form) {
+		$container.find(this.resultWrapper).map((index, wrapper) => {
 			var $wrapper = $(wrapper);
-			$(document).not($wrapper).on('focus, click', function (event) {
-				if(!$(self.searchField).is(':focus') && $wrapper.has(event.target).length === 0)
+			$(document).not($wrapper).on('focus, click', (event) => {
+				if(!$(this.searchField).is(':focus') && $wrapper.has(event.target).length === 0)
 					$wrapper.slideUp();
 			});
-			$form.find(self.searchField).on('focus', function (event) {
+			$form.find(this.searchField).on('focus', function (event) {
 				$wrapper.slideDown();
 			});
 		});
 	};
 
-	this.initSearchModal = function ($container, $form) {
-		$.map(self.events, function (event) {
+	initSearchModal ($container, $form) {
+		$.map(this.events, function (event) {
 			$(document).on(event, function (e) {
-				if(self.isActive)
+				if(this.isActive)
 					return;
 				//If any special keys were hit then ignore this
 				var char = String.fromCharCode(e.which);
@@ -116,22 +111,22 @@ function Search () {
 
 				if($container.modal() === undefined)
 				{
-					$form.find(self.searchField).focus().val(e.key);
+					$form.find(this.searchField).focus().val(e.key);
 					$container.on('hidden.bs.modal', function (e) {
-						self.isActive = false;
-						self.modal.modal('hide');
+						this.isActive = false;
+						this.modal.modal('hide');
 						e.stopPropagation();
 					});
 					$container.on('shown.bs.modal', function () {
-						self.isActive = true;
+						this.isActive = true;
 						var $modal = $(this);
 						var $form = $(this).find('form');
-						var $input = $form.find(self.searchField);
+						var $input = $form.find(this.searchField);
 						$input.focus().val(e.key).get(0).setSelectionRange($input.val().length*2, $input.val().length*2);
 					});
-					$container.modal(self.modalOptions);
+					$container.modal(this.modalOptions);
 				}
-				if(!self.isActive)
+				if(!this.isActive)
 				{
 					$container.modal('show');
 				}
@@ -141,8 +136,5 @@ function Search () {
 }
 
 $nitm.onModuleLoad('entity', function (module) {
-	console.log("initing search");
-	var s = new Search();
-	module.initModule(s);
-	s.initSearchFilter();
+	module.initModule(new Search);
 });

@@ -28,6 +28,7 @@ trait SearchTrait {
 
 	/**
 	 * Should wildcards be used for text searching?
+	 * This should be renamed...:-/
 	 */
 	public $booleanSearch;
 
@@ -45,36 +46,8 @@ trait SearchTrait {
 
 	protected $dataProvider;
 	protected $conditions = [];
-
-	public function scenarios()
-	{
-		return ['default' => ($this->getPrimaryModel()->tableName() ? $this->attributes() : ['id'])];
-	}
-
-	protected function getPrimaryModel()
-	{
-		if(!isset($this->primaryModel)){
-			$class = $this->getPrimaryModelClass(true);
-			if(class_exists($class))
-				$options = [];
-			else {
-				$class = "\\nitm\search\\".ucFirst($this->engine)."Search";
-				$options = [
-					'indexType' => $this->type(),
-				];
-			}
-			if($this->engine == 'db')
-				$this->primaryModel = new $class([
-					'noDbInit' => true
-				]);
-			else {
-				$this->primaryModel = new static([
-					'is' => $this->type()
-				]);
-			}
-		}
-		return $this->primaryModel;
-	}
+	protected $parsedParams;
+	protected $_customAttributes;
 
 	public function __set($name, $value)
 	{
@@ -98,6 +71,16 @@ trait SearchTrait {
 		return $ret_val;
 	}
 
+	public function scenarios()
+	{
+		return ['default' => ($this->getPrimaryModel()->tableName() ? $this->attributes() : ['id'])];
+	}
+
+	public function getParsedParams()
+	{
+		return $this->parsedParams;
+	}
+
     /**
      * @inheritdoc
      */
@@ -116,18 +99,13 @@ trait SearchTrait {
 
 		$query = $this->primaryModel->find($this);
 
-		if(isset($options['queryOptions']) && is_array($options['queryOptions']))
-		{
-			foreach($options['queryOptions'] as $method=>$params)
-			{
-				$query->$method($params);
-			}
-		}
-
 		$this->filter = ArrayHelper::getValue($options, $this->primaryModel->formName().'.filter', []);
+
 		$sortFromModel = ArrayHelper::getValue($this->filter, 'sort', ArrayHelper::getValue($this->filter, 'order_by', null));
 		$directionFromModel = ArrayHelper::getValue($this->filter, 'order', null);
+
 		$getParams = empty(ArrayHelper::getValue($options, $this->primaryModel->formName(), null));
+
 		if(!is_null($sortFromModel))
 			$options['sort'] = ($directionFromModel == 'desc' ? '-' : '').ltrim($sortFromModel, '-');
 
@@ -161,7 +139,7 @@ trait SearchTrait {
 				case 'where':
 				if($getParams) {
 					QueryFilter::aliasWhereFields($value, $this);
-					$this->dataProvider->query->where($value);
+					$this->dataProvider->query->andWhere($value);
 				}
 				break;
 			}
@@ -183,7 +161,9 @@ trait SearchTrait {
             return $this->dataProvider;
         }
 
-		foreach($params[$this->primaryModel->formName()] as $attr=>$value)
+		$this->parsedParams = $this->getDirtyAttributes();
+
+		foreach($this->parsedParams as $attr=>$value)
 		{
 			if(array_key_exists($attr, $this->columns()))
 			{
@@ -215,20 +195,43 @@ trait SearchTrait {
 				}
 			}
 		}
-
 		$this->setQueryParams($originalParams);
-		//print_r($this->dataProvider->query->createCommand()->getRawSql());
-		//print_r($originalParams);
-		//print_r($this->dataProvider->query->orderBy);
-		//print_r($this->dataProvider->sort->attributes);
-		//exit;
-
         return $this->dataProvider;
     }
+
+	public function isFilterSpecified($param)
+	{
+		return isset($this->parsedParams);
+	}
+
+	public function isOnlyFilterSpecified($params)
+	{
+		$paramCount = count($params);
+
+		//If any other parameter was specified then return false
+		if(count(array_diff_key($this->parsedParams, $params)) >= 1)
+			return false;
+
+		$existing = array_intersect_key($this->parsedParams, $params);
+
+		//If the existing parameters are different than what the user specified then return false
+		if(count(array_diff_assoc($existing, $params)))
+			return false;
+		return true;
+	}
+
+	public function noFilterSpecified()
+	{
+		return count(array_filter($this->parsedParams)) == 0;
+	}
 
 	protected function setQueryParams($params=[])
 	{
 		$this->addConditions();
+
+		if(isset($params['queryOptions']) && is_array($params['queryOptions']))
+			foreach($params['queryOptions'] as $method=>$options)
+				$this->dataProvider->query->$method($options);
 
 		/**
 		 * Set the sort values if necessary
@@ -258,6 +261,31 @@ trait SearchTrait {
 		 }
 	}
 
+	protected function getPrimaryModel()
+	{
+		if(!isset($this->primaryModel)){
+			$class = $this->getPrimaryModelClass(true);
+			if(class_exists($class))
+				$options = [];
+			else {
+				$class = "\\nitm\search\\".ucFirst($this->engine)."Search";
+				$options = [
+					'indexType' => $this->type(),
+				];
+			}
+			if($this->engine == 'db')
+				$this->primaryModel = new $class([
+					'noDbInit' => true
+				]);
+			else {
+				$this->primaryModel = new static([
+					'is' => $this->type()
+				]);
+			}
+		}
+		return $this->primaryModel;
+	}
+
 	/**
 	 * Overriding default find function
 	 */
@@ -277,6 +305,11 @@ trait SearchTrait {
 						unset($model->queryOptions[$filter]);
 						$query->$filter(static::primaryKey()[0]);
 					}
+					break;
+
+					case 'where':
+					case 'andWhere':
+					$query->andWhere($value);
 					break;
 				}
 			}
@@ -311,7 +344,8 @@ trait SearchTrait {
 
 	public function getModelClass($class)
 	{
-		return rtrim(static::$namespace, '\\').'\\'.array_pop(explode('\\', $class));
+		$class = explode('\\', $class);
+		return rtrim(static::$namespace, '\\').'\\'.array_pop($class);
 	}
 
 	public static function useSearchClass($callingClass)
@@ -322,8 +356,8 @@ trait SearchTrait {
 	protected function addConditions()
 	{
 		///If conditions were set by user then reset the where values
-		if(count($this->conditions))
-			$this->dataProvider->query->where = [];
+		//if(count($this->conditions))
+		//	$this->dataProvider->query->where = [];
 
 		foreach($this->conditions as $type=>$condition)
 		{
@@ -347,8 +381,25 @@ trait SearchTrait {
 
 		$value = (is_array($value) && count($value) == 1) ? current($value) : $value;
 
+		$simpleAddCondition = function ($params) {
+            switch($this->inclusiveSearch && !$this->exclusiveSearch)
+			{
+				case true:
+				$this->conditions['or'][] = $parsedParams;
+				break;
+
+				default:
+				$this->conditions['and'][] = $params;
+				break;
+			}
+		};
+
 		switch(1)
 		{
+			case $value == 'null':
+			$simpleAddCondition([$modelAttribute => null]);
+			break;
+
 			case is_array($value) && is_string(current($value)) && in_array(strtolower(current($value)), ['and', 'or']):
 			print_r($value);
 			exit;
@@ -357,17 +408,7 @@ trait SearchTrait {
 			case is_numeric($value):
 			case !$partialMatch:
 			case \nitm\helpers\Helper::boolval($value):
-			case is_array($value) && !$partialMatch:
-            switch($this->inclusiveSearch && !$this->exclusiveSearch)
-			{
-				case true:
-				$this->conditions['or'][] = [$modelAttribute => $value];
-				break;
-
-				default:
-				$this->conditions['and'][] = [$modelAttribute => $value];
-				break;
-			}
+			$simpleAddCondition([$modelAttribute => $value]);
 			break;
 
 			default:
@@ -375,19 +416,16 @@ trait SearchTrait {
 			{
 				case true:
 				$modelAttribute = "LOWER(".$modelAttribute.")";
-				$value = $this->expand($value);
 				switch(true)
 				{
 					case ($this->inclusiveSearch && !$this->forceExclusiveBooleanSearch):
-					$this->conditions['or'][] = ['or like', $modelAttribute, $value, false];
-					break;
-
 					case $this->inclusiveSearch:
+					$value = $this->expand($value);
 					$this->conditions['or'][] = ['or like', $modelAttribute, $value, false];
 					break;
 
 					default:
-					$this->conditions['and'][] = ['and like', $modelAttribute, $value, false];
+					$this->conditions['and'][] = ['like', $modelAttribute, $value];
 					break;
 				}
 				break;
@@ -527,23 +565,37 @@ trait SearchTrait {
 		return $params;
 	}
 
+	public function setCustomAttributes($attributes) {
+		$this->_customAttributes = $attribtues;
+	}
+
+	public function getCustomAttributes() {
+		if(!isset($this->_customAttributes))
+			return $this->attributes();
+		else
+			return $this->_customAttributes;
+	}
+
 	protected function getParams($params)
 	{
 		if($this->primaryModel->tableName()) {
-			$params = array_intersect_key($params, array_flip($this->attributes()));
-			if(sizeof($this->attributes()) >= 1)
-				$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->attributes(), array_fill(0, sizeof($this->attributes()), '')) : $params;
+			$params = array_intersect_key($params, array_flip($this->customAttributes));
+			if(sizeof($this->customAttributes) >= 1)
+				$params = (empty($params) && !$this->useEmptyParams) ? array_combine($this->customAttributes, array_fill(0, sizeof($this->customAttributes), '')) : $params;
 		}
-		if(sizeof($params) >= 1) $this->setProperties(array_keys($params), array_values($params));
+		if(sizeof($params) >= 1)
+			$this->setProperties(array_keys($params), array_values($params));
 
 		foreach($params as $attribute=>$value)
 		{
-			if(in_array($attribute, $this->attributes())) {
+			if(in_array($attribute, $this->customAttributes)) {
 				$params[$this->primaryModel->formName()][$attribute] = $value;
+				unset($params[$attribute]);
 			}
 		}
 
 		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(empty(current($params)) && !$this->useEmptyParams)) : $this->exclusiveSearch;
+
 		return $params;
 	}
 
