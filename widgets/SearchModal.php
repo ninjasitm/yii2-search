@@ -17,16 +17,16 @@ use kartik\widgets\ActiveField;
 class SearchModal extends Modal
 {
 	use BaseWidgetTrait;
-	
+
 	public $options = [
 		'id' => 'search-modal'
 	];
-	
+
 	/*
 	 * The size of the widget [large, mediaum, small, normal]
 	 */
 	public $size = 'large';
-	
+
 	public function run()
 	{
 		$this->header = !isset($this->header) ? Html::tag('br').$this->getDefaultHeader() : $this->header;
@@ -35,10 +35,10 @@ class SearchModal extends Modal
 			module.initSearch('#".$this->options['id']."', 'modal');
 		});");
 	}
-	
+
 	protected function getDefaultHeader()
 	{
-		return Html::tag('form', Html::tag('div', 
+		return Html::tag('form', Html::tag('div',
 			'<br>'.
 			Html::tag('div', '<div class="input-group">
 			  <input onFocus="this.value = this.value;" type="text" name="q" class="form-control" id="search-field" placeholder="Click here to start searching!!">
@@ -48,7 +48,7 @@ class SearchModal extends Modal
 				'class' => "form-group col-lg-12 col-sm-12 col-md-12"
 			]), [
 		  'class' => 'row'
-		 ], $this->formOptions);
+	  ], $this->formOptions));
 	}
 }
 ?>

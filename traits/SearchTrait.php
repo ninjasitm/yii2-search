@@ -179,7 +179,8 @@ trait SearchTrait {
 					case 'decimal':
 					case 'float':
 					case 'array':
-					$this->addCondition($column->name, $value);
+					if(is_numeric($value))
+						$this->addCondition($column->name, $value);
 					break;
 
 					case 'timestamp':
@@ -385,7 +386,7 @@ trait SearchTrait {
             switch($this->inclusiveSearch && !$this->exclusiveSearch)
 			{
 				case true:
-				$this->conditions['or'][] = $parsedParams;
+				$this->conditions['or'][] = $params;
 				break;
 
 				default:
@@ -416,16 +417,16 @@ trait SearchTrait {
 			{
 				case true:
 				$modelAttribute = "LOWER(".$modelAttribute.")";
+				$value = $this->expand($value);
 				switch(true)
 				{
 					case ($this->inclusiveSearch && !$this->forceExclusiveBooleanSearch):
 					case $this->inclusiveSearch:
-					$value = $this->expand($value);
 					$this->conditions['or'][] = ['or like', $modelAttribute, $value, false];
 					break;
 
 					default:
-					$this->conditions['and'][] = ['like', $modelAttribute, $value];
+					$this->conditions['and'][] = ['like', $modelAttribute, $value, false];
 					break;
 				}
 				break;
