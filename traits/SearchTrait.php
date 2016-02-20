@@ -13,6 +13,7 @@ trait SearchTrait {
 	public $text;
 	public $filter = [];
 	public $expand = 'all';
+	public $aliasFields = false;
 	/**
 	 * The default parameters for the dataProvider
 	 * [
@@ -138,7 +139,8 @@ trait SearchTrait {
 				case 'params':
 				case 'where':
 				if($getParams) {
-					QueryFilter::aliasWhereFields($value, $this);
+					if($this->aliasFields)
+						QueryFilter::aliasWhereFields($value, $this);
 					$this->dataProvider->query->andWhere($value);
 				}
 				break;
@@ -256,8 +258,12 @@ trait SearchTrait {
 		 * ONly do this for traditional DBMS
 		 */
 		 if($this instanceof \nitm\search\BaseSearch) {
-		 	QueryFilter::aliasSelectFields($this->dataProvider->query, $this->primaryModel);
-		 	$orders = QueryFilter::aliasOrderByFields($this->dataProvider->query, $this->primaryModel);
+			 if($this->aliasFields) {
+		 		QueryFilter::aliasSelectFields($this->dataProvider->query, $this->primaryModel);
+		 		$orders = QueryFilter::aliasOrderByFields($this->dataProvider->query, $this->primaryModel);
+			} else {
+				$orders = $this->dataProvider->query->orderBy;
+			}
 			QueryFilter::setDataProviderOrders($this->dataProvider, $orders);
 		 }
 	}
@@ -375,7 +381,7 @@ trait SearchTrait {
 		else
             $modelAttribute = $attribute;
 
-		$modelAttribute = $this->tableName().'.'.$modelAttribute;
+		$modelAttribute = $this->db->schema->quoteColumnName(QueryFilter::getAlias($this->dataProvider->query, $this).'.'.$modelAttribute);
 
         if (is_string($value) && trim($value) === '')
             return;
@@ -402,8 +408,7 @@ trait SearchTrait {
 			break;
 
 			case is_array($value) && is_string(current($value)) && in_array(strtolower(current($value)), ['and', 'or']):
-			print_r($value);
-			exit;
+			continue;
 			break;
 
 			case is_numeric($value):
