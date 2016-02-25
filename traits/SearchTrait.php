@@ -281,9 +281,7 @@ trait SearchTrait {
 				];
 			}
 			if($this->engine == 'db')
-				$this->primaryModel = new $class([
-					'noDbInit' => true
-				]);
+				$this->primaryModel = new $class();
 			else {
 				$this->primaryModel = new static([
 					'is' => $this->type()
