@@ -14,6 +14,7 @@ trait SearchTrait {
 	public $filter = [];
 	public $expand = 'all';
 	public $aliasFields = false;
+	public $searchFields;
 	/**
 	 * The default parameters for the dataProvider
 	 * [
@@ -174,7 +175,6 @@ trait SearchTrait {
 				{
 					case 'integer':
 					case 'long':
-					case 'boolean':
 					case 'smallint':
 					case 'bigint':
 					case 'double':
@@ -183,6 +183,10 @@ trait SearchTrait {
 					case 'array':
 					if(is_numeric($value))
 						$this->addCondition($column->name, $value);
+					break;
+
+					case 'boolean':
+					$this->addCondition($column->name, (bool)$value);
 					break;
 
 					case 'timestamp':
@@ -401,7 +405,7 @@ trait SearchTrait {
 
 		switch(1)
 		{
-			case $value == 'null':
+			case $value === 'null':
 			$simpleAddCondition([$modelAttribute => null]);
 			break;
 
@@ -556,7 +560,10 @@ trait SearchTrait {
 		if(!$this->primaryModel->tableName())
 			return $params;
 
-		foreach($this->primaryModel->getTableSchema()->columns as $column)
+		$columns = $this->primaryModel->getTableSchema()->columns;
+		if(!empty($this->searchFields))
+			$columns = array_intersect_key($columns, array_flip($this->searchFields));
+		foreach($columns as $column)
 		{
 			switch($column->phpType)
 			{
