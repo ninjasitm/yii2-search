@@ -222,7 +222,11 @@ trait SearchTrait {
 		$existing = array_intersect_key($this->parsedParams, $params);
 
 		//If the existing parameters are different than what the user specified then return false
-		if(count(array_diff_assoc($existing, $params)))
+		if(count(array_udiff_uassoc($existing, $params, function ($v1, $v2) {
+			return $v1 == $v2;
+		}, function ($k1, $k2) {
+			return $k1 == $k2;
+		})))
 			return false;
 		return true;
 	}
