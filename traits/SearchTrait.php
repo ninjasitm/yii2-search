@@ -164,7 +164,7 @@ trait SearchTrait {
             return $this->dataProvider;
         }
 
-		$this->parsedParams = $this->getDirtyAttributes();
+		$this->parsedParams = array_filter($this->getDirtyAttributes());
 
 		foreach($this->parsedParams as $attr=>$value)
 		{
