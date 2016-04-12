@@ -468,12 +468,21 @@ trait BaseIndexerTrait
 			return;
 		foreach($this->_classes as $namespace=>$classes)
 		{
+			$defaultAttributes = ArrayHelper::remove($classes, 'default', []);
+			$globalDefaultAttributes = ArrayHelper::remove($defaultAttributes, 'global', [])
 			foreach($classes as $modelName=>$attributes)
 			{
 				$localOptions = $options;
-				$class = $namespace.$modelName;
+				$localDefaultAttributes = ArrayHelper::getValue($defaultAttributes, ArrayHelper::remove($attributes, 'type', null), []);
+				if(ArrayHelper::remove($attributes, 'exclusive', false) === true)
+					$attributes = array_replace($globalDefaultAttributes, $defaultAttributes, (array)$attributes);
+				else
+					$attributes = array_replace_recursive($globalDefaultAttributes, $localDefaultAttributes, (array)$attributes);
+				$class = rtrim($namespace, '\\').'\\'.$modelName;
+
 				if(is_null($class::getDb()->schema->getTableSchema($class::tablename(), true)))
 					continue;
+
 				$class::$initClassConfig = false;
 				$localOptions['initLocalConfig'] = false;
 				$localOptions = array_merge((array)$attributes, $localOptions);
@@ -491,8 +500,7 @@ trait BaseIndexerTrait
 								->offset($self->offset)
 								->all();
 							//Doing this here to merge related records
-							foreach($results as $idx=>$record)
-							{
+							foreach($results as $idx=>$record) {
 								$results[$idx] = array_merge($record->toArray(), static::populateRelatedRecords($record));
 							}
 							$self->parseChunk($results);

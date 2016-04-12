@@ -17,6 +17,29 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 
 	public $disableIndexing = false;
 
+	/**
+	 * The class mappings in the format:
+	 * ```
+	 * 	{namespace} => [
+	 * 		These defaults will bemergd with the model that identitifes by {type}
+	 * 		{default} => [
+	 * 			{global} => [
+	 * 				Options global default attributes shared among all models
+	 * 			],
+	 * 			{type} => [
+	 * 				options,
+	 * 				...
+	 * 			]
+	 * 		]
+	 * 		{modelName} => [
+	 * 			{type} => The type that is used to fetch the default options,
+	 * 			SearchClass options,
+	 * 			...
+	 * 		]
+	 * 	]
+	 * ```
+	 * @var $classes
+	 */
 	public $classes = [];
 
 	public $namespaces;

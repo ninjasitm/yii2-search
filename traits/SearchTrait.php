@@ -216,7 +216,7 @@ trait SearchTrait {
 		$paramCount = count($params);
 
 		//If any other parameter was specified then return false
-		if(count(array_diff_key($this->parsedParams, $params)) >= 1)
+		if(count(array_diff_key($this->parsedParams, $params)) >= 1 || empty($this->parsedParams))
 			return false;
 
 		$existing = array_intersect_key($this->parsedParams, $params);
