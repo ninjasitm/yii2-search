@@ -3,6 +3,7 @@
 namespace nitm\search\console\controllers;
 
 use nitm\models\DB;
+use nitm\helpers\ArrayHelper;
 
 class IndexerController extends \yii\console\Controller
 {
@@ -58,11 +59,14 @@ class IndexerController extends \yii\console\Controller
 
 	public function initParameters()
 	{
-		$this->getIndexer();
 		$this->dbModel = new DB;
 		$this->_config = $this->prepareDataSource();
+		$this->indexer = $this->indexer ?: ArrayHelper::remove($this->_config, 'indexer', null);
+		$this->getIndexer();
 		$this->index = !isset($this->index) ? $this->dbModel->getDbName() : $this->index;
-		$this->model = new $this->indexer(array_merge([
+		$indexerClass = $this->indexer;
+		$this->model = \Yii::createObject(array_merge([
+			'class' => $this->indexer,
 			'mode' => $this->mode,
 			'index' => $this->index,
 			'reIndex' => isset($this->reIndex) ? true : false,
@@ -161,16 +165,8 @@ class IndexerController extends \yii\console\Controller
 	 */
 	protected function getIndexer()
 	{
-		switch($this->indexer)
-		{
-			case 'elasticsearch':
-			$this->indexer = '\nitm\search\IndexerElasticsearch';
-			break;
-
-			default:
-			$this->indexer = '\nitm\search\Indexer';
-			break;
-		}
+		if(!class_exists($this->indexer))
+			$this->indexer = \Yii::$app->getModule('nitm-search')->getIndexer($this->indexer);
 		return $this->indexer;
 	}
 
@@ -196,85 +192,75 @@ class IndexerController extends \yii\console\Controller
 			break;
 		}
 		$ret_val = [];
+		$modelDataSource = 'not set';
 		$all = false;
-		$modelDataSource = 'tables';
-		switch(is_null($types))
-		{
-			case false:
-			/**
-			 * If we're given a specific list of types/tables to deindex then check to make sure it exists according to our config
-			 */
-			$toUnset = [];
-			foreach($types as $idx=>$type)
-			{
-				if(isset($this->_config['tables']) && in_array($type, $this->_config['tables']))
-				{
-					$ret_val[] = $type;
-					unset($toUnset[$type]);
-				}
-				else if(isset($this->_config['tables']) && !in_array($type, $this->_config['tables']))
-					$toUnset[$type] = true;
-				else if(isset($this->_config['classes']))
-				{
-					$modelDataSource = 'classes';
-					foreach($this->_config['classes'] as $ns=>$classes)
-					{
-						foreach($classes as $class=>$options)
-						{
-							if(strtolower($class) == strtolower($type))
-							{
-								$ret_val[] = $type;
-								unset($toUnset[$class]);
-							}
-							else if(!in_array(strtolower($class), $ret_val)) {
-								$toUnset[$class] = true;
-							}
-						}
-
-					}
-				}
-			}
-			foreach($toUnset as $idx=>$remove)
-			{
-				switch($modelDataSource)
-				{
-					case 'tables':
-					unset($this->_config[$modelDataSource][array_search($type, $this->_config[$modelDataSource])]);
-					break;
-
-					case 'classes':
-					foreach($this->_config['classes'] as $ns=>$classes)
-					{
-						foreach($classes as $class=>$options)
-						{
-							if($idx == $class)
-								unset($this->_config[$modelDataSource][$ns][$class]);
-						}
-					}
-					break;
-				}
-			}
-			break;
-
-			default:
-			$all = true;
-			/**
-			 * Otherwise were deleting everything!
-			 */
-			if(isset($this->_config['tables']) && in_array($type, $this->_config['tables']))
-				$ret_val = $this->_config['tables'];
-			else if(isset($this->_config['classes']))
-			{
-				$modelDataSource = 'classes';
-				foreach($this->_config['classes'] as $ns=>$classes)
-				{
-					$classes = array_map('strtolower', array_keys($classes));
-					$ret_val = array_merge($ret_val, $classes);
-				}
-			}
-			break;
+		/**
+		 * If we're given a specific list of types/tables to deindex then check to make sure it exists according to our config
+		 */
+		if(isset($this->_config['tables'])) {
+			$modelDataSource = 'tables';
+			$this->configureConfigTables($types, $ret_val);
+		} else if(isset($this->_config['classes'])) {
+			$modelDataSource = 'classes';
+			$this->configureConfigClasses($types, $ret_val);
 		}
-		return ['validTypes' => $ret_val, 'all' => $all, 'source' => $modelDataSource];
+
+		return ['validTypes' => $ret_val, 'all' => count($types) == 0, 'source' => $modelDataSource];
+	}
+
+	/**
+	 * Perform some configuration check if using tables
+	 * @param  array $types      The types we want to specify. If empty then all tables will be indexed
+	 * @param  array $validTypes We're going to be returning these calid types
+	 * @return void
+	 */
+	protected function configureConfigTables($types, &$validTypes)
+	{
+		if(count($types)) {
+			foreach($types as $idx=>$type) {
+				if(isset($this->_config['tables']) && !in_array($type, $this->_config['tables'])) {
+					unset($this->_config['tables'][array_search($type, $this->_config['tables'])]);
+				} else {
+					$validTypes[] = $type;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Perform some configuration check if using tables
+	 * @param  array $types      The types we want to specify. If empty then all tables will be indexed
+	 * @param  array $validTypes We're going to be returning these calid types
+	 * @return void
+	 */
+	protected function configureConfigClasses($types, &$validTypes)
+	{
+		if(count($types)) {
+			foreach($this->_config['classes'] as $ns=>$classes)
+			{
+				$classTypes = array_map('strtolower', array_keys($classes));
+				$toRemove = array_diff($classTypes, $types);
+				foreach($toRemove as $remove) {
+					if($remove === 'default')
+						continue;
+					$realKeys = preg_grep("/$remove/i", array_keys($this->_config['classes'][$ns]));
+					foreach($realKeys as $key) {
+						unset($this->_config['classes'][$ns][$key]);
+					}
+				}
+			}
+		}
+		foreach($this->_config['classes'] as $ns=>$classes)
+		{
+			$userOptions = ArrayHelper::remove($classes, 'default', []);
+			foreach($classes as $class=>$options)
+			{
+				$validTypes[] = strtolower($class);
+				$customOptions = ArrayHelper::remove($options, 'exclusive', false) === true ? [] : array_merge_recursive($options, ArrayHelper::getValue($userOptions, 'global', []), ArrayHelper::getValue($userOptions, ArrayHelper::remove($options, 'type', null), []));
+				$classes[$class] = $customOptions;
+			}
+			$this->_config['classes'][$ns] = $classes;
+		}
 	}
 }
 

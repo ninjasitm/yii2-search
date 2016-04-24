@@ -25,7 +25,6 @@ trait SearchTrait {
 	public $defaults = [];
 
 	public $primaryModel;
-	public $primaryModelClass;
 	public $useEmptyParams;
 
 	/**
@@ -45,6 +44,7 @@ trait SearchTrait {
 	public static $sanitizeType = true;
 	public static $tableNames;
 	public static $namespace = '\nitm\models\\';
+	public static $_primaryModelClass;
 
 	protected $dataProvider;
 	protected $conditions = [];
@@ -96,7 +96,6 @@ trait SearchTrait {
 
 	public function restart($options=[])
 	{
-		$oldType = $this->type();
 		$this->getPrimaryModel();
 
 		$query = $this->primaryModel->find($this);
@@ -149,7 +148,6 @@ trait SearchTrait {
 		}
 
 		$this->conditions = [];
-		$this->setIndexType($oldType);
 		return $this;
 	}
 
@@ -338,19 +336,19 @@ trait SearchTrait {
 
 	public function getPrimaryModelClass($force=false)
 	{
-		if(!isset($this->primaryModelClass) || $force)
-			$this->setPrimaryModelClass(null, $force);
-		return $this->primaryModelClass;
+		if(!isset(static::$_primaryModelClass) || $force)
+			static::setPrimaryModelClass(null, $force);
+		return static::$_primaryModelClass;
 	}
 
 	public function setPrimaryModelClass($class=null, $force=fasle)
 	{
 		if(!is_null($class) && class_exists($class))
-			$this->primaryModelClass = $class;
+			static::$_primaryModelClass = $class;
 		else {
-			if(!isset($this->primaryModelClass) || $force) {
-				$class = $this->getModelClass($this->properClassName($this->type()));
-				$this->primaryModelClass = class_exists($class) ? $class : $this->className();
+			if(!isset(static::$_primaryModelClass) || $force) {
+				$class = static::getModelClass(\nitm\helpers\ClassHelper::properClassName(static::type()));
+				static::$_primaryModelClass = class_exists($class) ? $class : static::className();
 			}
 		}
 	}
@@ -387,7 +385,9 @@ trait SearchTrait {
 		else
             $modelAttribute = $attribute;
 
-		$modelAttribute = $this->db->schema->quoteColumnName(QueryFilter::getAlias($this->dataProvider->query, $this).'.'.$modelAttribute);
+		try {
+			$modelAttribute = $this->db->schema->quoteColumnName(QueryFilter::getAlias($this->dataProvider->query, $this).'.'.$modelAttribute);
+		} catch (\Exception $e) {}
 
         if (is_string($value) && trim($value) === '')
             return;
@@ -630,12 +630,13 @@ trait SearchTrait {
 			if(!is_null($inflector))
 				$type = \yii\helpers\Inflector::$inflector($type);
 
-			$properName = \nitm\models\Data::properClassName($type);
+			$properName = \nitm\models\Data::properFormName($type);
 
 			foreach(\Yii::$app->getModule('nitm-search')->getNamespaces(static::$namespace) as $namespace)
 			{
 				$class = [rtrim($namespace, '\\')];
-				if(end(array_filter(explode('\\', $namespace))) !== 'search')
+				$parts = array_filter(explode('\\', $namespace));
+				if(end($parts) !== 'search')
 					$class[] = 'search';
 				$class[] = $properName;
 				$class = implode('\\', $class);
@@ -705,7 +706,8 @@ trait SearchTrait {
 			if(!isset($columns[$f]))
 				continue;
 			$info = \yii\helpers\ArrayHelper::toArray($columns[$f]);
-			switch(array_shift(explode('(', $info['dbType'])))
+			$parts = explode('(', $info['dbType']);
+			switch(array_shift($parts))
 			{
 				case 'tinyint':
 				$item[$f] = $info['dbType'] == 'tinyint(1)' ? (boolean)$v : (int)$v;
@@ -835,15 +837,17 @@ trait SearchTrait {
 		static::normalize($record, true);
 	}
 
-	protected function extractAttributesAndRelations($from)
+	protected function extractAttributesAndRelations($from, $model)
 	{
+		$primaryModelClass = $model->getPrimaryModelClass();
+		$primaryModel = new $primaryModelClass;
 		$ret_val = [
 			'attributes' => $from,
 			'relations' => $from
 		];
 		foreach($from as $attribute=>$value)
 		{
-			if(is_array($value)) {
+			if(is_array($value) && $primaryModel->hasRelation($attribute)) {
 				$ret_val['relations'][$attribute] = $value;
 				unset($ret_val['attributes'][$attribute]);
 			} else {

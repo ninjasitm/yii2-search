@@ -2,52 +2,52 @@
 namespace nitm\search;
 
 use yii\helpers\ArrayHelper;
+use yii\helpers\Inflector;
 use nitm\models\DB;
 
 /**
  * IndexerMongo class
  * Can be extended later but by default
- * will include base methods for adding 
+ * will include base methods for adding
  * data to a search database and automatic
  * indexing of that information
- * 
+ *
  * There will also be the ability to
  * add search information
  * There will be the ability to update keywords
  * and such
 */
-	
+
 class IndexerMongo extends BaseMongo
 {
 	use traits\BaseIndexerTrait;
-	
+
 	public $deleteIndexes;
-	
+
 	/**
 	 * By default use node 0
 	 */
 	public $node = 0;
-	
+
 	/**
 	 * The URL for the mongo server
 	 */
 	public $url;
-	
+
 	public $nestedMapping = [];
-	
+
 	protected $columns = [];
-	
+
 	const MODE_FEEDER = 'feeder';
 	const MODE_RIVER = 'river';
-	
+
 	public function init()
 	{
 		parent::init();
 		$this->setIndex(!isset($this->_database) ? static::getDbModel()->getDbName() : $this->_database);
-		$this->url = !isset($this->url) ? \Yii::$app->mongo->nodes[$this->node] : $this->url;
 		$this->initEvents();
 	}
-	
+
 	public function behaviors()
 	{
 		$behaviors = [
@@ -57,7 +57,7 @@ class IndexerMongo extends BaseMongo
 		];
 		return array_merge(parent::behaviors(), $behaviors);
 	}
-	
+
 	protected function initEvents()
 	{
 		/**
@@ -71,25 +71,28 @@ class IndexerMongo extends BaseMongo
 				switch($event->sender->getSource())
 				{
 					case 'classes':
-					$options = $allInfo[$this->namespace][$this->properClassName($event->sender->type())];
+					$options = $allInfo[$this->namespace][$this->properFormName($event->sender->type())];
 					break;
-					
+
 					case 'tables':
 					break;
-					
+
 					default:
 					return;
 					break;
 				}
-				$this->columns = $event->sender->attributes();
-				$attributes = array_keys($this->columns);
+				$modelClass = $event->sender->currentQuery->modelClass;
+				$model = new $modelClass;
+				$fields = $model->allFields();
+				$this->columns = $fields[2];
+				$attributes = $this->columns;
 				if(is_array($options) && isset($options['queryOptions']['with']))
-					$attributes = array_merge($attributes, $options['queryOptions']['with']);
-					
+					$attributes = array_unique(array_merge($attributes, $options['queryOptions']['with']));
+
 				/*
 				 * Update the mapping
 				 */
-				$this->updateMapping($event->sender->getMapping(), $attributes, $options);
+				$this->updateMapping($event->sender->getMapping(), $attributes, $event, $options);
 			}
 			$event->handled = true;
 		});
@@ -97,15 +100,15 @@ class IndexerMongo extends BaseMongo
 		 * Delete the ammping after deleting an index
 		 */
 		$this->on(BaseIndexer::AFTER_SEARCH_DELETE, function ($event) {
-			$this->apiInternal('delete', ['url' => '_mapping']);
+			$this->api('delete', ['url' => '_mapping']);
 			$event->handled = true;
 		});
 	}
-	
+
 	/**
 	 * Update the mapping for an elsasticsearch index
 	 */
-	public function updateMapping($mapping, $attributes, $options=[])
+	public function updateMapping($mapping, $attributes, $event, $options=[])
 	{
 		$mapping = count($mapping) == 0 ? [] : $mapping;
 		foreach($attributes as $attribute)
@@ -113,7 +116,7 @@ class IndexerMongo extends BaseMongo
 			switch(isset($options['queryOptions']['with']) && in_array($attribute, (array)$options['queryOptions']['with']))
 			{
 				case true:
-				$class = $this->namespace.$this->properClassName($event->sender->type());
+				$class = $this->namespace.$this->properFormName($event->sender->type());
 				$primaryModel = new $class;
 				$relationGetter = 'get'.$attribute;
 				$relatedQuery = $primaryModel->$relationGetter();
@@ -121,255 +124,180 @@ class IndexerMongo extends BaseMongo
 				$relatedColumns = $linkModelClass::getTableSchema()->columns;
 				$relatedAttributes = is_array($relatedQuery->select) ? $relatedQuery->select : array_keys($relatedColumns);
 				@$mapping[$attribute] = ['name' => $attribute];
-				foreach($relatedAttributes as $relatedProperty)
+				foreach($relatedAttributes as $relatedProperty) {
+					$relatedProperty = Inflector::variablize($relatedProperty,'');
 					@$mapping[$attribute][$relatedProperty] = $this->getFieldAttributes($attribute, $relatedColumns[$relatedProperty], true);
+				}
 				break;
-				
+
 				default:
 				@$mapping[$attribute] = $this->getFieldAttributes($attribute, $this->columns[$attribute]);
 				break;
 			}
 		}
-		if($this->reIndex)
-			$this->apiInternal('deleteIndex');
-		if(count($mapping) >= 1)
-			foreach($mapping as $index)
-				$this->apiInternal('createIndex', $index);
+		if($this->reIndex) {
+			try {
+				$this->api('dropAllIndexes');
+			} catch (\Exception $e) {}
+		}
+		if(count($mapping)) {
+			foreach($mapping as $name=>$index) {
+				if(!is_string($name))
+					continue;
+				$result = static::getDb()->getCollection(static::collectionName())->mongoCollection->createIndex([
+					'key' => $name
+				]);
+				//$result = $this->api('createIndex', [$name]);
+			}
+		}
 	}
-	
+
 	protected function getFieldAttributes($field, $info, $all = false)
 	{
 		$info = \yii\helpers\ArrayHelper::toArray($info);
 		$ret_val = ['name' => $field];
 		$userMapping = isset($this->module->settings['mongo']['mapping'][$field]) ? $this->module->settings['mongo']['mapping'][$field] : null;
 		$ret_val = is_null($userMapping) ? $ret_val : $userMapping;
+		//if(@$info['isPrimaryKey']) {
+		//	$ret_val['unique'] = true;
+		//}
 		return $ret_val;
 	}
-	
+
 	/**
 	 * Get the mapping from the Mongo server
 	 * @return array
 	 */
 	public function getMapping()
 	{
-		return static::api('getIndexes');
+		return iterator_to_array(static::getDb()->getCollection(static::collectionName())->mongoCollection->listIndexes());
 	}
-	
-	public function operation($operation, $options=[])
+
+	public function operationStats($options=[])
 	{
-		$operation = strtolower($operation);
-		switch($operation)
-		{
-			case 'index':
-			case 'delete':
-			case 'update':
-			switch($operation)
-			{
-				case 'update':
-				$options = [
-					'queryOptions' => [
-						'indexby' => 'primaryKey'
-					]
-				];
-				break;
-				
-				case 'delete':
-				$options = [
-					'queryOptions' => [
-						'select' => 'primaryKey',
-					]
-				];
-				break;
-				
-				default:
-				$options = [];
-				break;
-			}
-			$this->prepare($operation, $options);
-			$this->run();
-			$this->finish();
-			break;
-			
-			case 'stats':
-			$originalMock = $this->mock;
-			$this->mock = false;
-			//$ret_val = $this->apiInternal('get', $options);
-			$ret_val = [];
-			$this->mock = $originalMock;
-			return $ret_val;
-			break;
-			
-			default:
-			echo "\n\tUnknown operation: $operation. Exiting...";
-			break;
-		}
+		$originalMock = $this->mock;
+		$this->mock = false;
+		//$ret_val = $this->api('get', $options);
+		$ret_val = [];
+		$this->mock = $originalMock;
+		return $ret_val;
 	}
-	
-	/**
-	 * Prepare data to be indexed/checked
-	 * @param int $mode
-	 * @param boolean $useClasses Use the namespaced calss to pull data?
-	 * @return bool
-	 */
-	public function prepare($operation='index', $queryOptions=[])
-	{
-		$this->type = 'prepare';
-		$this->_operation = 'operation'.ucfirst($operation);
-		switch($this->mode)
-		{
-			case self::MODE_FEEDER:
-			switch(is_array($this->_classes) && !empty($this->_classes))
-			{
-				case true:
-				$prepare = 'FromClasses';
-				$dataSource = '_classes';
-				break;
-				
-				default:
-				$prepare = 'FromTables';
-				$dataSource = '_tables';
-				break;
-			}
-			break;
-			
-			default:
-			$prepare = 'FromSql';
-			$dataSource = '_tables';
-			break;
-		}
-		if(is_array($this->$dataSource) && empty($this->$dataSource))
-			return false;
-		$prepare = 'prepare'.$prepare;
-		$this->$prepare($queryOptions);
-		$this->type = $operation;
-	}
-	
-	/**
-	 * Use SQL to push using a PUT command
-	 */
-	public function prepareFromSql()
-	{
-		if(empty($this->_tables))
-			return;
-		$success = false;
-		foreach($this->_tables as $table)
-		{
-			$this->log("\tDoing SQl River Push: ".static::index()."->$table Items: ".$this->tableInfo('Rows')."\n");
-			$this->stack($table, [
-				'worker' => [$this, 'parse'],
-				'args' => [
-					$model, 
-					function ($query, $self) {
-						$query->select()
-							->limit($self->limit, $self->offset)
-							->build();
-						$sql = $query->getSql();
-						$self->bulkSet($self->type, $sql);
-						return $self->pushRiver($sql);
-					}
-				]
-			]);
-		}
-		
-		if($success == true)
-		{
-			$this->updateIndexed();
-		}
-	}
-	
+
 	/**
 	 * Perform an operation
 	 * @param string $operation
 	 * @param array $data
 	 */
-	protected function apiInternal($operation, $options)
-	{
-		$options['mock'] = $this->mock;
-		$options['index'] = isset($options['index']) ? $options['index'] : $this->index();
-		$options['type'] = isset($options['type']) ? $options['type'] : $this->type();
-		$this->log("\n\t\tUrl is ".strtoupper($operation)." ".implode('/', array_filter((array)$options['url'])), 3);
-		$this->log("\n\t\t".var_export($options, true), 5);
-		return static::api($operation, $options);
-	}
-	
-	public static function api($operation, $options)
+	protected static function apiInternal($operation, $options=[])
 	{
 		//print_r(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3));
 		//exit;
-		switch(isset($options['mock']) && ($options['mock'] === true))
-		{
-			case true:
+		if(isset($options['mock']) && ($options['mock'] === true))
 			return true;
-			break;
-			
-			default:
+		else {
 			unset($options['index'], $options['type'], $options['url'], $options['mock']);
 			//$apiOptions = isset($options['apiOptions']) ? $options['apiOptions'] : [];
 			//array_unshift($options, implode('/', array_filter($url)), (array)$apiOptions);
 			return call_user_func_array([static::getDb()->getCollection(static::collectionName()), $operation], $options);
-			break;
 		}
 	}
-	
-	protected function runOperation()
+
+	public function api($operation, $options=[])
 	{
-		$result = call_user_func([$this, $this->_operation]);
-		$resultArray = json_decode($result, true);
-		$this->log("\n\t\t\t"."Result: Took \e[1m".$resultArray['took']."ms\e[0m Errors: ".($resultArray['errors'] ? "\e[31myes" : "\e[32mno")."\e[0m");
-		$this->log("\n\t\t\t".($this->verbose >= 2 ? "Debug: ".var_export(@$result, true) : ''), 2);
+		$options['mock'] = $this->mock;
+		$options['index'] = isset($options['index']) ? $options['index'] : $this->index();
+		$options['type'] = isset($options['type']) ? $options['type'] : $this->type();
+		$this->log("\n\t\tUrl is ".strtoupper($operation)." ".implode('/', array_filter((array)@$options['url'])), 3);
+		$this->log("\n\t\t".var_export($options, true), 5);
+		return static::apiInternal($operation, $options);
 	}
-	
-	public final function operationIndex()
+
+	protected function runOperation($type)
+	{
+		$result = call_user_func_array([$this, $this->_operation], [$type]);
+		$resultArray = is_array($result) ? $result : json_decode($result, true);
+		return $result;
+	}
+
+	public final function operationIndex($baseModel)
 	{
 		$ret_val = [
 			'success' => false,
+			'took' => '0',
+			'errors' => null
 		];
-		$now = strtotime('now');
+		$start = strtotime('now');
 		$index_update = [];
-		if(($this->mode != 'river') && ($this->bulkSize('index') >= 1))
-		{
+		if(($this->mode != 'river') && ($this->bulkSize('index') >= 1)) {
 			$create = [];
 			$this->log("\n\t\tIndexing :");
+			$searchField = 'id';
 			foreach($this->bulk('index') as $idx=>$item)
 			{
 				$this->normalize($item);
 				$this->progress('index', null, null, null, true);
-				$item['_md5'] = $this->fingerprint($item);
+				$item['_type'] = $baseModel->isWhat();
+				$item['_md5'] = $this->fingerprint($item, 24);
+				$item['_id'] = new \MongoDB\BSON\ObjectID($item['_md5']);
 				$create[] = $item;
 				$this->totals['current']++;
 			};
+			if($this->reIndex) {
+				$result = $this->api('remove', [
+					[
+						$searchField => ArrayHelper::getColumn($create, $searchField)
+					]
+				]);
+			}
+			$cursor = $this->api('find', [
+				[
+					$searchField => ArrayHelper::getColumn($create, $searchField)
+				], [
+					$searchField => true
+				]
+			]);
+			$existing = [];
+			if($cursor instanceof \MongoDB\Driver\Cursor)
+				$existing = ArrayHelper::getColumn(iterator_to_array($cursor), $searchField);
+			if(count($existing)) {
+				$create = array_filter($create, function ($c) use($existing) {
+					if(in_array($c['_md5'], $existing))
+						return false;
+					return true;
+				});
+			}
+			$create = array_values($create);
 			$options = [
-				$create
+				//Need to use a reference for the rows as MongoCollection reqires this for batch insert
+				&$create, [
+					'continueOnError' => true
+				]
 			];
-			if(sizeof($create) >= 1 && ($result = $this->apiInternal('batchInsert', $options)))
-			{
+			if(count($create) && ($result = $this->api('batchInsert', $options)))
 				$this->bulkLog('index');
-			}
 			else
-			{
 				$this->log("\n\t\tNothing to Index\n");
-			}
-			$ret_val = $result;
+			$ret_val['result'] = $result;
+			$ret_val['success'] = true;
 		}
 		if(isset($put) && $put == true)
-		{
 			$this->updateIndexed();
-		}
-		$this->bulk[$this->type] = [];
+		$this->bulk[static::type()] = [];
+		echo "\n\t\tFinished index operation on ".count($create)." items";
 		return $ret_val;
 	}
-	
+
 	public function operationUpdate()
 	{
 		if(($this->mode != 'river') && ($this->bulkSize('update') >= 1))
 		{
 			$update = [];
 			$delete = [];
-			
-			$existing = iterator_to_array($this->apiInternal('find'), false);
-			
+
+			$existing = iterator_to_array($this->api('find'), false);
+
 			$this->log("\n\t\tUpdating :");
-			foreach((array)$existing as $item=>$idx) 
+			foreach((array)$existing as $item=>$idx)
 			{
 				$this->normalize($item);
 				$this->progress('update', null, null, null, true);
@@ -377,9 +305,9 @@ class IndexerMongo extends BaseMongo
 				{
 					if($self->bulk('update', $item['_id'])['_md5'] != $item['_md5'])
 					{
-						$condition = ['_id' => new \MongoId($item['_id'])];
+						$condition = ['_id' => new \MongoDB\BSON\ObjectID($item['_id'])];
 						$item['_md5'] = $this->fingerprint($this->bulk('update', $item['_id']));
-						if($this->apiInternal('update', $condition, $item))
+						if($this->api('update', $condition, $item))
 						{
 							$update[] = $item;
 							$sel->totals['current']++;
@@ -408,12 +336,12 @@ class IndexerMongo extends BaseMongo
 			}
 		}
 	}
-	
+
 	public function operationDeleteIndex()
 	{
-		
+
 	}
-	
+
 	public function operationDelete()
 	{
 		$ret_val = false;
@@ -436,7 +364,7 @@ class IndexerMongo extends BaseMongo
 				$options = [
 					$this->bulk('delete')
 				];
-				if($result = $this->apiInternal('update', $options))
+				if($result = $this->api('update', $options))
 				{
 					$this->log("\n\t\tDeleted: ".$this->totals['current']." entries\n");
 					$this->bulkLog('delete');
@@ -450,7 +378,7 @@ class IndexerMongo extends BaseMongo
 				$ret_val = '{"took":"1ms","Errors":false}';
 			}
 		}
-		
+
 	}
 }
 ?>
