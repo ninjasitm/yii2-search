@@ -219,6 +219,45 @@ class IndexerMongo extends BaseMongo
 		return $result;
 	}
 
+	public function processModel($model)
+	{
+		$this->setIndexType($model->isWhat(), $model->tableName());
+		$scenario = $model->getScenario();
+	    list($attributes, $model) = static::prepareModel($model, (array)static::getModule()->getModelOptions($model->className()));
+		//$attributes = array_merge($model->toArray(), static::populateRelatedRecords($model));
+		//$attributes['_id'] = new \MongoDB\BSON\ObjectID(static::fingerprint($attributes['id']));
+		switch($scenario)
+		{
+			case 'delete':
+			$op = 'remove';
+			$options = [
+				$attributes
+			];
+			break;
+
+			case 'update':
+			$op = 'update';
+			$options = [
+				[
+					'_id' => new \MongoDB\BSON\ObjectID($this->fingerprint($model->getId(), 24))
+				],	$attributes
+			];
+			break;
+
+			default:
+			$op = 'insert';
+			$options = [
+				$attributes
+			];
+			break;
+		}
+		try {
+			return $this->api($op, $options);
+		} catch (\Exception $e) {
+			\Yii::error($e->getMessage());
+		}
+	}
+
 	public final function operationIndex($baseModel)
 	{
 		$ret_val = [
@@ -238,7 +277,8 @@ class IndexerMongo extends BaseMongo
 				$this->progress('index', null, null, null, true);
 				$item['_type'] = $baseModel->isWhat();
 				$item['_md5'] = $this->fingerprint($item, 24);
-				$item['_id'] = new \MongoDB\BSON\ObjectID($item['_md5']);
+				$item['_id'] = ArrayHelper::getValue($item, '_id', $item['id']);
+				$item['_id'] = new \MongoDB\BSON\ObjectID($this->fingerprint($item['_id'], 24));
 				$create[] = $item;
 				$this->totals['current']++;
 			};
@@ -378,7 +418,6 @@ class IndexerMongo extends BaseMongo
 				$ret_val = '{"took":"1ms","Errors":false}';
 			}
 		}
-
 	}
 }
 ?>

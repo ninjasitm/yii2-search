@@ -279,8 +279,11 @@ trait BaseIndexerTrait
 
 	public static function fingerprint($item, $length=24)
 	{
-		$string = json_encode((array)$item);
-		return substr(hash('tiger128,3', $string), 0, $length);
+		$string = json_encode($item);
+		$ret_val = hash('tiger128,3', $string);
+		if($length >= 1)
+			return substr(hash('tiger128,3', $string), 0, $length);
+		return $ret_val;
 	}
 
 	protected function prepareMetainfo($type, $table, $query)
@@ -318,9 +321,13 @@ trait BaseIndexerTrait
 			$this->progressStart('prepare', sizeof($data));
 			foreach($data as $idx=>$result)
 			{
-				$id = $result[$this->idKey];
 				$this->progress('prepare', null, null, null, true);
-				$result['_id'] = $id;
+				if(!isset($result['_id'])) {
+					$id = $result[$this->idKey];
+					$result['_id'] = $id;
+				} else {
+					$id = $result['_id'];
+				}
 				$result['_md5'] = isset($result['md5']) ? $result['_md5'] : $this->fingerprint($result);
 				$this->bulkSet($this->type, $id, $result);
 			}
@@ -523,7 +530,8 @@ trait BaseIndexerTrait
 							//Doing this here to merge related records
 							foreach($results as $idx=>$record) {
 								$results[$idx] = array_merge($record->toArray(), static::populateRelatedRecords($record));
-								//$results[$idx] = $record->toArray();
+								if(!isset($results[$idx]['_id']))
+									$results[$idx]['_id'] = $record->getId();
 							}
 							$self->parseChunk($results);
 							$result = $self->runOperation($model);
