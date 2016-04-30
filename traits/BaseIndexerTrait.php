@@ -2,7 +2,7 @@
 
 namespace nitm\search\traits;
 
-use yii\helpers\ArrayHelper;
+use nitm\helpers\ArrayHelper;
 use nitm\models\DB;
 
 /*
@@ -39,6 +39,7 @@ trait BaseIndexerTrait
 	protected $_attributes =[];
 	protected $_indexUpdate = [];
 	protected $_operation = 'index';
+	protected static $_fields = [];
 
 	private $_stack = [];
 	private $_queries = [];
@@ -530,6 +531,7 @@ trait BaseIndexerTrait
 							//Doing this here to merge related records
 							foreach($results as $idx=>$record) {
 								$results[$idx] = array_merge($record->toArray(), static::populateRelatedRecords($record));
+								//$results[$idx] = $record->toArray();
 								if(!isset($results[$idx]['_id']))
 									$results[$idx]['_id'] = $record->getId();
 							}
@@ -634,16 +636,28 @@ trait BaseIndexerTrait
 	 */
 	protected static function populateRelatedRecords($object, $parent='')
 	{
+		//echo "\nPopulating records for ".$object->getId();
 		$ret_val = [];
 		foreach($object->relatedRecords as $name=>$value)
 		{
 			$path = implode('.', array_filter(array_merge([$name], explode('.', $parent))));
+			//echo "\nChecking relation $path";
+			if(in_array($name, static::currentFields($object, 'extraFields'))) {
+				if(is_callable($object->extraFields()[$name])) {
+					$value = $object->extraFields()[$name]($object);
+				}
+			} else if(in_array($name, static::currentFields($object, 'fields'))) {
+				if(is_callable($object->fields()[$name])) {
+					$value = $object->fields()[$name]($object);
+				}
+			}
 			if(is_array($value)) {
-				foreach($value as $v) {
-					if(is_object($v))
-						$ret_val[$name][] = array_merge(ArrayHelper::toArray($v), static::populateRelatedRecords($v, $path));
-					else
-						$ret_val[$name][] = $v;
+				foreach($value as $k=>$v) {
+					if(is_object($v)) {
+						//$ret_val[$name][$k] = array_merge(ArrayHelper::toArray($v), static::populateRelatedRecords($v, $path));
+						$ret_val[$name][$k] = ArrayHelper::toArray($v);
+					} else
+						$ret_val[$name][$k] = is_array($v) || is_object($v) ? ArrayHelper::toArray($v) : $v;
 				}
 			} else if(is_object($value) && $object->hasRelation($name)) {
 				$ret_val[$name] = $value->toArray();
@@ -654,6 +668,26 @@ trait BaseIndexerTrait
 			}
 		}
 		return $ret_val;
+	}
+	/**
+	 * Get the fields for the specified object
+	 * @param  [type] $table [description]
+	 * @return [type]        [description]
+	 */
+	protected static function currentFields($object, $type=null) {
+		if(!isset(static::$_fields[$object->tableName()])) {
+			try {
+				list($fields, $extraFields, $allFields) = $object->allFields();
+			} catch(\Exception $e) {
+				$fields = $extraFields = $allFields = [];
+			}
+			static::$_fields[$object->tableName()] = [
+				'fields' => $fields,
+				'extraFields' => $extraFields,
+				'allFields' => $allFields
+			];
+		}
+		return ArrayHelper::getValue(static::$_fields, implode('.', array_filter([$object->tableName(), $type])), []);
 	}
 }
 ?>
