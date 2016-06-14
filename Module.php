@@ -18,6 +18,16 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 	public $disableIndexing = false;
 
 	/**
+	 * Callback used to get/prepare the changed atributes for indexing
+	 * Should have the follwing signature:
+	 * function ($model) {
+	 * 	return [$attributes, $targetModel];
+	 * }
+	 * @var function
+	 */
+	public $attributesFilter;
+
+	/**
 	 * The class mappings in the format:
 	 * ```
 	 * 	{namespace} => [
@@ -139,7 +149,7 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 		return BaseIndexer::fingerprint($item);
 	}
 
-	protected function getModelOptions($class)
+	public function getModelOptions($class)
 	{
 		$class = explode('\\', $class);
 		$modelClass = array_pop($class);
@@ -158,45 +168,20 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 		if($this->disableIndexing)
 			return;
 
-		$indexer = $this->getIndexer();
+		$indexer = $this->getIndexerObject();
 		/**
 		 * Need to enable better support for different search indexers here
 		 */
-		$attributes = $indexer::prepareModel($event->sender, (array)$this->getModelOptions($event->sender->className()));
-		$attributes['_md5'] = $this->fingerprint($attributes);
+		if($event->sender instanceof \nitm\models\Data)
+			return $indexer->processModel($event->sender);
+	}
 
-		switch($event->sender->getScenario())
-		{
-			case 'create':
-			$op = null;
-			$method = 'put';
-			break;
-
-			case 'delete':
-			$op = '';
-			$method = 'delete';
-			break;
-
-			default:
-			$op = '_update';
-			$method = 'post';
-			$attributes = ['doc' => $attributes];
-			break;
-		}
-
-		$options = [
-			'url' => implode('/', array_filter([$event->sender->isWhat(), $event->sender->getId(), $op])),
-			json_encode($attributes),
-			true
-		];
-		try {
-			return $indexer::api($method, $options);
-		} catch (\yii\elasticsearch\Exception $e) {
-			if(defined('YII_ENV') && YII_ENV == 'debug')
-				throw $e;
-			else
-				return true;
-		}
+	public function getAttributes($model)
+	{
+		if(is_callable($this->attributesFilter))
+			return call_user_func_array($this->attributesFilter, [$model]);
+		else
+		 	return $model->getAttributes();
 	}
 
 	protected function defaultNamespaces()
