@@ -8,24 +8,24 @@ use nitm\models\DB;
 /*
  * Class containing commong functions used by solr indexer and searcher class
  */
- 
+
 class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements SearchInterface
 {
-	use traits\ElasticSearchTrait, 
-		traits\SearchTrait, 
-		\nitm\traits\Data, 
-		\nitm\traits\Query, 
+	use traits\ElasticSearchTrait,
+		traits\SearchTrait,
+		\nitm\traits\Data,
+		\nitm\traits\Query,
 		\nitm\traits\Relations,
 		\nitm\traits\Alerts;
-		
+
 	public $engine = 'elasticsearch';
-	
+
 	public function init()
 	{
 		$class = $this->getPrimaryModelClass();
 		static::setIndexType($class::isWhat(), $class::tableName());
 	}
-	
+
 	public function behaviors()
 	{
 		$behaviors = [
@@ -35,12 +35,12 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		];
 		return array_merge(parent::behaviors(), $behaviors);
 	}
-	
+
 	public function getId()
 	{
 		return parent::getPrimaryKey();
 	}
-	
+
 	public function offsetGet($name)
 	{
 		/**
@@ -48,7 +48,7 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		 */
 		return self::__get($name);
 	}
-	
+
 	/**
 	 * Overriding default find function
 	 */
@@ -56,7 +56,7 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 	{
 		return static::findInternal(\nitm\search\query\ActiveElasticQuery::className(), $model, $options);
 	}
-	
+
 	public static function getTableSchema()
 	{
 		return new \yii\db\TableSchema([
@@ -67,19 +67,19 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 			'fullName' => static::index().'.'.static::type()
 		]);
 	}
-	
+
 	public function get_Id()
 	{
 		return $this->id;
 	}
-	
+
 	protected function getTextParam($value)
 	{
 		//$this->dataProvider->query->query = ['query_string' => $value];
 		$this->useEmptyParams = true;
 		return ['q' => $value];
 	}
-	
+
 	public function getDataProvider($params, $options=[])
 	{
 		/**
@@ -87,11 +87,11 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		 */
 		$dataProvider = $this->search($params);
 		$query = $dataProvider->query;
-		
+
 		//Parse the query and extract the parts
 		$parts = $this->parseQuery($this->text);
-		
-		$command = $query->createCommand();	
+
+		$command = $query->createCommand();
 		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
 		//$query->highlight(true);
 		$query->query(isset($parts['query']) ? $parts['query'] : ArrayHelper::getValue($command, 'queryParts.query', []));
@@ -99,21 +99,21 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 			'_score' => 'desc',
 			'_id' => 'desc',
 		])));
-		
+
 		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
 		$where = ArrayHelper::getValue($options, 'where', false);
-		
+
 		if(count($parts['filter']))
 			$query->filter($parts['filter']);
-			
+
 		if(is_array($where))
 			$query->where($where);
-		
+
 		if($this->forceType === true)
 			$query->type = $options['types'];
 		else
 			$query->type = (isset($parts['types']) ? $parts['types'] : $options['types']);
-			
+
 		//Do not allow the use of the _all or base-elastic-search type for searching
 		switch($query->type)
 		{
@@ -122,12 +122,12 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 			$query->type = '';
 			break;
 		}
-			
+
 		$results = [];
-		
+
 		//Setup data provider. Manually set the totalcount and models to enable proper pagination
         $dataProvider = new \yii\data\ArrayDataProvider;
-		
+
 		if(count($command->queryParts) || $this->text)
 		{
 			try {
@@ -152,17 +152,17 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 		}
 		return [$results, $dataProvider];
 	}
-	
+
 	public static function instantiate($attributes)
 	{
 		if(!isset($attributes['_source']))
 			$attributes['_source'] = [];
-			
+
 		$model = static::instantiateInternal($attributes['_source'], $attributes['_type']);
-		static::setIndexType($model->isWhat());
+		//static::setIndexType($model->isWhat());
 		return $model;
 	}
-	
+
 	/**
 	 * Custom record population for related records
 	 */
@@ -170,12 +170,12 @@ class BaseElasticSearch extends \yii\elasticsearch\ActiveRecord implements Searc
 	{
 		if(!isset($row['_source']))
 			return;
-		
-		extract(static::extractAttributesAndRelations($row['_source']));
+
+		extract(static::extractAttributesAndRelations($row['_source'], $record));
 		parent::populateRecord($record, $attributes);
 		static::populateRelations($record, $relations);
 	}
-	
+
 	public function getSort()
 	{
 		return [];

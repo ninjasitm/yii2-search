@@ -8,17 +8,22 @@ use nitm\models\DB;
 /*
  * Class containing commong functions used by solr indexer and searcher class
  */
- 
+
 class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 {
-	use traits\MongoTrait, traits\SearchTrait, \nitm\traits\Data, \nitm\traits\Query, \nitm\traits\Relations, \nitm\traits\Nitm;
-	
+	use traits\MongoTrait,
+        traits\SearchTrait,
+        \nitm\traits\Data,
+        \nitm\traits\Query,
+        \nitm\traits\Relations,
+        \nitm\traits\Nitm;
+
 	public function init()
 	{
 		$class = $this->getPrimaryModelClass();
-		static::setIndexType($this->isWhat(), (is_array($class::collectionName()) ? array_pop($class::collectionName()) : $class::collectionName()));
+		$this->setIndexType($this->isWhat(), $class::tableName());
 	}
-	
+
 	public function behaviors()
 	{
 		$behaviors = [
@@ -28,12 +33,12 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 		];
 		return array_merge(parent::behaviors(), $behaviors);
 	}
-	
+
 	public function getId()
 	{
 		return parent::getPrimaryKey();
 	}
-	
+
 	public function offsetGet($name)
 	{
 		/**
@@ -41,7 +46,7 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 		 */
 		return self::__get($name);
 	}
-	
+
 	/**
 	 * Overriding default find function
 	 */
@@ -49,7 +54,7 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 	{
 		return static::findInternal(\nitm\search\query\ActiveMongoQuery::className(), $model, $options);
 	}
-	
+
 	public static function getTableSchema()
 	{
 		return new \yii\db\TableSchema([
@@ -60,34 +65,34 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 			'columns' => static::columns()
 		]);
 	}
-	
+
 	public static function collectionName()
 	{
 		try {
-			return static::$collectionName;
+			return \yii\helpers\Inflector::slug(static::tableName(), '');
 		} catch (\Exception $e) {
 			return parent::collectionName();
 		}
 	}
-	
+
 	public function get_Id()
 	{
 		return $this->id;
 	}
-	
+
 	protected function getTextParam($value)
 	{
 		//$this->dataProvider->query->query = ['query_string' => $value];
 		$this->useEmptyParams = true;
 		return ['q' => $value];
 	}
-	
+
 	public static function instantiate($attributes)
 	{
-		$model = static::instantiateInternal($attributes);
+		$model = static::instantiateInternal($attributes, ArrayHelper::remove($attribtues, '_type', static::isWhat()));
 		return $model;
 	}
-	
+
 	public function getDataProvider($params, $options=[])
 	{
 		/**
@@ -95,28 +100,28 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 		 */
 		$dataProvider = $this->search($params);
 		$query = $dataProvider->query;
-		
+
 		//Parse the query and extract the parts
 		$parts = $this->parseQuery($this->text);
-		
-		$command = $query->createCommand();	
+
+		$command = $query->createCommand();
 		$query->offset((int) \Yii::$app->request->get('page')*$options['limit']);
 		//$query->highlight(true);
 		$query->query(isset($parts['query']) ? $parts['query'] : ArrayHelper($command, 'queryParts.query', []));
 		$query->orderBy($options['sort']);
 		$parts['filter'] = ArrayHelper::getValue($parts, 'filter', []);
 		$query->where(array_merge((array)$query->where, (array)$parts['filter'], ArrayHelper::getValue($options, 'where', [])));
-		
+
 		if($this->forceType === true)
 			$query->type = $options['types'];
 		else
 			$query->type = (isset($parts['types']) ? $parts['types'] : $options['types']);
 
 		$models = $results = [];
-		
+
 		//Setup data provider. Manually set the totalcount and models to enable proper pagination
         $dataProvider = new \yii\data\ArrayDataProvider;
-		
+
 		if(count($command->queryParts) || $this->text)
 		{
 			try {
@@ -132,7 +137,7 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 			{
 				/**
 				 * The models are instantiated in Search::instantiate function
-				}*/
+				*/
 				$dataProvider->setTotalCount($results['hits']['total']);
 				//Must happen after setting the total count
 				$dataProvider->setModels(ArrayHelper::remove($results['hits'], 'hits'));
@@ -141,7 +146,18 @@ class BaseMongo extends \yii\mongodb\ActiveRecord implements SearchInterface
 		}
 		return [$results, $dataProvider];
 	}
-	
+
+	/**
+	 * Custom record population for related records
+	 */
+	public static function populateRecord($record, $row)
+	{
+		unset($row['_id']);
+		extract(static::extractAttributesAndRelations($row, $record));
+		parent::populateRecord($record, $attributes);
+		static::populateRelations($record, $relations);
+	}
+
 	public function getSort()
 	{
 		return [];

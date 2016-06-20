@@ -2,7 +2,7 @@
 
 namespace nitm\search\traits;
 
-use yii\helpers\ArrayHelper;
+use nitm\helpers\ArrayHelper;
 use nitm\models\DB;
 
 /*
@@ -19,7 +19,7 @@ trait BaseIndexerTrait
 	public $progress = ["complete" => false, "separator" => ":", "op" => ["start" => 0, "end" => 0]];
 	public $verbose = 0;
 	public $offset = 0;
-	public $limit = 500;
+	public $limit = 100;
 	public $model;
 	public $info = [];
 
@@ -29,6 +29,7 @@ trait BaseIndexerTrait
 	protected $bulk = ["update" => [], "delete" => [], "index" => []];
 	protected static $dbModel;
 	protected $currentUser;
+	protected $currentQuery;
 
 	protected $_logText = '';
 	protected $_info = ["info" => [], "table" => []];
@@ -38,8 +39,10 @@ trait BaseIndexerTrait
 	protected $_attributes =[];
 	protected $_indexUpdate = [];
 	protected $_operation = 'index';
+	protected static $_fields = [];
 
 	private $_stack = [];
+	private $_queries = [];
 
 	public function set_Tables($tables=[])
 	{
@@ -117,11 +120,6 @@ trait BaseIndexerTrait
 		$this->log("\n\tIndex Summary:\n\tOn ".date("F j, Y @ g:i a")." user ".$this->currentUser." performed index operations. Summary as follows:\n\tIndexed (".$this->totals['index'].") Re-Indexed (".$this->totals['update'].") items De-Indexed (".$this->totals['delete'].") items Index total (".$this->totals['total'].")\n");
 		$this->progress['op']['end'] = microtime(true);
 		$this->stats['end'] = microtime(true);
-	}
-
-	public function operation()
-	{
-		throw new \yii\bas\Exception("operation() should be implemented in a clas extending from this one");
 	}
 
 	/**
@@ -245,7 +243,7 @@ trait BaseIndexerTrait
 
 	protected function printDebug($value)
 	{
-		echo $this->_logtext;
+		echo $this->_logtext."\n";
 	}
 
 	/**
@@ -280,19 +278,21 @@ trait BaseIndexerTrait
 		return $ret_val;
 	}
 
-	public static function fingerprint($item)
+	public static function fingerprint($item, $length=24)
 	{
-		return md5(json_encode((array)$item));
+		$string = json_encode($item);
+		$ret_val = hash('tiger128,3', $string);
+		if($length >= 1)
+			return substr(hash('tiger128,3', $string), 0, $length);
+		return $ret_val;
 	}
 
-	protected function prepareMetainfo($type, $table)
+	protected function prepareMetainfo($type, $table, $query)
 	{
 		$this->setIndexType($type, $table);
-		static::getDbModel()->setTable(static::$_table);
-		$this->_info['table'][static::$_table] = static::getDbModel()->getTableStatus(static::$_table);
-		$this->_info['tableInfo'][static::$_table] = static::getDbModel()->getTableInfo(null, static::$_table);
-		$this->_attributes = ArrayHelper::toArray($this->_info['table'][static::$_table]->columns);
-		$this->idKey = static::getDbModel()->primaryKey();
+		$schema = \Yii::$app->db->schema;
+		$this->_attributes = ArrayHelper::toArray($schema->getTableSchema($table)->columns);
+		$this->idKey = $schema->getTableSchema($table)->primaryKey;
 		$this->idKey = is_array($this->idKey) ? array_pop($this->idKey) : $this->idKey;
 	}
 
@@ -302,7 +302,7 @@ trait BaseIndexerTrait
 		{
 			if(isset($options['namespace']))
 				$this->namespace = $options['namespace'];
-			$this->prepareMetainfo((isset($options['type']) ? $options['type'] : $table), $table);
+			$this->prepareMetainfo(ArrayHelper::getValue($options, 'type', $table), ArrayHelper::getValue($options, 'table', $table), $options['args'][0]);
 			$result = call_user_func_array($options['worker'], $options['args']);
 			unset($this->_stack[$table]);
 		}
@@ -315,23 +315,25 @@ trait BaseIndexerTrait
 	protected function parseChunk($data=[])
 	{
 		$ret_val = false;
-		if(is_array($data) && sizeof($data)>=1)
-		{
-			$this->totals['chunk'] = sizeof($data);
+		if(is_array($data) && count($data)) {
+			$this->totals['chunk'] = count($data);
+			$this->offset += $this->totals['chunk'];
 			$this->log(" [".$this->totals['chunk']."]: ");
 			$this->progressStart('prepare', sizeof($data));
 			foreach($data as $idx=>$result)
 			{
-				$id = $result[$this->idKey];
 				$this->progress('prepare', null, null, null, true);
-				$result['_id'] = $id;
+				if(!isset($result['_id'])) {
+					$id = $result[$this->idKey];
+					$result['_id'] = $id;
+				} else {
+					$id = $result['_id'];
+				}
 				$result['_md5'] = isset($result['md5']) ? $result['_md5'] : $this->fingerprint($result);
 				$this->bulkSet($this->type, $id, $result);
 			}
 			$ret_val = true;
-		}
-		else
-		{
+		} else {
 			$this->bulkSet($this->type, null);
 			$this->log("\n\t\tNothing to ".$this->type." from: ".static::index()."->".static::type());
 		}
@@ -348,48 +350,50 @@ trait BaseIndexerTrait
 	 */
 	protected function parse($query, $callback)
 	{
+		$this->currentQuery = $query;
 		//Is the indexed column available? If not find everything
 		$findAll = array_key_exists('indexed', $this->_attributes) ? false :true;
 		if(($findAll === false && !$this->reIndex) && ($this->type != 'delete'))
 			$query->where(['not', 'indexed=1']);
-		$this->log("\n\tPerforming: ".$this->type." on ".static::index()."->".static::type()." Items: ".$this->tableRows());
+		$this->log("\n\tPerforming: ".$this->type." on ".static::index()."->".static::type()." Items: ".$query->count());
 
 		//Do something before $this->type
-		$event = strtoupper('before_search_'.$this->type);
-		$this->trigger(constant('\nitm\search\BaseIndexer::'.$event));
+		$eventName = strtoupper('before_search_'.$this->type);
+		$this->trigger(constant('\nitm\search\BaseIndexer::'.$eventName));
 
-		$this->totals[$this->type] = $this->tableRows();
+		$this->totals[$this->type] = $query->count();
 		$this->totals['current'] = $this->totals['chunk'] = $this->offset = 0;
 
-		for($i=0; $i<($this->tableRows()/$this->limit);$i++)
+		for($i=0; $i<($query->count()/$this->limit);$i++)
 		{
 			$this->totals['current'] = 0;
 			$this->offset = $this->limit * $i;
 			$this->log("\n\t\tPreparing chunk: $i [starting at ".$this->offset."] ");
 			switch(1)
 			{
-				case $this->tableRows() <= $this->limit:
-				$count =  $this->tableRows();
+				case $query->count() <= $this->limit:
+				$count =  $query->count();
 				break;
 
-				case ($this->tableRows() - ($this->offset)) > $this->limit:
+				case ($query->count() - ($this->offset)) > $this->limit:
 				$count = $this->limit;
 				break;
 
 				default:
-				$count = $this->tableRows() - ($this->offset);
+				$count = $query->count() - ($this->offset);
 				break;
 			}
 			$this->progressStart($this->type, $count);
 			$callback($query, $this);
+			$this->currentQuery = null;
 		}
 
 		//Do something after indexing
-		$event = strtoupper('after_search_'.$this->type);
-		$this->trigger(constant('\nitm\search\BaseIndexer::'.$event));
+		$eventName = strtoupper('after_search_'.$this->type);
+		$this->trigger(constant('\nitm\search\BaseIndexer::'.$eventName));
 
 		$this->totals['total'] += $this->totals['current'];
-		$this->log("\n\tResult: ".$this->totals['current']." out of ".$this->totals[$this->type]." entries\n");
+		$this->log("\tResult: ".$this->totals['current']." out of ".$this->totals[$this->type]." entries\n\n");
 	}
 
 	protected function bulk($index=null, $id=null)
@@ -418,18 +422,13 @@ trait BaseIndexerTrait
 			$this->bulk[static::type()][$index][$id] = $value;
 	}
 
-	protected function tableInfo($key=null)
+	protected function tableInfo($key=null, $table=null)
 	{
+		$table = $table ?: static::$_table;
 		if(is_null($key))
-			return $this->_info['tableInfo'][static::tableName()];
+			return static::getDbModel()->getTableStatus($table);
 		else
-			return $this->_info['tableInfo'][static::tableName()][$key];
-	}
-
-	protected function tableRows($key=null)
-	{
-		static::getDbModel()->execute("SELECT COUNT(*) FROM ".static::getDbModel()->tableName());
-		return static::getDbModel()->result()[0];
+			return ArrayHelper::getValue(static::getDbModel()->getTableStatus($table), $key, null);
 	}
 
 	/**
@@ -438,6 +437,45 @@ trait BaseIndexerTrait
 	protected function stack($id, $options)
 	{
 		$this->_stack[$id] = $options;
+	}
+
+	/**
+	 * Prepare data to be indexed/checked
+	 * @param int $mode
+	 * @param boolean $useClasses Use the namespaced calss to pull data?
+	 * @return bool
+	 */
+	public function prepare($operation='index', $queryOptions=[])
+	{
+		$this->type = 'prepare';
+		$this->_operation = 'operation'.ucfirst($operation);
+		switch($this->mode)
+		{
+			case self::MODE_FEEDER:
+			switch(is_array($this->_classes) && !empty($this->_classes))
+			{
+				case true:
+				$prepare = 'FromClasses';
+				$dataSource = '_classes';
+				break;
+
+				default:
+				$prepare = 'FromTables';
+				$dataSource = '_tables';
+				break;
+			}
+			break;
+
+			default:
+			$prepare = 'FromSql';
+			$dataSource = '_tables';
+			break;
+		}
+		if(is_array($this->$dataSource) && empty($this->$dataSource))
+			return false;
+		$prepare = 'prepare'.$prepare;
+		$this->$prepare($queryOptions);
+		$this->type = $operation;
 	}
 
 	public static function prepareModel($model, $options)
@@ -470,33 +508,40 @@ trait BaseIndexerTrait
 		{
 			foreach($classes as $modelName=>$attributes)
 			{
-				$localOptions = $options;
 				$class = $namespace.$modelName;
 				if(is_null($class::getDb()->schema->getTableSchema($class::tablename(), true)))
 					continue;
-				$class::$initClassConfig = false;
-				$localOptions['initLocalConfig'] = false;
-				$localOptions = array_merge((array)$attributes, $localOptions);
+				$localOptions = array_merge((array)$attributes, $options);
 				$model = new $class($localOptions);
-				$this->stack($model->tableName(), [
+				$tableName = \yii\helpers\Inflector::slug($class::tableName(), '');
+				$this->stack($modelName, [
 					'type' => $model->isWhat(null, true),
+					'table' => $tableName,
 					'namespace' => $namespace,
 					'worker' => [$this, 'parse'],
 					'args' => [
 						$class::find($model),
-						function ($query, $self) {
+						function ($query, $self) use($model) {
+							$start = microtime(true);
 							$self->log("\n\t\t".$query->limit($self->limit)
 								->offset($self->offset)->createCommand()->getSql(), 3);
 							$results = $query->limit($self->limit)
 								->offset($self->offset)
 								->all();
 							//Doing this here to merge related records
-							foreach($results as $idx=>$record)
-							{
+							foreach($results as $idx=>$record) {
 								$results[$idx] = array_merge($record->toArray(), static::populateRelatedRecords($record));
+								//$results[$idx] = $record->toArray();
+								if(!isset($results[$idx]['_id']))
+									$results[$idx]['_id'] = $record->getId();
 							}
 							$self->parseChunk($results);
-							return $self->runOperation();
+							$result = $self->runOperation($model);
+							$result['took'] = round(microtime(true) - $start, 2);
+							$this->log("\n\t\tResult: Took \e[1m".$result['took']."s\e[0m Errors: ".($result['errors'] ? "\e[31myes" : "\e[32mno")."\e[0m")."\n";
+							$this->log("\n\t\t\t".($this->verbose >= 2 ? "Debug: ".var_export(@$result, true) : ''), 2);
+							$this->log("\n");
+							return $result;
 						}
 					]
 				]);
@@ -504,24 +549,9 @@ trait BaseIndexerTrait
 		}
 	}
 
-	protected static function populateRelatedRecords($object)
-	{
-		$ret_val = [];
-		foreach($object->relatedRecords as $name=>$value)
-		{
-			if(is_array($value))
-				foreach($value as $v)
-					$ret_val[$name][] = array_merge(ArrayHelper::toArray($v), static::populateRelatedRecords($v));
-			else if(is_object($value) && $value->hasMethod('get'.$name))
-				$ret_val[$name] = array_merge($value->toArray(), static::populateRelatedRecords($value));
-			else
-				$ret_val[$name] = ArrayHelper::toArray($value);
-		}
-		return $ret_val;
-	}
-
 	/**
 	 * Use tables to prepare the data
+	 * @param array $optionsOptions for the query
 	 */
 	public function prepareFromTables($options=[])
 	{
@@ -532,19 +562,132 @@ trait BaseIndexerTrait
 			$this->stack($table, [
 				'worker' => [$this, 'parse'],
 				'args' => [
-					static::getDbModel(),
-					function ($query, $self) use($options) {
-						$query->select(@$options['queryOptions']['select'])
-						 ->limit($self->limit, $self->offset);
-						if(isset($options['queryOptions']['where']))
-							call_user_func_array([$query, 'where'], $options['queryOptions']['where']);
-						$query->run();
-						$self->parseChunk($query->result(DB::R_ASS, true));
-						return $self->runOperation();
+					new Query(),
+					function ($query, $self) use($options, $table) {
+						$query->from($table)
+							->limit($self->limit, $self->offset);
+						foreach($options as $method=>$params) {
+							$query->$method($params);
+						}
+						$self->parseChunk($query->all());
+						return $self->runOperation($table);
 					}
 				]
 			]);
 		}
+	}
+
+	protected function runOperation($baseModel)
+	{
+		$result = call_user_func_array([$this, $this->_operation], [$baseModel]);
+		$resultArray = @json_decode($result, true);
+		return $resultArray;
+	}
+
+	public function operation($operation, $options=[])
+	{
+		$operation = strtolower($operation);
+		switch($operation)
+		{
+			case 'index':
+			case 'delete':
+			case 'update':
+			switch($operation)
+			{
+				case 'update':
+				$options = [
+					'queryOptions' => [
+						'indexby' => 'primaryKey'
+					]
+				];
+				break;
+
+				case 'delete':
+				$options = [
+					'queryOptions' => [
+						'select' => 'primaryKey',
+					]
+				];
+				break;
+
+				default:
+				$options = [];
+				break;
+			}
+			$this->prepare($operation, $options);
+			$this->run();
+			$this->finish();
+			break;
+
+			case 'stats':
+			return $this->operationStats($options);
+			break;
+
+			default:
+			echo "\n\tUnknown operation: $operation. Exiting...";
+			break;
+		}
+	}
+
+	/**
+	 * Populate related records for the specified object
+	 * @param  \nitm\models\Data $object [description]
+	 * @return array         Populte records
+	 */
+	protected static function populateRelatedRecords($object, $parent='')
+	{
+		//echo "\nPopulating records for ".$object->getId();
+		$ret_val = [];
+		foreach($object->relatedRecords as $name=>$value)
+		{
+			$path = implode('.', array_filter(array_merge([$name], explode('.', $parent))));
+			//echo "\nChecking relation $path";
+			if(in_array($name, static::currentFields($object, 'extraFields'))) {
+				if(is_callable($object->extraFields()[$name])) {
+					$value = $object->extraFields()[$name]($object);
+				}
+			} else if(in_array($name, static::currentFields($object, 'fields'))) {
+				if(is_callable($object->fields()[$name])) {
+					$value = $object->fields()[$name]($object);
+				}
+			}
+			if(is_array($value)) {
+				foreach($value as $k=>$v) {
+					if(is_object($v)) {
+						//$ret_val[$name][$k] = array_merge(ArrayHelper::toArray($v), static::populateRelatedRecords($v, $path));
+						$ret_val[$name][$k] = ArrayHelper::toArray($v);
+					} else
+						$ret_val[$name][$k] = is_array($v) || is_object($v) ? ArrayHelper::toArray($v) : $v;
+				}
+			} else if(is_object($value) && $object->hasRelation($name)) {
+				$ret_val[$name] = $value->toArray();
+			} else if(is_object($value)) {
+				$ret_val[$name] = ArrayHelper::toArray($value);
+			} else {
+				$ret_val[$name] = $value;
+			}
+		}
+		return $ret_val;
+	}
+	/**
+	 * Get the fields for the specified object
+	 * @param  [type] $table [description]
+	 * @return [type]        [description]
+	 */
+	protected static function currentFields($object, $type=null) {
+		if(!isset(static::$_fields[$object->tableName()])) {
+			try {
+				list($fields, $extraFields, $allFields) = $object->allFields();
+			} catch(\Exception $e) {
+				$fields = $extraFields = $allFields = [];
+			}
+			static::$_fields[$object->tableName()] = [
+				'fields' => $fields,
+				'extraFields' => $extraFields,
+				'allFields' => $allFields
+			];
+		}
+		return ArrayHelper::getValue(static::$_fields, implode('.', array_filter([$object->tableName(), $type])), []);
 	}
 }
 ?>

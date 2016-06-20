@@ -263,104 +263,20 @@ class IndexerElasticsearch extends BaseElasticSearch
 		return static::api('get', ['url' => '_mapping', null, false]);
 	}
 
-	public function operation($operation, $options=[])
+	protected function operationStats($options)
 	{
-		$operation = strtolower($operation);
-		switch($operation)
-		{
-			case 'index':
-			case 'delete':
-			case 'update':
-			switch($operation)
-			{
-				case 'update':
-				$options = [
-					'queryOptions' => [
-						'indexby' => 'primaryKey'
-					]
-				];
-				break;
-
-				case 'delete':
-				$options = [
-					'queryOptions' => [
-						'select' => 'primaryKey',
-					]
-				];
-				break;
-
-				default:
-				$options = [];
-				break;
-			}
-			$this->prepare($operation, $options);
-			$this->run();
-			$this->finish();
-			break;
-
-			case 'stats':
-			$options['url'] = '_search';
-			$oldJdbcOptions = $this->jdbc['options'];
-			$this->jdbc['options'] = [
-				'q' => '*',
-				'search_type' => 'count'
-			];
-			$originalMock = $this->mock;
-			$this->mock = false;
-			$ret_val = $this->apiInternal('get', $options);
-			$this->mock = $originalMock;
-			$this->jdbc['options'] = $oldJdbcOptions;
-			return $ret_val;
-			break;
-
-			default:
-			echo "\n\tUnknown operation: $operation. Exiting...";
-			break;
-		}
-	}
-
-	/**
-	 * Prepare data to be indexed/checked
-	 * @param int $mode
-	 * @param boolean $useClasses Use the namespaced calss to pull data?
-	 * @return bool
-	 */
-	public function prepare($operation='index', $queryOptions=[])
-	{
-		$this->type = 'prepare';
-		$this->_operation = 'operation'.ucfirst($operation);
-		switch($this->mode)
-		{
-			case self::MODE_FEEDER:
-			switch(is_array($this->_classes) && !empty($this->_classes))
-			{
-				case true:
-				$prepare = 'FromClasses';
-				$dataSource = '_classes';
-				break;
-
-				default:
-				$prepare = 'FromTables';
-				$dataSource = '_tables';
-				break;
-			}
-			break;
-
-			default:
-			if(!isset($this->jdbc))
-			{
-				//By default use components value
-				$this->jdbc = static::getJdbcOptions();
-			}
-			$prepare = 'FromSql';
-			$dataSource = '_tables';
-			break;
-		}
-		if(is_array($this->$dataSource) && !count($this->$dataSource))
-			return false;
-		$prepare = 'prepare'.$prepare;
-		$this->$prepare($queryOptions);
-		$this->type = $operation;
+		$options['url'] = '_search';
+		$oldJdbcOptions = $this->jdbc['options'];
+		$this->jdbc['options'] = [
+			'q' => '*',
+			'search_type' => 'count'
+		];
+		$originalMock = $this->mock;
+		$this->mock = false;
+		$ret_val = $this->apiInternal('get', $options);
+		$this->mock = $originalMock;
+		$this->jdbc['options'] = $oldJdbcOptions;
+		return $ret_val;
 	}
 
 	protected static function getJdbcOptions()
@@ -472,15 +388,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 		}
 	}
 
-	protected function runOperation()
-	{
-		$result = call_user_func([$this, $this->_operation]);
-		$resultArray = @json_decode($result, true);
-		$this->log("\n\t\t\t"."Result: Took \e[1m".$resultArray['took']."ms\e[0m Errors: ".($resultArray['errors'] ? "\e[31myes" : "\e[32mno")."\e[0m");
-		$this->log("\n\t\t\t".($this->verbose >= 2 ? "Debug: ".var_export(@$result, true) : ''), 2);
-	}
-
-	public final function operationIndex()
+	public final function operationIndex($baseModel)
 	{
 		$ret_val = [
 			'success' => false,
@@ -495,7 +403,7 @@ class IndexerElasticsearch extends BaseElasticSearch
 			{
 				$this->normalize($item);
 				$this->progress('index', null, null, null, true);
-				$create[] = json_encode(['index' => ['_type' => static::type(), '_id' => $item['id']]]);
+				$create[] = json_encode(['index' => ['_type' => $baseModel->isWhat(), '_id' => $item['id']]]);
 				$item['_md5'] = $this->fingerprint($item);
 				$create[] = json_encode($item);
 				$this->totals['current']++;
@@ -506,12 +414,9 @@ class IndexerElasticsearch extends BaseElasticSearch
 				implode("\n", $create),
 				true
 			];
-			if(sizeof($create) >= 1 && ($result = $this->apiInternal('post', $options)))
-			{
+			if(sizeof($create) >= 1 && ($result = $this->apiInternal('post', $options))) {
 				$this->bulkLog('index');
-			}
-			else
-			{
+			} else {
 				$this->log("\n\t\tNothing to Index\n");
 			}
 			$ret_val = $result;
