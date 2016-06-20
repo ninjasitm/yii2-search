@@ -105,7 +105,7 @@ trait SearchTrait {
 		$sortFromModel = ArrayHelper::getValue($this->filter, 'sort', ArrayHelper::getValue($this->filter, 'order_by', null));
 		$directionFromModel = ArrayHelper::getValue($this->filter, 'order', null);
 
-		$getParams = empty(ArrayHelper::getValue($options, $this->primaryModel->formName(), null));
+		$getParams = !(ArrayHelper::getValue($options, $this->primaryModel->formName(), null));
 
 		if(!is_null($sortFromModel))
 			$options['sort'] = ($directionFromModel == 'desc' ? '-' : '').ltrim($sortFromModel, '-');
@@ -600,7 +600,7 @@ trait SearchTrait {
 			}
 		}
 
-		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(empty(current($params)) && !$this->useEmptyParams)) : $this->exclusiveSearch;
+		$this->exclusiveSearch = !isset($this->exclusiveSearch) ? (!(current($params) && !$this->useEmptyParams)) : $this->exclusiveSearch;
 
 		return $params;
 	}
